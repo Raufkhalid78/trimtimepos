@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+      --brand-amber: #f59e0b;
+      --brand-slate: #0f172a;
+  }
+  body { 
+      font-family: 'Plus Jakarta Sans', sans-serif; 
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-smoothing: grayscale;
+      touch-action: manipulation; /* Prevents double-tap zoom delay */
+  }
+  
+  /* Language Specific Fonts */
+  :root[lang="ur"] body { font-family: 'Noto Nastaliq Urdu', serif; line-height: 2; }
+  :root[lang="fa"] body { font-family: 'Vazirmatn', sans-serif; }
+
+  .font-brand { font-family: 'Playfair Display', serif; }
+  
+  /* Smooth Scrollbars */
+  ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+      background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+      background: #e2e8f0;
+      border-radius: 10px;
+  }
+  .dark ::-webkit-scrollbar-thumb {
+      background: #334155;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+      background: #cbd5e1;
+  }
+
+  @media print {
+      .no-print { display: none !important; }
+      .print-only { display: block !important; }
+      body { background: white !important; }
+  }
+  .print-only { display: none; }
+
+  /* Improved mobile inputs */
+  input, select, textarea {
+      font-size: 16px !important; /* Prevents auto-zoom on iOS */
+  }
+}
+
+@layer utilities {
+  .animate-float {
+      animation: subtle-float 4s ease-in-out infinite;
+  }
+}
+
+@keyframes subtle-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
