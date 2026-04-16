@@ -44,7 +44,7 @@ const App: React.FC = () => {
   const { 
     authUser, currentTenant, subscription, authLoading, saasView, 
     currentUser, sessionLanguage, isDarkMode,
-    setSaasView, setSessionLanguage, setIsDarkMode, signOut, loginStaff 
+    setSaasView, setSessionLanguage, setIsDarkMode, signOut, loginStaff, refreshAuth 
   } = useAuth();
   
   const { loading: dataLoading, settings, staff } = useData();
@@ -80,8 +80,8 @@ const App: React.FC = () => {
   if (authLoading) return <div className="h-screen w-full flex items-center justify-center bg-slate-950"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-amber-500 mx-auto mb-4"></div></div>;
 
   if (saasView === 'landing') return <LandingPage onGoToSignUp={() => setSaasView('signup')} onGoToLogin={() => setSaasView('login')} />;
-  if (saasView === 'signup') return <SignUp onBack={() => setSaasView('landing')} onSuccess={() => setSaasView('app')} />;
-  if (saasView === 'login') return <OwnerLogin onBack={() => setSaasView('landing')} onSuccess={() => setSaasView('app')} />;
+  if (saasView === 'signup') return <SignUp onBack={() => setSaasView('landing')} onSuccess={() => refreshAuth()} />;
+  if (saasView === 'login') return <OwnerLogin onBack={() => setSaasView('landing')} onSuccess={() => refreshAuth()} />;
 
   if (subscription && !isSubscriptionValid(subscription)) {
     return (
@@ -154,7 +154,7 @@ const App: React.FC = () => {
 };
 
 // Owner Login Component
-const OwnerLogin: React.FC<{ onBack: () => void; onSuccess: () => void }> = ({ onBack, onSuccess }) => {
+const OwnerLogin: React.FC<{ onBack: () => void; onSuccess: () => void | Promise<void> }> = ({ onBack, onSuccess }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
@@ -166,8 +166,12 @@ const OwnerLogin: React.FC<{ onBack: () => void; onSuccess: () => void }> = ({ o
     setError('');
     setLoading(true);
     const result = await loginWithEmail(email.trim().toLowerCase(), password);
-    if (result.success) onSuccess();
-    else { setError(result.error || 'Invalid email or password.'); setLoading(false); }
+    if (result.success) {
+      await onSuccess();
+    } else {
+      setError(result.error || 'Invalid email or password.');
+      setLoading(false);
+    }
   };
 
   const handleResetPassword = async () => {

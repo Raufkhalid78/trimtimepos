@@ -6,7 +6,7 @@ import { registerNewBusiness, SignUpData } from '../services/authService';
 
 interface SignUpProps {
   onBack: () => void;
-  onSuccess: () => void;
+  onSuccess: () => void | Promise<void>;
 }
 
 // ==========================================
@@ -271,10 +271,14 @@ const SignUp: React.FC<SignUpProps> = ({ onBack, onSuccess }) => {
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    onClick={onSuccess}
-                    className="w-full py-5 bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 rounded-[1.5rem] font-black text-xl shadow-xl shadow-amber-500/10"
+                    onClick={async () => {
+                      setLoading(true);
+                      await onSuccess();
+                    }}
+                    disabled={loading}
+                    className="w-full py-5 bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 rounded-[1.5rem] font-black text-xl shadow-xl shadow-amber-500/10 disabled:opacity-60"
                   >
-                    Go to Dashboard →
+                    {loading ? 'Loading Dashboard...' : 'Go to Dashboard →'}
                   </motion.button>
                 </div>
               ) : (
