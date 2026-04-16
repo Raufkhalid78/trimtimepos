@@ -26,7 +26,7 @@ interface DataContextType {
   loading: boolean;
   
   fetchData: (isSilent?: boolean) => Promise<void>;
-  fetchPublicTenantBySlug: (slug: string) => Promise<boolean>;
+  fetchPublicTenantBySlug: (slug: string) => Promise<any>;
   
   // CRUD Handlers
   updateServices: (updated: Service[]) => Promise<void>;
@@ -72,21 +72,22 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const fetchData = useCallback(async (isSilent = false) => {
     if (!currentTenant) return;
     if (!isSilent) setLoading(true);
+    const tid = currentTenant.id;
     
     try {
       const [sv, pr, st, ex, cu, sa, se, ap, sup, sl, appts, avail] = await Promise.all([
-        supabase.from('services').select('*'),
-        supabase.from('products').select('*'),
-        supabase.from('staff').select('*'),
-        supabase.from('expenses').select('*'),
-        supabase.from('customers').select('*'),
-        supabase.from('sales').select('*'),
-        supabase.from('settings').select('*').single(),
-        supabase.from('advance_payments').select('*'),
-        supabase.from('suppliers').select('*'),
-        supabase.from('stock_logs').select('*'),
-        supabase.from('appointments').select('*'),
-        supabase.from('staff_availability').select('*')
+        supabase.from('services').select('*').eq('tenant_id', tid),
+        supabase.from('products').select('*').eq('tenant_id', tid),
+        supabase.from('staff').select('*').eq('tenant_id', tid),
+        supabase.from('expenses').select('*').eq('tenant_id', tid),
+        supabase.from('customers').select('*').eq('tenant_id', tid),
+        supabase.from('sales').select('*').eq('tenant_id', tid),
+        supabase.from('settings').select('*').eq('tenant_id', tid).single(),
+        supabase.from('advance_payments').select('*').eq('tenant_id', tid),
+        supabase.from('suppliers').select('*').eq('tenant_id', tid),
+        supabase.from('stock_logs').select('*').eq('tenant_id', tid),
+        supabase.from('appointments').select('*').eq('tenant_id', tid),
+        supabase.from('staff_availability').select('*').eq('tenant_id', tid)
       ]);
 
       if (sv.data) setServices(sv.data.map((s: any) => ({ ...s, nameUr: s.name_ur })));
@@ -335,7 +336,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
           status: a.status, 
           notes: a.notes || null, 
           customer_name: a.customerName || null, 
-          customer_phone: a.customer_phone || null,
+          customer_phone: a.customerPhone || null,
           customer_email: a.customerEmail || null
         }));
         const { error } = await supabase.from('appointments').upsert(rows);

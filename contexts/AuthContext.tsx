@@ -55,6 +55,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const tenant = await getCurrentTenant();
         if (tenant) {
           setCurrentTenant(tenant);
+          const sub = await getCurrentSubscription(tenant.id);
           setSubscription(sub);
           
           // Auto-login owner as staff

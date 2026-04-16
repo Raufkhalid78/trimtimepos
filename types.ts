@@ -158,6 +158,7 @@ export interface Appointment {
   notes?: string;
   customerName?: string;
   customerPhone?: string;
+  customerEmail?: string;
 }
 
 export interface StaffAvailability {

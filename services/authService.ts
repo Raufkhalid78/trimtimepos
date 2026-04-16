@@ -1,5 +1,5 @@
 import { supabase } from '../supabaseClient';
-import { BusinessType, Tenant, Subscription, PLAN_PRICES } from '../types';
+import { BusinessType, Tenant, Subscription, Staff, PLAN_PRICES } from '../types';
 import { hashPassword } from './passwordService';
 
 // ==========================================
