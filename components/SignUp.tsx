@@ -250,12 +250,12 @@ const SignUp: React.FC<SignUpProps> = ({ onBack, onSuccess }) => {
                       <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-3">Employee Login Link</p>
                       <p className="text-xs text-slate-400 mb-4 px-2 italic">Share this link with your team so they can login for their shifts. Bookmark it on your staff tablet or phone.</p>
                     </div>
-                    
+
                     <div className="relative group">
                       <div className="w-full bg-slate-950/50 border border-slate-800 rounded-xl px-4 py-3 text-emerald-400 font-mono text-[10px] break-all pr-12">
                         https://trimtimepos.com/staff-login/{generatedSlug}
                       </div>
-                      <button 
+                      <button
                         onClick={() => {
                           navigator.clipboard.writeText(`https://trimtimepos.com/staff-login/${generatedSlug}`);
                           setCopied(true);
@@ -281,314 +281,311 @@ const SignUp: React.FC<SignUpProps> = ({ onBack, onSuccess }) => {
                 <>
                   {/* ========== CARD 1: Business Details ========== */}
                   {step === 1 && (
-                <div className="space-y-6">
-                  <div>
-                    <h2 className="text-xl font-black text-white mb-1">Business Details</h2>
-                    <p className="text-slate-500 text-sm">Tell us about your business.</p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block ml-1">Business Name</label>
-                    <input
-                      type="text"
-                      value={businessName}
-                      onChange={e => setBusinessName(e.target.value)}
-                      placeholder="e.g. Elite Cuts & Styles"
-                      className="w-full bg-slate-800/30 border border-slate-700/50 text-white rounded-2xl px-5 py-4 focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all placeholder:text-slate-600 font-medium"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block ml-1">Business Type</label>
-                    <div className="space-y-3">
-                      {businessTypes.map(bt => (
-                        <button
-                          key={bt.value}
-                          type="button"
-                          onClick={() => { setBusinessType(bt.value); setServicesInitialized(false); }}
-                          className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 transition-all text-left ${
-                            businessType === bt.value
-                              ? 'border-amber-500 bg-amber-500/5'
-                              : 'border-slate-700/50 bg-slate-800/20 hover:border-slate-600'
-                          }`}
-                        >
-                          <span className="text-3xl">{bt.icon}</span>
-                          <div>
-                            <p className={`font-bold ${businessType === bt.value ? 'text-amber-400' : 'text-white'}`}>{bt.label}</p>
-                            <p className="text-xs text-slate-500">{bt.desc}</p>
-                          </div>
-                          {businessType === bt.value && (
-                            <svg className="w-5 h-5 text-amber-500 ml-auto flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/></svg>
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* ========== CARD 2: Account Setup ========== */}
-              {step === 2 && (
-                <div className="space-y-6">
-                  <div>
-                    <h2 className="text-xl font-black text-white mb-1">Account Setup</h2>
-                    <p className="text-slate-500 text-sm">Create your login credentials.</p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block ml-1">Your Full Name</label>
-                    <input
-                      type="text"
-                      value={ownerName}
-                      onChange={e => setOwnerName(e.target.value)}
-                      placeholder="John Smith"
-                      className="w-full bg-slate-800/30 border border-slate-700/50 text-white rounded-2xl px-5 py-4 focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all placeholder:text-slate-600 font-medium"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block ml-1">Email Address</label>
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={e => setEmail(e.target.value)}
-                      placeholder="you@example.com"
-                      className="w-full bg-slate-800/30 border border-slate-700/50 text-white rounded-2xl px-5 py-4 focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all placeholder:text-slate-600 font-medium"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block ml-1">Password</label>
-                    <div className="relative">
-                      <input
-                        type={showPassword1 ? 'text' : 'password'}
-                        value={password}
-                        onChange={e => setPassword(e.target.value)}
-                        placeholder="At least 6 characters"
-                        className="w-full bg-slate-800/30 border border-slate-700/50 text-white rounded-2xl px-5 py-4 pr-12 focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all placeholder:text-slate-600 font-medium"
-                      />
-                      <button type="button" onClick={() => setShowPassword1(!showPassword1)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors">
-                        {showPassword1 ? '🙈' : '👁️'}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block ml-1">Confirm Password</label>
-                    <div className="relative">
-                      <input
-                        type={showPassword2 ? 'text' : 'password'}
-                        value={confirmPassword}
-                        onChange={e => setConfirmPassword(e.target.value)}
-                        placeholder="Re-enter your password"
-                        className="w-full bg-slate-800/30 border border-slate-700/50 text-white rounded-2xl px-5 py-4 pr-12 focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all placeholder:text-slate-600 font-medium"
-                      />
-                      <button type="button" onClick={() => setShowPassword2(!showPassword2)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors">
-                        {showPassword2 ? '🙈' : '👁️'}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* ========== CARD 3: Choose Plan ========== */}
-              {step === 3 && (
-                <div className="space-y-6">
-                  <div>
-                    <h2 className="text-xl font-black text-white mb-1">Choose Your Plan</h2>
-                    <p className="text-slate-500 text-sm">Both plans include a 1-month free trial. No credit card needed.</p>
-                  </div>
-
-                  <div className="space-y-4">
-                    {/* Monthly Card */}
-                    <button
-                      type="button"
-                      onClick={() => setPlan('monthly')}
-                      className={`w-full p-5 rounded-2xl border-2 transition-all text-left ${
-                        plan === 'monthly'
-                          ? 'border-amber-500 bg-amber-500/5'
-                          : 'border-slate-700/50 bg-slate-800/20 hover:border-slate-600'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-black text-white text-lg">Monthly</p>
-                          <p className="text-slate-500 text-xs mt-0.5">Billed monthly, cancel anytime</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-2xl font-black text-white">${PLAN_PRICES.monthly}</p>
-                          <p className="text-slate-500 text-xs">/month</p>
-                        </div>
+                    <div className="space-y-6">
+                      <div>
+                        <h2 className="text-xl font-black text-white mb-1">Business Details</h2>
+                        <p className="text-slate-500 text-sm">Tell us about your business.</p>
                       </div>
-                    </button>
 
-                    {/* Yearly Card */}
-                    <button
-                      type="button"
-                      onClick={() => setPlan('yearly')}
-                      className={`w-full p-5 rounded-2xl border-2 transition-all text-left relative ${
-                        plan === 'yearly'
-                          ? 'border-amber-500 bg-amber-500/5'
-                          : 'border-slate-700/50 bg-slate-800/20 hover:border-slate-600'
-                      }`}
-                    >
-                      <div className="absolute -top-2.5 right-4 bg-emerald-500 text-white px-3 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider">
-                        Save $40
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block ml-1">Business Name</label>
+                        <input
+                          type="text"
+                          value={businessName}
+                          onChange={e => setBusinessName(e.target.value)}
+                          placeholder="e.g. Elite Cuts & Styles"
+                          className="w-full bg-slate-800/30 border border-slate-700/50 text-white rounded-2xl px-5 py-4 focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all placeholder:text-slate-600 font-medium"
+                        />
                       </div>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-black text-white text-lg">Yearly</p>
-                          <p className="text-slate-500 text-xs mt-0.5">Best value — only $16.67/mo</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-2xl font-black text-white">${PLAN_PRICES.yearly}</p>
-                          <p className="text-slate-500 text-xs">/year</p>
-                        </div>
-                      </div>
-                    </button>
-                  </div>
 
-                  <div className="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-2xl">
-                    <p className="text-emerald-400 text-sm font-bold text-center">
-                      🎉 Your first month is completely free!
-                    </p>
-                    <p className="text-emerald-500/60 text-xs text-center mt-1">
-                      You won't be charged until your trial ends.
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* ========== CARD 4: Customize Services ========== */}
-              {step === 4 && (
-                <div className="space-y-6">
-                  <div>
-                    <h2 className="text-xl font-black text-white mb-1">Your Services</h2>
-                    <p className="text-slate-500 text-sm">
-                      We've pre-selected services for{' '}
-                      {businessType === 'barbershop' ? 'barbershops' : businessType === 'beauty_salon' ? 'beauty salons' : 'barber & beauty'}.
-                      Toggle any you don't need — you can always edit later.
-                    </p>
-                  </div>
-
-                  <div className="max-h-[320px] overflow-y-auto space-y-2 scrollbar-hide pr-1">
-                    {getServicesForType(businessType).map(svc => {
-                      const isSelected = selectedServiceIds.has(svc.id);
-                      return (
-                        <button
-                          key={svc.id}
-                          type="button"
-                          onClick={() => toggleService(svc.id)}
-                          className={`w-full flex items-center justify-between p-3.5 rounded-xl border transition-all text-left ${
-                            isSelected
-                              ? 'border-amber-500/30 bg-amber-500/5'
-                              : 'border-slate-700/30 bg-slate-800/20 opacity-50'
-                          }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
-                              isSelected ? 'border-amber-500 bg-amber-500' : 'border-slate-600'
-                            }`}>
-                              {isSelected && (
-                                <svg className="w-3 h-3 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/></svg>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block ml-1">Business Type</label>
+                        <div className="space-y-3">
+                          {businessTypes.map(bt => (
+                            <button
+                              key={bt.value}
+                              type="button"
+                              onClick={() => { setBusinessType(bt.value); setServicesInitialized(false); }}
+                              className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 transition-all text-left ${businessType === bt.value
+                                  ? 'border-amber-500 bg-amber-500/5'
+                                  : 'border-slate-700/50 bg-slate-800/20 hover:border-slate-600'
+                                }`}
+                            >
+                              <span className="text-3xl">{bt.icon}</span>
+                              <div>
+                                <p className={`font-bold ${businessType === bt.value ? 'text-amber-400' : 'text-white'}`}>{bt.label}</p>
+                                <p className="text-xs text-slate-500">{bt.desc}</p>
+                              </div>
+                              {businessType === bt.value && (
+                                <svg className="w-5 h-5 text-amber-500 ml-auto flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
                               )}
-                            </div>
-                            <div>
-                              <p className="text-sm font-bold text-white">{svc.name}</p>
-                              <p className="text-[10px] text-slate-500 uppercase tracking-wider">{svc.category} • {svc.duration}min</p>
-                            </div>
-                          </div>
-                          <span className="text-sm font-black text-slate-400">${svc.price}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  <p className="text-xs text-slate-600 text-center">
-                    {selectedServiceIds.size} service{selectedServiceIds.size !== 1 ? 's' : ''} selected
-                  </p>
-                </div>
-              )}
-
-              {/* ========== CARD 5: Staff Setup ========== */}
-              {step === 5 && (
-                <div className="space-y-6">
-                  <div>
-                    <h2 className="text-xl font-black text-white mb-1">Add Your Team</h2>
-                    <p className="text-slate-500 text-sm">Add staff members who will use the POS. You can skip this and add them later.</p>
-                  </div>
-
-                  {/* Already added staff */}
-                  {staffList.length > 0 && (
-                    <div className="space-y-2">
-                      {staffList.map((s, i) => (
-                        <div key={i} className="flex items-center justify-between bg-slate-800/30 p-3 rounded-xl border border-slate-700/30">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 bg-amber-500/20 text-amber-400 rounded-lg flex items-center justify-center font-black text-xs">
-                              {s.name.charAt(0)}
-                            </div>
-                            <div>
-                              <p className="text-sm font-bold text-white">{s.name}</p>
-                              <p className="text-[10px] text-slate-500">@{s.username} • {s.commission}% commission</p>
-                            </div>
-                          </div>
-                          <button type="button" onClick={() => removeStaff(i)} className="text-slate-500 hover:text-rose-400 transition-colors p-1">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                          </button>
+                            </button>
+                          ))}
                         </div>
-                      ))}
+                      </div>
                     </div>
                   )}
 
-                  {/* Add new staff form */}
-                  <div className="bg-slate-800/20 border border-slate-700/30 rounded-2xl p-4 space-y-3">
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Add Team Member</p>
-                    <input
-                      type="text"
-                      value={newStaffName}
-                      onChange={e => setNewStaffName(e.target.value)}
-                      placeholder="Full Name"
-                      className="w-full bg-slate-800/40 border border-slate-700/40 text-white rounded-xl px-4 py-3 text-sm focus:border-amber-500 outline-none placeholder:text-slate-600"
-                    />
-                    <div className="grid grid-cols-2 gap-3">
-                      <input
-                        type="text"
-                        value={newStaffUsername}
-                        onChange={e => setNewStaffUsername(e.target.value)}
-                        placeholder="Login Username"
-                        className="w-full bg-slate-800/40 border border-slate-700/40 text-white rounded-xl px-4 py-3 text-sm focus:border-amber-500 outline-none placeholder:text-slate-600"
-                      />
-                      <input
-                        type="text"
-                        value={newStaffPassword}
-                        onChange={e => setNewStaffPassword(e.target.value)}
-                        placeholder="Login Password"
-                        className="w-full bg-slate-800/40 border border-slate-700/40 text-white rounded-xl px-4 py-3 text-sm focus:border-amber-500 outline-none placeholder:text-slate-600"
-                      />
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1">
-                        <label className="text-[10px] text-slate-500 font-bold mb-1 block">Commission %</label>
+                  {/* ========== CARD 2: Account Setup ========== */}
+                  {step === 2 && (
+                    <div className="space-y-6">
+                      <div>
+                        <h2 className="text-xl font-black text-white mb-1">Account Setup</h2>
+                        <p className="text-slate-500 text-sm">Create your login credentials.</p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block ml-1">Your Full Name</label>
                         <input
-                          type="number"
-                          min="0"
-                          max="100"
-                          value={newStaffCommission}
-                          onChange={e => setNewStaffCommission(parseInt(e.target.value) || 0)}
-                          className="w-full bg-slate-800/40 border border-slate-700/40 text-white rounded-xl px-4 py-3 text-sm focus:border-amber-500 outline-none"
+                          type="text"
+                          value={ownerName}
+                          onChange={e => setOwnerName(e.target.value)}
+                          placeholder="John Smith"
+                          className="w-full bg-slate-800/30 border border-slate-700/50 text-white rounded-2xl px-5 py-4 focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all placeholder:text-slate-600 font-medium"
                         />
                       </div>
-                      <button
-                        type="button"
-                        onClick={addStaffMember}
-                        disabled={!newStaffName.trim() || !newStaffUsername.trim() || !newStaffPassword.trim()}
-                        className="mt-5 px-5 py-3 bg-amber-500 text-slate-950 rounded-xl text-sm font-black disabled:opacity-30 disabled:cursor-not-allowed hover:bg-amber-400 transition-colors"
-                      >
-                        Add
-                      </button>
+
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block ml-1">Email Address</label>
+                        <input
+                          type="email"
+                          value={email}
+                          onChange={e => setEmail(e.target.value)}
+                          placeholder="you@example.com"
+                          className="w-full bg-slate-800/30 border border-slate-700/50 text-white rounded-2xl px-5 py-4 focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all placeholder:text-slate-600 font-medium"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block ml-1">Password</label>
+                        <div className="relative">
+                          <input
+                            type={showPassword1 ? 'text' : 'password'}
+                            value={password}
+                            onChange={e => setPassword(e.target.value)}
+                            placeholder="At least 6 characters"
+                            className="w-full bg-slate-800/30 border border-slate-700/50 text-white rounded-2xl px-5 py-4 pr-12 focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all placeholder:text-slate-600 font-medium"
+                          />
+                          <button type="button" onClick={() => setShowPassword1(!showPassword1)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors">
+                            {showPassword1 ? '🙈' : '👁️'}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block ml-1">Confirm Password</label>
+                        <div className="relative">
+                          <input
+                            type={showPassword2 ? 'text' : 'password'}
+                            value={confirmPassword}
+                            onChange={e => setConfirmPassword(e.target.value)}
+                            placeholder="Re-enter your password"
+                            className="w-full bg-slate-800/30 border border-slate-700/50 text-white rounded-2xl px-5 py-4 pr-12 focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all placeholder:text-slate-600 font-medium"
+                          />
+                          <button type="button" onClick={() => setShowPassword2(!showPassword2)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors">
+                            {showPassword2 ? '🙈' : '👁️'}
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
+                  )}
+
+                  {/* ========== CARD 3: Choose Plan ========== */}
+                  {step === 3 && (
+                    <div className="space-y-6">
+                      <div>
+                        <h2 className="text-xl font-black text-white mb-1">Choose Your Plan</h2>
+                        <p className="text-slate-500 text-sm">Both plans include a 1-month free trial. No credit card needed.</p>
+                      </div>
+
+                      <div className="space-y-4">
+                        {/* Monthly Card */}
+                        <button
+                          type="button"
+                          onClick={() => setPlan('monthly')}
+                          className={`w-full p-5 rounded-2xl border-2 transition-all text-left ${plan === 'monthly'
+                              ? 'border-amber-500 bg-amber-500/5'
+                              : 'border-slate-700/50 bg-slate-800/20 hover:border-slate-600'
+                            }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="font-black text-white text-lg">Monthly</p>
+                              <p className="text-slate-500 text-xs mt-0.5">Billed monthly, cancel anytime</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-2xl font-black text-white">${PLAN_PRICES.monthly}</p>
+                              <p className="text-slate-500 text-xs">/month</p>
+                            </div>
+                          </div>
+                        </button>
+
+                        {/* Yearly Card */}
+                        <button
+                          type="button"
+                          onClick={() => setPlan('yearly')}
+                          className={`w-full p-5 rounded-2xl border-2 transition-all text-left relative ${plan === 'yearly'
+                              ? 'border-amber-500 bg-amber-500/5'
+                              : 'border-slate-700/50 bg-slate-800/20 hover:border-slate-600'
+                            }`}
+                        >
+                          <div className="absolute -top-2.5 right-4 bg-emerald-500 text-white px-3 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider">
+                            Save $40
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="font-black text-white text-lg">Yearly</p>
+                              <p className="text-slate-500 text-xs mt-0.5">Best value — only $16.67/mo</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-2xl font-black text-white">${PLAN_PRICES.yearly}</p>
+                              <p className="text-slate-500 text-xs">/year</p>
+                            </div>
+                          </div>
+                        </button>
+                      </div>
+
+                      <div className="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-2xl">
+                        <p className="text-emerald-400 text-sm font-bold text-center">
+                          🎉 Your first month is completely free!
+                        </p>
+                        <p className="text-emerald-500/60 text-xs text-center mt-1">
+                          You won't be charged until your trial ends.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ========== CARD 4: Customize Services ========== */}
+                  {step === 4 && (
+                    <div className="space-y-6">
+                      <div>
+                        <h2 className="text-xl font-black text-white mb-1">Your Services</h2>
+                        <p className="text-slate-500 text-sm">
+                          We've pre-selected services for{' '}
+                          {businessType === 'barbershop' ? 'barbershops' : businessType === 'beauty_salon' ? 'beauty salons' : 'barber & beauty'}.
+                          Toggle any you don't need — you can always edit later.
+                        </p>
+                      </div>
+
+                      <div className="max-h-[320px] overflow-y-auto space-y-2 scrollbar-hide pr-1">
+                        {getServicesForType(businessType).map(svc => {
+                          const isSelected = selectedServiceIds.has(svc.id);
+                          return (
+                            <button
+                              key={svc.id}
+                              type="button"
+                              onClick={() => toggleService(svc.id)}
+                              className={`w-full flex items-center justify-between p-3.5 rounded-xl border transition-all text-left ${isSelected
+                                  ? 'border-amber-500/30 bg-amber-500/5'
+                                  : 'border-slate-700/30 bg-slate-800/20 opacity-50'
+                                }`}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${isSelected ? 'border-amber-500 bg-amber-500' : 'border-slate-600'
+                                  }`}>
+                                  {isSelected && (
+                                    <svg className="w-3 h-3 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
+                                  )}
+                                </div>
+                                <div>
+                                  <p className="text-sm font-bold text-white">{svc.name}</p>
+                                  <p className="text-[10px] text-slate-500 uppercase tracking-wider">{svc.category} • {svc.duration}min</p>
+                                </div>
+                              </div>
+                              <span className="text-sm font-black text-slate-400">${svc.price}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      <p className="text-xs text-slate-600 text-center">
+                        {selectedServiceIds.size} service{selectedServiceIds.size !== 1 ? 's' : ''} selected
+                      </p>
+                    </div>
+                  )}
+
+                  {/* ========== CARD 5: Staff Setup ========== */}
+                  {step === 5 && (
+                    <div className="space-y-6">
+                      <div>
+                        <h2 className="text-xl font-black text-white mb-1">Add Your Team</h2>
+                        <p className="text-slate-500 text-sm">Add staff members who will use the POS. You can skip this and add them later.</p>
+                      </div>
+
+                      {/* Already added staff */}
+                      {staffList.length > 0 && (
+                        <div className="space-y-2">
+                          {staffList.map((s, i) => (
+                            <div key={i} className="flex items-center justify-between bg-slate-800/30 p-3 rounded-xl border border-slate-700/30">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 bg-amber-500/20 text-amber-400 rounded-lg flex items-center justify-center font-black text-xs">
+                                  {s.name.charAt(0)}
+                                </div>
+                                <div>
+                                  <p className="text-sm font-bold text-white">{s.name}</p>
+                                  <p className="text-[10px] text-slate-500">@{s.username} • {s.commission}% commission</p>
+                                </div>
+                              </div>
+                              <button type="button" onClick={() => removeStaff(i)} className="text-slate-500 hover:text-rose-400 transition-colors p-1">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Add new staff form */}
+                      <div className="bg-slate-800/20 border border-slate-700/30 rounded-2xl p-4 space-y-3">
+                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Add Team Member</p>
+                        <input
+                          type="text"
+                          value={newStaffName}
+                          onChange={e => setNewStaffName(e.target.value)}
+                          placeholder="Full Name"
+                          className="w-full bg-slate-800/40 border border-slate-700/40 text-white rounded-xl px-4 py-3 text-sm focus:border-amber-500 outline-none placeholder:text-slate-600"
+                        />
+                        <div className="grid grid-cols-2 gap-3">
+                          <input
+                            type="text"
+                            value={newStaffUsername}
+                            onChange={e => setNewStaffUsername(e.target.value)}
+                            placeholder="Login Username"
+                            className="w-full bg-slate-800/40 border border-slate-700/40 text-white rounded-xl px-4 py-3 text-sm focus:border-amber-500 outline-none placeholder:text-slate-600"
+                          />
+                          <input
+                            type="text"
+                            value={newStaffPassword}
+                            onChange={e => setNewStaffPassword(e.target.value)}
+                            placeholder="Login Password"
+                            className="w-full bg-slate-800/40 border border-slate-700/40 text-white rounded-xl px-4 py-3 text-sm focus:border-amber-500 outline-none placeholder:text-slate-600"
+                          />
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="flex-1">
+                            <label className="text-[10px] text-slate-500 font-bold mb-1 block">Commission %</label>
+                            <input
+                              type="number"
+                              min="0"
+                              max="100"
+                              value={newStaffCommission}
+                              onChange={e => setNewStaffCommission(parseInt(e.target.value) || 0)}
+                              className="w-full bg-slate-800/40 border border-slate-700/40 text-white rounded-xl px-4 py-3 text-sm focus:border-amber-500 outline-none"
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={addStaffMember}
+                            disabled={!newStaffName.trim() || !newStaffUsername.trim() || !newStaffPassword.trim()}
+                            className="mt-5 px-5 py-3 bg-amber-500 text-slate-950 rounded-xl text-sm font-black disabled:opacity-30 disabled:cursor-not-allowed hover:bg-amber-400 transition-colors"
+                          >
+                            Add
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </motion.div>
           </AnimatePresence>
@@ -607,7 +604,6 @@ const SignUp: React.FC<SignUpProps> = ({ onBack, onSuccess }) => {
             )}
           </AnimatePresence>
 
-          </div>
         </div>
 
         {/* Existing logic hides nav buttons when showSuccess is true */}
@@ -640,7 +636,7 @@ const SignUp: React.FC<SignUpProps> = ({ onBack, onSuccess }) => {
               >
                 {loading ? (
                   <span className="flex items-center justify-center gap-2">
-                    <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/></svg>
+                    <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>
                     Creating...
                   </span>
                 ) : 'Launch My Business 🚀'}
@@ -648,7 +644,6 @@ const SignUp: React.FC<SignUpProps> = ({ onBack, onSuccess }) => {
             )}
           </div>
         )}
-        </div>
 
         {/* Already have account */}
         {!showSuccess && (
