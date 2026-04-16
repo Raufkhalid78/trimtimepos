@@ -263,3 +263,24 @@ export async function getCurrentSubscription(tenantId: string): Promise<Subscrip
     createdAt: data.created_at,
   };
 }
+
+/**
+ * Manually activate a subscription (Demo Mode)
+ */
+export async function demoActivateSubscription(tenantId: string, plan: 'monthly' | 'yearly'): Promise<boolean> {
+  const price = plan === 'monthly' ? 20 : 200;
+  
+  // Update existing subscription to active
+  const { error } = await supabase
+    .from('subscriptions')
+    .update({ 
+      status: 'active',
+      plan: plan,
+      price: price,
+      current_period_start: new Date().toISOString(),
+      current_period_end: new Date(Date.now() + (plan === 'monthly' ? 30 : 365) * 24 * 60 * 60 * 1000).toISOString()
+    })
+    .eq('tenant_id', tenantId);
+
+  return !error;
+}

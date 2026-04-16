@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Language, PLAN_PRICES } from '../types';
 import { TRANSLATIONS } from '../constants';
-import { polarService } from '../services/polarService';
+import { demoActivateSubscription } from '../services/authService';
 
 interface PricingPageProps {
   tenantId: string;
@@ -20,13 +20,17 @@ const PricingPage: React.FC<PricingPageProps> = ({ tenantId, userEmail, language
     setIsLoading(true);
     setError(null);
     try {
-      const checkoutUrl = polarService.getCheckoutUrl(plan, tenantId, userEmail);
-      window.open(checkoutUrl, '_blank');
-      // We don't necessarily need to set loading back to false here if we assume 
-      // the user is leaving, but for safety: 
-      setTimeout(() => setIsLoading(false), 2000);
+      const success = await demoActivateSubscription(tenantId, plan);
+      if (success) {
+        // Since we don't have a global state update for subscription in DataContext yet, 
+        // the easiest way is a reload or just an alert.
+        alert(`Plan activated! Your account is now ${plan === 'yearly' ? 'Pro (Yearly)' : 'Active (Monthly)'}.`);
+        window.location.reload(); 
+      } else {
+        throw new Error("Activation failed");
+      }
     } catch (err: any) {
-      setError(err.message || 'Check out initiation failed');
+      setError(err.message || 'Activation failed');
       setIsLoading(false);
     }
   };

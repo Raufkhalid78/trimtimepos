@@ -56,12 +56,26 @@ const App: React.FC = () => {
   const navigate = useNavigate();
   const t = TRANSLATIONS[sessionLanguage];
 
-  const handleFullSignOut = async () => { await signOut(); navigate('/'); };
+  const handleFullSignOut = async () => { 
+    localStorage.removeItem('trimtime_session');
+    await signOut(); 
+    navigate('/'); 
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('trimtime_session');
     window.location.reload();
   };
+
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  useEffect(() => {
+    const handler = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
 
   if (authLoading) return <div className="h-screen w-full flex items-center justify-center bg-slate-950"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-amber-500 mx-auto mb-4"></div></div>;
 
@@ -113,7 +127,7 @@ const App: React.FC = () => {
               <div className="w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center font-black text-slate-950 text-xs">{currentUser.name.charAt(0)}</div>
               <div className="flex flex-col"><span className="text-xs font-bold dark:text-white">{currentUser.name}</span><span className="text-[9px] uppercase font-black text-slate-400">{currentUser.role}</span></div>
             </div>
-            <button onClick={handleLogout} className="p-2.5 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-xl">🚪</button>
+            <button onClick={handleFullSignOut} className="p-2.5 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-xl" title={t.logout}>🚪</button>
           </div>
         </header>
 
@@ -132,7 +146,7 @@ const App: React.FC = () => {
         </main>
       </div>
 
-      <InstallBanner deferredPrompt={null} onClose={() => {}} />
+      <InstallBanner deferredPrompt={deferredPrompt} onClose={() => setDeferredPrompt(null)} />
 
       {isPricingOpen && authUser && currentTenant && <PricingPage tenantId={currentTenant.id} userEmail={authUser.email || ''} language={sessionLanguage} onClose={() => setIsPricingOpen(false)} />}
     </div>

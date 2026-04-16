@@ -13,6 +13,7 @@ const Settings = lazy(() => import('@/components/Settings'));
 const Appointments = lazy(() => import('@/components/Appointments'));
 const PublicLayout = lazy(() => import('@/components/PublicLayout'));
 const BookingPage = lazy(() => import('@/components/BookingPage'));
+const ResetPassword = lazy(() => import('@/components/ResetPassword'));
 
 const Loading = () => (
   <div className="h-full w-full flex items-center justify-center bg-slate-50 dark:bg-slate-950">
@@ -61,9 +62,17 @@ function StaffWithData() {
 }
 
 function SettingsWithData() {
-  const { settings, updateSettings, fetchData } = useData();
+  const { settings, updateSettings, fetchData, deleteSales, sales } = useData();
   const { currentUser, signOut } = useAuth();
-  return <Settings settings={settings} onUpdateSettings={updateSettings} currentUser={currentUser} onLogout={signOut} onPurgeSales={() => {}} onRefreshStatus={fetchData} dbStatus="connected" />;
+  return <Settings 
+    settings={settings} 
+    onUpdateSettings={updateSettings} 
+    currentUser={currentUser} 
+    onLogout={signOut} 
+    onPurgeSales={() => deleteSales(sales.map(s => s.id))} 
+    onRefreshStatus={fetchData} 
+    dbStatus="connected" 
+  />;
 }
 
 function AppointmentsWithData() {
@@ -95,5 +104,9 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <BookingPage /> }
     ]
+  },
+  {
+    path: '/reset-password',
+    element: <Suspense fallback={<Loading />}><ResetPassword /></Suspense>
   }
 ]);

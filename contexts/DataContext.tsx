@@ -44,6 +44,7 @@ interface DataContextType {
   deleteExpense: (id: string) => Promise<void>;
   addAdvance: (advance: AdvancePayment) => Promise<void>;
   deleteAdvance: (id: string) => Promise<void>;
+  publicCreateAppointment: (appointment: Omit<Appointment, 'id'>, tenantId: string) => Promise<boolean>;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -180,7 +181,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // If booking is disabled for this shop, stop here
         if (!fetchedSettings.bookingEnabled) {
           setLoading(false);
-          return false;
+          return null;
         }
       }
 
@@ -215,13 +216,15 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       setLoading(false);
-      return true;
+      return tenantData;
+
     } catch (err) {
-      console.error('Public data loading error:', err);
+      console.error('Data loading error:', err);
+      showToast('Error loading shop data', 'error');
       setLoading(false);
-      return false;
+      return null;
     }
-  }, []);
+  }, [showToast]);
 
   const updateServices = async (updated: Service[]) => {
     if (!tenantId) return;
@@ -321,7 +324,20 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       if (toDelete.length) await supabase.from('appointments').delete().in('id', toDelete);
       if (updated.length) {
-        const rows = updated.map(a => ({ id: a.id, tenant_id: tenantId, staff_id: a.staffId, customer_id: a.customerId || null, service_ids: JSON.stringify(a.serviceIds), start_time: a.startTime, end_time: a.endTime, status: a.status, notes: a.notes || null, customer_name: a.customerName || null, customer_phone: a.customerPhone || null }));
+        const rows = updated.map(a => ({ 
+          id: a.id, 
+          tenant_id: tenantId, 
+          staff_id: a.staffId, 
+          customer_id: a.customerId || null, 
+          service_ids: JSON.stringify(a.serviceIds), 
+          start_time: a.startTime, 
+          end_time: a.endTime, 
+          status: a.status, 
+          notes: a.notes || null, 
+          customer_name: a.customerName || null, 
+          customer_phone: a.customer_phone || null,
+          customer_email: a.customerEmail || null
+        }));
         const { error } = await supabase.from('appointments').upsert(rows);
         if (error) throw error;
       }
@@ -417,6 +433,30 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try { await supabase.from('advance_payments').delete().eq('id', id); } catch (e) { showToast("Failed to delete advance", "error"); }
   };
 
+  const publicCreateAppointment = async (appointment: Omit<Appointment, 'id'>, targetTenantId: string) => {
+    try {
+      const { data, error } = await supabase.from('appointments').insert({
+        tenant_id: targetTenantId,
+        staff_id: appointment.staffId,
+        customer_id: appointment.customerId || null,
+        service_ids: JSON.stringify(appointment.serviceIds),
+        start_time: appointment.startTime,
+        end_time: appointment.endTime,
+        status: 'unconfirmed',
+        notes: appointment.notes || null,
+        customer_name: appointment.customerName || null,
+        customer_phone: appointment.customerPhone || null,
+        customer_email: appointment.customerEmail || null
+      }).select();
+
+      if (error) throw error;
+      return true;
+    } catch (e) {
+      console.error('Public booking error:', e);
+      return false;
+    }
+  };
+
   useEffect(() => {
     if (currentTenant) fetchData();
   }, [currentTenant, fetchData]);
@@ -427,7 +467,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       advancePayments, suppliers, stockLogs, appointments, staffAvailability, settings, 
       loading, fetchData, fetchPublicTenantBySlug,
       updateServices, updateProducts, updateStaff, updateCustomers, updateSettings, updateSuppliers, updateAppointments, updateStaffAvailability,
-      addStockLog, completeSale, deleteSales, addExpense, deleteExpense, addAdvance, deleteAdvance
+      addStockLog, completeSale, deleteSales, addExpense, deleteExpense, addAdvance, deleteAdvance, publicCreateAppointment
     }}>
       {children}
     </DataContext.Provider>

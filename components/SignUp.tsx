@@ -169,7 +169,11 @@ const SignUp: React.FC<SignUpProps> = ({ onBack, onSuccess }) => {
     if (result.success) {
       onSuccess();
     } else {
-      setError(result.error || 'Registration failed.');
+      let errorMsg = result.error || 'Registration failed.';
+      if (errorMsg.includes('Failed to fetch') || errorMsg.includes('NetworkError')) {
+        errorMsg = "Network Error: Could not reach Supabase. Check your Vercel Environment Variables and make sure you have REDEPLOYED the app.";
+      }
+      setError(errorMsg);
       setLoading(false);
     }
   };

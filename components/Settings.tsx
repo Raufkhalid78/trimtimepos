@@ -536,7 +536,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
                   <div className="flex gap-2">
                     <div className="flex-1 relative">
                       <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-bold pointer-events-none">
-                        trimtime.app/book/
+                        trimtimepos.com/book/
                       </div>
                       <input 
                         type="text" 
@@ -550,7 +550,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
                       type="button"
                       disabled={!formData.bookingSlug}
                       onClick={() => {
-                        const link = `https://trimtime.app/book/${formData.bookingSlug}`;
+                        const link = `https://trimtimepos.com/book/${formData.bookingSlug}`;
                         navigator.clipboard.writeText(link);
                         alert(t.bookingLinkCopied);
                       }}

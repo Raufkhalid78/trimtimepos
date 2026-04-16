@@ -7,8 +7,8 @@ const apiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY || (import.meta as 
 const ai = new GoogleGenAI({ apiKey });
 
 export async function getFinancialInsights(sales: Sale[], expenses: Expense[], businessType?: BusinessType) {
-  // Using gemini-3-flash-preview for general business analysis tasks
-  const model = 'gemini-3-flash-preview';
+  // Using gemini-2.0-flash for general business analysis tasks
+  const model = 'gemini-2.0-flash';
   
   const totalRevenue = sales.reduce((acc, s) => acc + s.total, 0);
   const totalExpenses = expenses.reduce((acc, e) => acc + e.amount, 0);

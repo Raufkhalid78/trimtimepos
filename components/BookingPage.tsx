@@ -10,7 +10,7 @@ const BookingPage: React.FC = () => {
   const navigate = useNavigate();
   const { 
     services, staff, staffAvailability, appointments, settings, loading,
-    fetchPublicTenantBySlug, updateAppointments 
+    fetchPublicTenantBySlug, publicCreateAppointment 
   } = useData();
 
   const [step, setStep] = useState(1);
@@ -25,12 +25,15 @@ const BookingPage: React.FC = () => {
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [tenant, setTenant] = useState<any>(null);
 
   useEffect(() => {
     if (slug) {
-      fetchPublicTenantBySlug(slug).then(success => {
-        if (!success) {
+      fetchPublicTenantBySlug(slug).then(t => {
+        if (!t) {
           setError("Business not found or online booking is disabled.");
+        } else {
+          setTenant(t);
         }
       });
     }
@@ -94,7 +97,6 @@ const BookingPage: React.FC = () => {
       const endDateTime = addMinutes(startDateTime, selectedService.duration);
 
       const newAppointment = {
-        id: crypto.randomUUID(),
         staffId: selectedStaff.id,
         serviceIds: [selectedService.id],
         startTime: startDateTime.toISOString(),
@@ -103,13 +105,18 @@ const BookingPage: React.FC = () => {
         customerName,
         customerPhone,
         customerEmail,
-        notes: `Guest booking from public page.`
+        notes: `Online booking via ${slug}`
       };
 
-      await updateAppointments([...appointments, newAppointment as any]);
-      setStep(5); // Success step
-    } catch (err) {
-      setError("Failed to create booking. Please try again.");
+      const success = await publicCreateAppointment(newAppointment, tenant.id);
+      
+      if (success) {
+        setStep(5); // Success step
+      } else {
+        setError("Failed to create appointment. Please try again or call the shop.");
+      }
+    } catch (err: any) {
+      setError(err.message || "An error occurred.");
     } finally {
       setIsSubmitting(false);
     }
