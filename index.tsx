@@ -6,6 +6,7 @@ import App from './App';
 import { ToastProvider } from './contexts/ToastContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { DataProvider } from './contexts/DataContext';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 
 import { router } from './router';
 import { RouterProvider } from 'react-router-dom';
@@ -22,6 +23,7 @@ root.render(
       <AuthProvider>
         <DataProvider>
           <RouterProvider router={router} />
+          <SpeedInsights />
         </DataProvider>
       </AuthProvider>
     </ToastProvider>
