@@ -566,6 +566,51 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
           </AnimatePresence>
         </motion.div>
 
+        {/* Staff Shift Login Settings */}
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.22 }}
+          className="bg-white dark:bg-slate-900 p-6 md:p-8 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm space-y-6"
+        >
+          <div className="flex items-center gap-4 mb-2">
+            <div className="w-10 h-10 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl flex items-center justify-center text-emerald-500">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A10.003 10.003 0 0012 3a9.99 9.99 0 00-4.556 1.088m.054 13.926a10.003 10.003 0 01-2.46-3.572m11.756 3.572a10.003 10.003 0 01-5.32 2.315 m0 0A10.003 10.003 0 0112 21a9.99 9.99 0 01-4.556-1.088m4.556 1.088V11"/></svg>
+            </div>
+            <div>
+              <h3 className="text-lg md:text-xl font-bold text-slate-800 dark:text-white">{t.staffLoginLink}</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{t.staffLoginDesc}</p>
+            </div>
+          </div>
+
+          <div className="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-3xl border border-slate-100 dark:border-slate-700/50 space-y-4">
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex-1 relative group">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-[10px] font-black uppercase tracking-tighter opacity-50 group-hover:opacity-100 transition-opacity">
+                  Staff URL
+                </div>
+                <div className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl pl-20 pr-5 py-4 text-sm font-mono text-emerald-600 dark:text-emerald-400 break-all overflow-hidden whitespace-nowrap">
+                  https://trimtimepos.com/staff-login/{formData.bookingSlug}
+                </div>
+              </div>
+              <button 
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(`https://trimtimepos.com/staff-login/${formData.bookingSlug}`);
+                  alert(t.staffLinkCopied);
+                }}
+                className="px-8 py-4 bg-slate-950 dark:bg-emerald-500 text-white dark:text-slate-950 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-800 dark:hover:bg-emerald-600 transition-all flex items-center justify-center gap-2 shadow-lg"
+              >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg>
+                  {t.copyStaffLink}
+              </button>
+            </div>
+            <p className="text-[10px] text-slate-400 dark:text-slate-500 italic px-2">
+              Tip: Copy this link and send it to your staff groups or pin it on your shop tablet browser for quick access.
+            </p>
+          </div>
+        </motion.div>
+
         <motion.div 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}

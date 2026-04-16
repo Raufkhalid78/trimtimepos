@@ -273,6 +273,10 @@ export const TRANSLATIONS = {
     bookingStatusUnconfirmed: "Waiting for Approval",
     bookingStatusConfirmed: "Confirmed",
     cashDrawer: "Cash Drawer",
+    staffLoginLink: "Staff Login Link",
+    staffLoginDesc: "Independent login page for team members.",
+    copyStaffLink: "Copy Staff Link",
+    staffLinkCopied: "Staff login link copied!",
 
     // Login
     premiumAccess: 'Premium Terminal Access',
@@ -630,6 +634,10 @@ export const TRANSLATIONS = {
     bookingStatusUnconfirmed: "منظوری کا انتظار ہے",
     bookingStatusConfirmed: "تصدیق شدہ",
     cashDrawer: "کیش دراز",
+    staffLoginLink: "عملے کا لاگ ان لنک",
+    staffLoginDesc: "ٹیم کے اراکین کے لیے آزاد لاگ ان صفحہ۔",
+    copyStaffLink: "لنک کاپی کریں",
+    staffLinkCopied: "عملے کا لاگ ان لنک کاپی ہو گیا!",
     startingCash: "ابتدائی نقد",
     endingCash: "اختتامی نقد",
     actualCash: "اصل نقد",

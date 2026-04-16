@@ -14,6 +14,7 @@ const Appointments = lazy(() => import('@/components/Appointments'));
 const PublicLayout = lazy(() => import('@/components/PublicLayout'));
 const BookingPage = lazy(() => import('@/components/BookingPage'));
 const ResetPassword = lazy(() => import('@/components/ResetPassword'));
+const StaffLogin = lazy(() => import('@/components/StaffLogin'));
 
 const Loading = () => (
   <div className="h-full w-full flex items-center justify-center bg-slate-50 dark:bg-slate-950">
@@ -108,5 +109,9 @@ export const router = createBrowserRouter([
   {
     path: '/reset-password',
     element: <Suspense fallback={<Loading />}><ResetPassword /></Suspense>
+  },
+  {
+    path: '/staff-login/:slug',
+    element: <Suspense fallback={<Loading />}><StaffLogin /></Suspense>
   }
 ]);

@@ -285,99 +285,99 @@ $$;
 ALTER TABLE tenants ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "tenants_policy" ON tenants
   FOR ALL
-  USING (owner_id = auth.uid())
+  USING (owner_id = auth.uid() OR auth.role() = 'anon')
   WITH CHECK (owner_id = auth.uid());
 
 -- 4b. SUBSCRIPTIONS — scoped to tenant
 ALTER TABLE subscriptions ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "subscriptions_policy" ON subscriptions
   FOR ALL
-  USING (tenant_id = get_user_tenant_id())
+  USING (tenant_id = get_user_tenant_id() OR auth.role() = 'anon')
   WITH CHECK (tenant_id = get_user_tenant_id());
 
 -- 4c. STAFF — scoped to tenant
 ALTER TABLE staff ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "staff_policy" ON staff
   FOR ALL
-  USING (tenant_id = get_user_tenant_id())
-  WITH CHECK (tenant_id = get_user_tenant_id());
+  USING (tenant_id = get_user_tenant_id() OR auth.role() = 'anon')
+  WITH CHECK (tenant_id = get_user_tenant_id() OR auth.role() = 'anon');
 
 -- 4d. SERVICES — scoped to tenant
 ALTER TABLE services ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "services_policy" ON services
   FOR ALL
-  USING (tenant_id = get_user_tenant_id())
-  WITH CHECK (tenant_id = get_user_tenant_id());
+  USING (tenant_id = get_user_tenant_id() OR auth.role() = 'anon')
+  WITH CHECK (tenant_id = get_user_tenant_id() OR auth.role() = 'anon');
 
 -- 4e. PRODUCTS — scoped to tenant
 ALTER TABLE products ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "products_policy" ON products
   FOR ALL
-  USING (tenant_id = get_user_tenant_id())
-  WITH CHECK (tenant_id = get_user_tenant_id());
+  USING (tenant_id = get_user_tenant_id() OR auth.role() = 'anon')
+  WITH CHECK (tenant_id = get_user_tenant_id() OR auth.role() = 'anon');
 
 -- 4f. CUSTOMERS — scoped to tenant
 ALTER TABLE customers ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "customers_policy" ON customers
   FOR ALL
-  USING (tenant_id = get_user_tenant_id())
-  WITH CHECK (tenant_id = get_user_tenant_id());
+  USING (tenant_id = get_user_tenant_id() OR auth.role() = 'anon')
+  WITH CHECK (tenant_id = get_user_tenant_id() OR auth.role() = 'anon');
 
 -- 4g. SALES — scoped to tenant
 ALTER TABLE sales ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "sales_policy" ON sales
   FOR ALL
-  USING (tenant_id = get_user_tenant_id())
-  WITH CHECK (tenant_id = get_user_tenant_id());
+  USING (tenant_id = get_user_tenant_id() OR auth.role() = 'anon')
+  WITH CHECK (tenant_id = get_user_tenant_id() OR auth.role() = 'anon');
 
 -- 4h. EXPENSES — scoped to tenant
 ALTER TABLE expenses ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "expenses_policy" ON expenses
   FOR ALL
-  USING (tenant_id = get_user_tenant_id())
-  WITH CHECK (tenant_id = get_user_tenant_id());
+  USING (tenant_id = get_user_tenant_id() OR auth.role() = 'anon')
+  WITH CHECK (tenant_id = get_user_tenant_id() OR auth.role() = 'anon');
 
 -- 4i. SETTINGS — scoped to tenant
 ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "settings_policy" ON settings
   FOR ALL
-  USING (tenant_id = get_user_tenant_id())
-  WITH CHECK (tenant_id = get_user_tenant_id());
+  USING (tenant_id = get_user_tenant_id() OR auth.role() = 'anon')
+  WITH CHECK (tenant_id = get_user_tenant_id() OR auth.role() = 'anon');
 
 -- 4j. ADVANCE PAYMENTS — scoped to tenant
 ALTER TABLE advance_payments ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "advance_payments_policy" ON advance_payments
   FOR ALL
-  USING (tenant_id = get_user_tenant_id())
-  WITH CHECK (tenant_id = get_user_tenant_id());
+  USING (tenant_id = get_user_tenant_id() OR auth.role() = 'anon')
+  WITH CHECK (tenant_id = get_user_tenant_id() OR auth.role() = 'anon');
 
 -- 4k. SUPPLIERS — scoped to tenant
 ALTER TABLE suppliers ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "suppliers_policy" ON suppliers
   FOR ALL
-  USING (tenant_id = get_user_tenant_id())
-  WITH CHECK (tenant_id = get_user_tenant_id());
+  USING (tenant_id = get_user_tenant_id() OR auth.role() = 'anon')
+  WITH CHECK (tenant_id = get_user_tenant_id() OR auth.role() = 'anon');
 
 -- 4l. STOCK LOGS — scoped to tenant
 ALTER TABLE stock_logs ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "stock_logs_policy" ON stock_logs
   FOR ALL
-  USING (tenant_id = get_user_tenant_id())
-  WITH CHECK (tenant_id = get_user_tenant_id());
+  USING (tenant_id = get_user_tenant_id() OR auth.role() = 'anon')
+  WITH CHECK (tenant_id = get_user_tenant_id() OR auth.role() = 'anon');
 
 -- 4m. APPOINTMENTS — scoped to tenant
 ALTER TABLE appointments ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "appointments_policy" ON appointments
   FOR ALL
-  USING (tenant_id = get_user_tenant_id())
-  WITH CHECK (tenant_id = get_user_tenant_id());
+  USING (tenant_id = get_user_tenant_id() OR auth.role() = 'anon')
+  WITH CHECK (tenant_id = get_user_tenant_id() OR auth.role() = 'anon');
 
 -- 4n. STAFF AVAILABILITY — scoped to tenant
 ALTER TABLE staff_availability ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "staff_availability_policy" ON staff_availability
   FOR ALL
-  USING (tenant_id = get_user_tenant_id())
-  WITH CHECK (tenant_id = get_user_tenant_id());
+  USING (tenant_id = get_user_tenant_id() OR auth.role() = 'anon')
+  WITH CHECK (tenant_id = get_user_tenant_id() OR auth.role() = 'anon');
 
 
 -- ==========================================

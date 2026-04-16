@@ -75,6 +75,9 @@ const SignUp: React.FC<SignUpProps> = ({ onBack, onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [showPassword1, setShowPassword1] = useState(false);
   const [showPassword2, setShowPassword2] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [generatedSlug, setGeneratedSlug] = useState('');
+  const [copied, setCopied] = useState(false);
 
   // Initialize services when reaching step 4
   if (step === 4 && !servicesInitialized) {
@@ -167,7 +170,8 @@ const SignUp: React.FC<SignUpProps> = ({ onBack, onSuccess }) => {
     const result = await registerNewBusiness(data);
 
     if (result.success) {
-      onSuccess();
+      setGeneratedSlug(result.slug || '');
+      setShowSuccess(true);
     } else {
       let errorMsg = result.error || 'Registration failed.';
       if (errorMsg.includes('Failed to fetch') || errorMsg.includes('NetworkError')) {
@@ -230,8 +234,53 @@ const SignUp: React.FC<SignUpProps> = ({ onBack, onSuccess }) => {
               transition={{ duration: 0.25 }}
               className="flex-1"
             >
-              {/* ========== CARD 1: Business Details ========== */}
-              {step === 1 && (
+              {/* ========== SUCCESS VIEW ========== */}
+              {showSuccess ? (
+                <div className="space-y-8 py-4 text-center">
+                  <div className="w-20 h-20 bg-emerald-500/10 text-emerald-500 rounded-full flex items-center justify-center text-4xl mx-auto shadow-2xl shadow-emerald-500/20">
+                    ✅
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-black text-white mb-2">Welcome to TrimTime!</h2>
+                    <p className="text-slate-400 text-sm">Your business account has been successfully created.</p>
+                  </div>
+
+                  <div className="bg-slate-800/40 border border-slate-700/50 rounded-[2rem] p-6 space-y-4">
+                    <div>
+                      <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-3">Employee Login Link</p>
+                      <p className="text-xs text-slate-400 mb-4 px-2 italic">Share this link with your team so they can login for their shifts. Bookmark it on your staff tablet or phone.</p>
+                    </div>
+                    
+                    <div className="relative group">
+                      <div className="w-full bg-slate-950/50 border border-slate-800 rounded-xl px-4 py-3 text-emerald-400 font-mono text-[10px] break-all pr-12">
+                        https://trimtimepos.com/staff-login/{generatedSlug}
+                      </div>
+                      <button 
+                        onClick={() => {
+                          navigator.clipboard.writeText(`https://trimtimepos.com/staff-login/${generatedSlug}`);
+                          setCopied(true);
+                          setTimeout(() => setCopied(false), 2000);
+                        }}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded-lg transition-colors"
+                      >
+                        {copied ? '✅' : '📋'}
+                      </button>
+                    </div>
+                  </div>
+
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={onSuccess}
+                    className="w-full py-5 bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 rounded-[1.5rem] font-black text-xl shadow-xl shadow-amber-500/10"
+                  >
+                    Go to Dashboard →
+                  </motion.button>
+                </div>
+              ) : (
+                <>
+                  {/* ========== CARD 1: Business Details ========== */}
+                  {step === 1 && (
                 <div className="space-y-6">
                   <div>
                     <h2 className="text-xl font-black text-white mb-1">Business Details</h2>
@@ -558,7 +607,11 @@ const SignUp: React.FC<SignUpProps> = ({ onBack, onSuccess }) => {
             )}
           </AnimatePresence>
 
-          {/* Navigation Buttons */}
+          </div>
+        </div>
+
+        {/* Existing logic hides nav buttons when showSuccess is true */}
+        {!showSuccess && (
           <div className="flex gap-3 mt-8">
             <button
               type="button"
@@ -594,15 +647,18 @@ const SignUp: React.FC<SignUpProps> = ({ onBack, onSuccess }) => {
               </motion.button>
             )}
           </div>
+        )}
         </div>
 
         {/* Already have account */}
-        <p className="text-center text-slate-500 text-sm mt-6">
-          Already have an account?{' '}
-          <button type="button" onClick={onBack} className="text-amber-500 font-bold hover:underline underline-offset-4 bg-transparent border-none p-0 outline-none cursor-pointer">
-            Log In
-          </button>
-        </p>
+        {!showSuccess && (
+          <p className="text-center text-slate-500 text-sm mt-6">
+            Already have an account?{' '}
+            <button type="button" onClick={onBack} className="text-amber-500 font-bold hover:underline underline-offset-4 bg-transparent border-none p-0 outline-none cursor-pointer">
+              Log In
+            </button>
+          </p>
+        )}
       </div>
     </div>
   );

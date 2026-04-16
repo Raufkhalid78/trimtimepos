@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { getCurrentTenant, getCurrentSubscription } from '../services/authService';
+import { getCurrentTenant, getCurrentSubscription, getOwnerStaff } from '../services/authService';
 import { Tenant, Subscription, Staff, Language, SaaSView } from '../types';
 
 interface AuthContextType {
@@ -19,7 +19,7 @@ interface AuthContextType {
   setCurrentUser: (user: Staff | null) => void;
   
   refreshSubscription: (tenantId?: string) => Promise<void>;
-  loginStaff: (user: Staff, remember: boolean) => void;
+  loginStaff: (user: Staff, remember: boolean | number) => void;
   signOut: () => Promise<void>;
 }
 
@@ -55,14 +55,51 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const tenant = await getCurrentTenant();
         if (tenant) {
           setCurrentTenant(tenant);
-          const sub = await getCurrentSubscription(tenant.id);
           setSubscription(sub);
+          
+          // Auto-login owner as staff
+          const ownerStaff = await getOwnerStaff(tenant.id);
+          if (ownerStaff) {
+            setCurrentUser(ownerStaff);
+          }
+          
           setSaasView('app');
         } else {
           setSaasView('landing');
         }
       } else {
-        setSaasView('landing');
+        // Check if we have a staff session but no Supabase auth (employee mode)
+        const saved = localStorage.getItem('trimtime_session');
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+            if (parsed.user && parsed.expiry && Date.now() < parsed.expiry) {
+              // We are an employee. We need to fetch the tenant info to let the app function.
+              // Note: DataContext will use currentTenant.id
+              const { data: tenant } = await supabase.from('tenants').select('*').eq('id', parsed.user.tenant_id).single();
+              if (tenant) {
+                 setCurrentTenant({
+                    id: tenant.id,
+                    ownerId: tenant.owner_id,
+                    businessName: tenant.business_name,
+                    businessType: tenant.business_type,
+                    slug: tenant.slug,
+                    createdAt: tenant.created_at,
+                    logoUrl: tenant.logo_url,
+                    isActive: tenant.is_active
+                 });
+                 setSaasView('app');
+              }
+            }
+          } catch (e) {}
+        }
+        
+        if (saasView === 'landing' || saasView === 'app') {
+            // Only set to landing if we didn't find a staff session
+            if (!localStorage.getItem('trimtime_session')) {
+                setSaasView('landing');
+            }
+        }
       }
     } catch (err) {
       console.error('Auth check failed:', err);
@@ -72,10 +109,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const loginStaff = (user: Staff, remember: boolean) => {
-    const expiry = Date.now() + (remember ? 30 : 1) * 24 * 60 * 60 * 1000;
+  const loginStaff = (user: Staff, remember: boolean | number) => {
+    const expiry = typeof remember === 'number' ? remember : (Date.now() + (remember ? 30 : 1) * 24 * 60 * 60 * 1000);
     localStorage.setItem('trimtime_session', JSON.stringify({ user, expiry }));
     setCurrentUser(user);
+    setSaasView('app');
   };
 
   const signOut = async () => {

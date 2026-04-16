@@ -25,7 +25,7 @@ export interface SignUpData {
 /**
  * Register a new business — creates auth user, tenant, subscription, and seed data
  */
-export async function registerNewBusiness(data: SignUpData): Promise<{ success: boolean; error?: string; tenantId?: string }> {
+export async function registerNewBusiness(data: SignUpData): Promise<{ success: boolean; error?: string; tenantId?: string; slug?: string }> {
   try {
     // 1. Create Supabase Auth user
     const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -171,7 +171,7 @@ export async function registerNewBusiness(data: SignUpData): Promise<{ success: 
 
     if (settError) console.error('Settings seed error:', settError);
 
-    return { success: true, tenantId };
+    return { success: true, tenantId, slug };
 
   } catch (err: any) {
     console.error('Registration Error:', err);
@@ -283,4 +283,31 @@ export async function demoActivateSubscription(tenantId: string, plan: 'monthly'
     .eq('tenant_id', tenantId);
 
   return !error;
+}
+
+/**
+ * Get the owner's staff record for a tenant
+ */
+export async function getOwnerStaff(tenantId: string): Promise<Staff | null> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data, error } = await supabase
+    .from('staff')
+    .select('*')
+    .eq('tenant_id', tenantId)
+    .eq('role', 'admin')
+    .maybeSingle();
+
+  if (error || !data) return null;
+
+  return {
+    id: data.id,
+    name: data.name,
+    role: data.role as any,
+    commission: typeof data.commission === 'string' ? parseFloat(data.commission) : (data.commission || 0),
+    username: data.username,
+    password: data.password,
+    email: data.email,
+  };
 }
