@@ -10,7 +10,7 @@ interface RevenueChartProps {
 }
 
 export const RevenueChart: React.FC<RevenueChartProps> = ({ data }) => (
-  <ResponsiveContainer width="100%" height="100%">
+  <ResponsiveContainer width="100%" height="100%" minHeight={1}>
     <AreaChart data={data}>
       <defs>
         <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
@@ -37,7 +37,7 @@ interface PieChartProps {
 }
 
 export const ExpensePieChart: React.FC<PieChartProps> = ({ data, colors }) => (
-  <ResponsiveContainer width="100%" height="100%">
+  <ResponsiveContainer width="100%" height="100%" minHeight={1}>
     <PieChart>
       <Pie
         data={data}
@@ -67,7 +67,7 @@ interface BarChartProps {
 }
 
 export const PerformanceBarChart: React.FC<BarChartProps> = ({ data, color = '#f59e0b', layout = 'vertical' }) => (
-  <ResponsiveContainer width="100%" height="100%">
+  <ResponsiveContainer width="100%" height="100%" minHeight={1}>
     <BarChart data={data} layout={layout} margin={{ left: layout === 'vertical' ? 20 : 0, right: 30 }}>
       {layout === 'vertical' ? (
         <>

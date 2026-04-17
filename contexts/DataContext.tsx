@@ -514,70 +514,91 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     if (!currentTenant) return;
 
-    const channel = supabase
-      .channel(`tenant_updates_${currentTenant.id}`)
-      .on(
-        'postgres_changes',
-        { 
-          event: '*', 
-          schema: 'public', 
-          table: 'appointments'
-        },
-        (payload) => {
-          console.log('🔔 Realtime Event Received:', payload.eventType, 'Full Payload:', payload);
-          
-          // Filter by tenant_id in JS to rule out Supabase filter issues
-          const newPayload = payload.new as any;
-          const oldPayload = payload.old as any;
-          const newTenantId = newPayload?.tenant_id || oldPayload?.tenant_id;
-          
-          console.log('🔍 Realtime Filter Check:', {
-            eventTenantId: newTenantId,
-            currentTenantId: currentTenant.id,
-            match: String(newTenantId) === String(currentTenant.id)
-          });
+    let channel: any;
+    let retryCount = 0;
+    const maxRetries = 3;
+    let retryTimeout: NodeJS.Timeout;
 
-          if (String(newTenantId) !== String(currentTenant.id)) return;
+    const setupRealtime = () => {
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
 
-          if (payload.eventType === 'INSERT') {
-            const newApp = payload.new;
-            notificationService.show('📅 New Booking Received!', {
-              body: `${newApp.customer_name || 'A customer'} has booked a session at ${format(new Date(newApp.start_time), 'h:mm a')} on ${format(new Date(newApp.start_time), 'MMM d')}.`,
-              tag: `new-app-${newApp.id}`,
-              icon: '/icon.svg'
-            });
-            // Update local state without full refresh if possible, or just call fetchData(true)
-            fetchData(true);
-          } else if (payload.eventType === 'UPDATE') {
-            const oldApp = payload.old;
-            const newApp = payload.new;
+      channel = supabase
+        .channel(`tenant_updates_${currentTenant.id}`)
+        .on(
+          'postgres_changes',
+          { 
+            event: '*', 
+            schema: 'public', 
+            table: 'appointments'
+          },
+          (payload) => {
+            console.log('🔔 Realtime Event Received:', payload.eventType, 'Full Payload:', payload);
             
-            if (oldApp.status !== newApp.status) {
-              notificationService.show('🔔 Booking Updated', {
-                body: `Booking for ${newApp.customer_name || 'Guest'} is now ${newApp.status.toUpperCase()}`,
-                tag: `update-app-${newApp.id}`
+            // Filter by tenant_id in JS to rule out Supabase filter issues
+            const newPayload = payload.new as any;
+            const oldPayload = payload.old as any;
+            const newTenantId = newPayload?.tenant_id || oldPayload?.tenant_id;
+            
+            console.log('🔍 Realtime Filter Check:', {
+              eventTenantId: newTenantId,
+              currentTenantId: currentTenant.id,
+              match: String(newTenantId) === String(currentTenant.id)
+            });
+
+            if (String(newTenantId) !== String(currentTenant.id)) return;
+
+            if (payload.eventType === 'INSERT') {
+              const newApp = payload.new;
+              notificationService.show('📅 New Booking Received!', {
+                body: `${newApp.customer_name || 'A customer'} has booked a session at ${format(new Date(newApp.start_time), 'h:mm a')} on ${format(new Date(newApp.start_time), 'MMM d')}.`,
+                tag: `new-app-${newApp.id}`,
+                icon: '/icon.svg'
               });
+              // Update local state without full refresh if possible, or just call fetchData(true)
+              fetchData(true);
+            } else if (payload.eventType === 'UPDATE') {
+              const oldApp = payload.old;
+              const newApp = payload.new;
+              
+              if (oldApp.status !== newApp.status) {
+                notificationService.show('🔔 Booking Updated', {
+                  body: `Booking for ${newApp.customer_name || 'Guest'} is now ${newApp.status.toUpperCase()}`,
+                  tag: `update-app-${newApp.id}`
+                });
+              }
+              fetchData(true);
             }
-            fetchData(true);
           }
-        }
-      )
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') {
-          console.log('✅ Realtime: Subscribed to appointments updates for tenant:', currentTenant.id);
-        } else if (status === 'CLOSED') {
-          console.log('⚠️ Realtime: Subscription closed');
-        } else if (status === 'CHANNEL_ERROR') {
-          console.error('❌ Realtime: Subscription error for tenant:', currentTenant.id);
-        } else if (status === 'TIMED_OUT') {
-          console.error('❌ Realtime: Subscription timed out');
-        }
-      });
+        )
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            console.log('✅ Realtime: Subscribed to appointments updates for tenant:', currentTenant.id);
+            retryCount = 0;
+          } else if (status === 'CLOSED') {
+            console.log('⚠️ Realtime: Subscription closed');
+          } else if (status === 'CHANNEL_ERROR') {
+            console.error('❌ Realtime: Subscription error for tenant:', currentTenant.id);
+          } else if (status === 'TIMED_OUT') {
+            console.error('❌ Realtime: Subscription timed out');
+            if (retryCount < maxRetries) {
+              retryCount++;
+              const delay = 2000 * Math.pow(2, retryCount - 1); // 2s, 4s, 8s
+              console.log(`⏳ Retrying subscription in ${delay}ms (Attempt ${retryCount}/${maxRetries})...`);
+              retryTimeout = setTimeout(setupRealtime, delay);
+            }
+          }
+        });
+    };
+
+    setupRealtime();
 
     return () => {
-      supabase.removeChannel(channel);
+      clearTimeout(retryTimeout);
+      if (channel) supabase.removeChannel(channel);
     };
-  }, [currentTenant?.id]); // Only re-subscribe if tenant ID changes
+  }, [currentTenant?.id, fetchData]); // Only re-subscribe if tenant ID changes
 
   return (
     <DataContext.Provider value={{
