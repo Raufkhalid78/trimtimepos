@@ -188,7 +188,8 @@ const OwnerLogin: React.FC<{ onBack: () => void; onSuccess: () => void | Promise
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6 relative overflow-hidden">
+    <main className="min-h-screen bg-slate-950 flex items-center justify-center p-6 relative overflow-hidden">
+
       <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-amber-500/10 blur-[120px] rounded-full"></div>
       <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-indigo-500/10 blur-[120px] rounded-full"></div>
       <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="max-w-md w-full relative z-10">
@@ -225,7 +226,8 @@ const OwnerLogin: React.FC<{ onBack: () => void; onSuccess: () => void | Promise
           <button type="button" onClick={onBack} className="text-slate-600 text-sm font-bold hover:text-slate-400 transition-colors bg-transparent border-none p-0 outline-none cursor-pointer">← Back to Home</button>
         </div>
       </motion.div>
-    </div>
+    </main>
+
   );
 };
 

@@ -19,7 +19,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGoToSignUp, onGoToLogin }) 
   ];
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white overflow-x-hidden">
+    <main className="min-h-screen bg-slate-950 text-white overflow-x-hidden">
+
 
       {/* ========== NAVBAR ========== */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-slate-950/80 backdrop-blur-xl border-b border-white/5">
@@ -215,7 +216,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGoToSignUp, onGoToLogin }) 
               </p>
             </div>
             <div>
-              <h4 className="font-bold text-white mb-4 uppercase tracking-widest text-xs">Product</h4>
+              <h3 className="font-bold text-white mb-4 uppercase tracking-widest text-xs">Product</h3>
+
               <ul className="space-y-2 text-sm text-slate-500">
                 <li><a href="#features" className="hover:text-amber-500 transition-colors">Features</a></li>
                 <li><a href="#pricing" className="hover:text-amber-500 transition-colors">Pricing</a></li>
@@ -223,7 +225,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGoToSignUp, onGoToLogin }) 
               </ul>
             </div>
             <div>
-              <h4 className="font-bold text-white mb-4 uppercase tracking-widest text-xs">Legal</h4>
+              <h3 className="font-bold text-white mb-4 uppercase tracking-widest text-xs">Legal</h3>
+
               <ul className="space-y-2 text-sm text-slate-500">
                 <li><Link to="/privacy" className="hover:text-amber-500 transition-colors">Privacy Policy</Link></li>
                 <li><Link to="/terms" className="hover:text-amber-500 transition-colors">Terms of Service</Link></li>
@@ -239,7 +242,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGoToSignUp, onGoToLogin }) 
           </div>
         </div>
       </footer>
-    </div>
+    </main>
+
   );
 };
 

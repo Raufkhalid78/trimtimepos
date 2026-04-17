@@ -195,7 +195,8 @@ const SignUp: React.FC<SignUpProps> = ({ onBack, onSuccess }) => {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4 md:p-6 relative overflow-hidden">
+    <main className="min-h-screen bg-slate-950 flex items-center justify-center p-4 md:p-6 relative overflow-hidden">
+
       {/* Background glows */}
       <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-amber-500/8 blur-[120px] rounded-full pointer-events-none"></div>
       <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-indigo-500/8 blur-[120px] rounded-full pointer-events-none"></div>
@@ -659,7 +660,8 @@ const SignUp: React.FC<SignUpProps> = ({ onBack, onSuccess }) => {
           </p>
         )}
       </div>
-    </div>
+    </main>
+
   );
 };
 
