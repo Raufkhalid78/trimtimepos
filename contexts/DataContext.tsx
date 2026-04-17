@@ -511,10 +511,14 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         { 
           event: '*', 
           schema: 'public', 
-          table: 'appointments',
-          filter: `tenant_id=eq.${currentTenant.id}`
+          table: 'appointments'
         },
         (payload) => {
+          console.log('🔔 Realtime Event Received:', payload.eventType, payload);
+          // Filter by tenant_id in JS to rule out Supabase filter issues
+          const newTenantId = payload.new?.tenant_id || payload.old?.tenant_id;
+          if (newTenantId !== currentTenant.id) return;
+
           if (payload.eventType === 'INSERT') {
             const newApp = payload.new;
             notificationService.show('📅 New Booking!', {

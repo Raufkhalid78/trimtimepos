@@ -44,9 +44,20 @@ export class NotificationService {
     };
 
     if (registration && 'showNotification' in registration) {
-      return (registration as any).showNotification(title, defaultOptions);
+      console.log('📲 Showing notification via ServiceWorker');
+      return (registration as any).showNotification(title, defaultOptions).catch((err: any) => {
+        console.error('❌ SW Notification Failed:', err);
+        return new Notification(title, defaultOptions);
+      });
     } else {
-      return new Notification(title, defaultOptions);
+      console.log('💻 Showing notification via Window API');
+      try {
+        const notification = new Notification(title, defaultOptions);
+        notification.onerror = (err) => console.error('❌ Notification display error:', err);
+        return notification;
+      } catch (err) {
+        console.error('❌ Window Notification Failed:', err);
+      }
     }
   }
 
