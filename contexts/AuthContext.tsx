@@ -186,7 +186,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     document.documentElement.lang = sessionLanguage;
-    document.dir = sessionLanguage === 'ur' ? 'rtl' : 'ltr';
+    document.dir = (sessionLanguage === 'ur' || sessionLanguage === 'ar') ? 'rtl' : 'ltr';
     localStorage.setItem('trimtime_lang', sessionLanguage);
   }, [sessionLanguage]);
 

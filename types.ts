@@ -60,7 +60,7 @@ export interface User {
   role: UserRole;
 }
 
-export type Language = 'en' | 'ur';
+export type Language = 'en' | 'ur' | 'ar' | 'hi';
 
 export interface ShopSettings {
   shopName: string;

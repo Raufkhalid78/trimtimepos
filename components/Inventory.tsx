@@ -252,6 +252,25 @@ const Inventory: React.FC<InventoryProps> = ({
         };
         if (isEditing.id) onUpdateSuppliers(suppliers.map(s => s.id === isEditing.id ? newSupplier : s));
         else onUpdateSuppliers([...suppliers, newSupplier]);
+    } else if (activeTab === 'logs') {
+        const newLog: StockLog = {
+            id: Math.random().toString(36).substr(2, 9).toUpperCase(),
+            productId: itemData.productId as string,
+            change: parseInt(itemData.change as string) || 0,
+            reason: itemData.reason as any,
+            timestamp: new Date().toISOString(),
+            userId: 'admin',
+            notes: itemData.notes as string
+        };
+        onAddStockLog(newLog);
+        
+        // Update product stock
+        const product = products.find(p => p.id === newLog.productId);
+        if (product) {
+            onUpdateProducts(products.map(p => 
+                p.id === product.id ? { ...p, stock: Math.max(0, p.stock + newLog.change) } : p
+            ));
+        }
     }
     setIsEditing(null);
   };
@@ -270,7 +289,9 @@ const Inventory: React.FC<InventoryProps> = ({
         </div>
         <button onClick={() => setIsEditing({})} className="bg-slate-950 dark:bg-slate-800 text-white px-6 py-3 rounded-xl font-black flex items-center gap-2 hover:bg-slate-800 transition-all shadow-lg text-sm w-full sm:w-auto justify-center active:scale-95">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
-          {activeTab === 'services' ? t.newService : t.newProduct}
+          {activeTab === 'services' ? t.newService : 
+           activeTab === 'products' ? t.newProduct : 
+           activeTab === 'suppliers' ? t.newSupplier : t.addStockLog}
         </button>
       </div>
       
@@ -407,6 +428,35 @@ const Inventory: React.FC<InventoryProps> = ({
                     <div>
                         <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.address}</label>
                         <textarea name="address" defaultValue={isEditing.address || ''} className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200" rows={2} />
+                    </div>
+                  </>
+                ) : activeTab === 'logs' ? (
+                  <>
+                    <div>
+                        <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">Product</label>
+                        <select name="productId" required className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200">
+                           <option value="">Select a product...</option>
+                           {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                        </select>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">Change</label>
+                            <input name="change" type="number" placeholder="+5 or -2" required className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200" />
+                        </div>
+                        <div>
+                            <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">Reason</label>
+                            <select name="reason" required className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200">
+                                <option value="restock">{t.restock}</option>
+                                <option value="adjustment">{t.adjustment}</option>
+                                <option value="damage">{t.damage}</option>
+                                <option value="return">{t.return}</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">Notes (Optional)</label>
+                        <input name="notes" type="text" className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200" />
                     </div>
                   </>
                 ) : (

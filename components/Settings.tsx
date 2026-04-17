@@ -150,6 +150,8 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
               >
                 <option value="en">English (US)</option>
                 <option value="ur">Urdu (اردو)</option>
+                <option value="ar">Arabic (العربية)</option>
+                <option value="hi">Hindi (हिन्दी)</option>
               </select>
             </div>
             
@@ -516,7 +518,12 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
             </div>
             <button 
               type="button" 
-              onClick={() => setFormData({ ...formData, bookingEnabled: !formData.bookingEnabled })}
+              onClick={() => {
+                const newEnabled = !formData.bookingEnabled;
+                const newSettings = { ...formData, bookingEnabled: newEnabled };
+                setFormData(newSettings);
+                onUpdateSettings(newSettings);
+              }}
               className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none ${formData.bookingEnabled ? 'bg-amber-500' : 'bg-slate-200 dark:bg-slate-700'}`}
             >
               <span className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${formData.bookingEnabled ? 'translate-x-6' : 'translate-x-1'}`} />

@@ -48,8 +48,8 @@ const BookingPage: React.FC = () => {
     if (!dayAvail) return [];
 
     const slots: string[] = [];
-    let current = parse(dayAvail.startTime, 'HH:mm', selectedDate);
-    const end = parse(dayAvail.endTime, 'HH:mm', selectedDate);
+    let current = parse(dayAvail.startTime.substring(0, 5), 'HH:mm', selectedDate);
+    const end = parse(dayAvail.endTime.substring(0, 5), 'HH:mm', selectedDate);
     const slotDuration = selectedService.duration;
 
     // Filter appointments for this staff on this day
