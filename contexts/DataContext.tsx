@@ -541,9 +541,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
           if (payload.eventType === 'INSERT') {
             const newApp = payload.new;
-            notificationService.show('📅 New Booking!', {
-              body: `${newApp.customer_name || 'Guest'} booked for ${format(new Date(newApp.start_time), 'MMM d, h:mm a')}`,
-              tag: `new-app-${newApp.id}`
+            notificationService.show('📅 New Booking Received!', {
+              body: `${newApp.customer_name || 'A customer'} has booked a session at ${format(new Date(newApp.start_time), 'h:mm a')} on ${format(new Date(newApp.start_time), 'MMM d')}.`,
+              tag: `new-app-${newApp.id}`,
+              icon: '/icon.svg'
             });
             // Update local state without full refresh if possible, or just call fetchData(true)
             fetchData(true);

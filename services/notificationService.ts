@@ -1,12 +1,14 @@
-
 export class NotificationService {
   private static instance: NotificationService;
   private permission: NotificationPermission = 'default';
+  private audio: HTMLAudioElement | null = null;
 
   private constructor() {
     if ('Notification' in window) {
       this.permission = Notification.permission;
     }
+    // Pre-load a clean notification sound
+    this.audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
   }
 
   public static getInstance(): NotificationService {
@@ -42,6 +44,11 @@ export class NotificationService {
       vibrate: [200, 100, 200],
       ...options
     };
+
+    // Play sound if possible
+    if (this.audio) {
+      this.audio.play().catch(e => console.warn('🔊 Sound play blocked by browser:', e));
+    }
 
     // Prefer standard Window Notification for better reliability in non-PWA environments
     // Only use ServiceWorker if the window is NOT focused or we are explicitly in a background state
