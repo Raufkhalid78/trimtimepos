@@ -171,14 +171,18 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(true);
     try {
       // 1. Fetch Tenant by Slug
+      const cleanSlug = slug.trim().toLowerCase();
+      console.log('🔍 Fetching tenant by slug:', cleanSlug);
+      
       const { data: tenantData, error: tenantError } = await supabase
         .from('tenants')
         .select('*')
-        .eq('slug', slug)
+        .eq('slug', cleanSlug)
         .eq('is_active', true)
         .single();
 
       if (tenantError || !tenantData) {
+        console.error('❌ Tenant fetch error or not found:', tenantError, tenantData);
         setLoading(false);
         return false;
       }
@@ -523,11 +527,13 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.log('🔔 Realtime Event Received:', payload.eventType, 'Full Payload:', payload);
           
           // Filter by tenant_id in JS to rule out Supabase filter issues
-          const newTenantId = payload.new?.tenant_id || payload.old?.tenant_id;
+          const newPayload = payload.new as any;
+          const oldPayload = payload.old as any;
+          const newTenantId = newPayload?.tenant_id || oldPayload?.tenant_id;
           
-          console.log('🔍 Comparing Tenant IDs:', {
+          console.log('🔍 Realtime Filter Check:', {
             eventTenantId: newTenantId,
-            currentContextTenantId: currentTenant.id,
+            currentTenantId: currentTenant.id,
             match: String(newTenantId) === String(currentTenant.id)
           });
 
