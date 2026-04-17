@@ -48,6 +48,7 @@ interface DataContextType {
   addAdvance: (advance: AdvancePayment) => Promise<void>;
   deleteAdvance: (id: string) => Promise<void>;
   publicCreateAppointment: (appointment: Omit<Appointment, 'id'>, tenantId: string) => Promise<boolean>;
+  testNotification: () => void;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -492,6 +493,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const testNotification = useCallback(() => {
+    notificationService.test();
+  }, []);
+
   useEffect(() => {
     if (currentTenant) fetchData(true);
   }, [currentTenant, fetchData]);
@@ -532,7 +537,18 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ Realtime: Subscribed to appointments updates for tenant:', currentTenant.id);
+        } else if (status === 'CLOSED') {
+          console.log('⚠️ Realtime: Subscription closed');
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('❌ Realtime: Subscription error for tenant:', currentTenant.id);
+          showToast('Realtime sync error. Please refresh.', 'error');
+        } else if (status === 'TIMED_OUT') {
+          console.error('❌ Realtime: Subscription timed out');
+        }
+      });
 
     return () => {
       supabase.removeChannel(channel);
@@ -545,7 +561,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       advancePayments, suppliers, stockLogs, appointments, staffAvailability, settings, 
       loading, fetchData, fetchPublicTenantBySlug,
       updateServices, updateProducts, updateStaff, updateCustomers, updateSettings, updateSuppliers, updateAppointments, updateAppointmentStatus, updateStaffAvailability,
-      addStockLog, completeSale, deleteSales, addExpense, deleteExpense, addAdvance, deleteAdvance, publicCreateAppointment
+      addStockLog, completeSale, deleteSales, addExpense, deleteExpense, addAdvance, deleteAdvance, publicCreateAppointment,
+      testNotification
     }}>
       {children}
     </DataContext.Provider>

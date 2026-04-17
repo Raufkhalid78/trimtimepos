@@ -65,7 +65,7 @@ function StaffWithData() {
 }
 
 function SettingsWithData() {
-  const { settings, updateSettings, fetchData, deleteSales, sales } = useData();
+  const { settings, updateSettings, fetchData, deleteSales, sales, testNotification } = useData();
   const { currentUser, signOut } = useAuth();
   return <Settings 
     settings={settings} 
@@ -74,6 +74,7 @@ function SettingsWithData() {
     onLogout={signOut} 
     onPurgeSales={() => deleteSales(sales.map(s => s.id))} 
     onRefreshStatus={fetchData} 
+    onTestNotification={testNotification}
     dbStatus="connected" 
   />;
 }

@@ -24,6 +24,12 @@ export class NotificationService {
     return result === 'granted';
   }
 
+  public refreshPermission() {
+    if ('Notification' in window) {
+      this.permission = Notification.permission;
+    }
+  }
+
   public async show(title: string, options?: NotificationOptions) {
     if (this.permission !== 'granted') return;
 
@@ -42,6 +48,13 @@ export class NotificationService {
     } else {
       return new Notification(title, defaultOptions);
     }
+  }
+
+  public async test() {
+    return this.show('🔔 Test Notification', {
+      body: 'If you can see this, notifications are working correctly!',
+      tag: 'test-notification'
+    });
   }
 
   public hasPermission(): boolean {

@@ -415,6 +415,13 @@ export const TRANSLATIONS = {
     face: "Face",
     staffAvailability: "Working Hours",
     closed: "Off Duty",
+    notificationSettings: 'Notification Settings',
+    testNotification: 'Test Notification',
+    updatePermissions: 'Update Permissions',
+    notificationStatus: 'Notification Status',
+    notificationGranted: 'Granted',
+    notificationDenied: 'Denied',
+    notificationDefault: 'Click to request',
   },
   ur: {
     // Navigation
@@ -776,6 +783,13 @@ export const TRANSLATIONS = {
     error: "خرابی",
     staffAvailability: "کام کے اوقات",
     closed: "آف ڈیوٹی",
+    notificationSettings: 'نوٹیفیکیشن کی ترتیبات',
+    testNotification: 'ٹیسٹ نوٹیفیکیشن',
+    updatePermissions: 'اجازتیں اپ ڈیٹ کریں',
+    notificationStatus: 'نوٹیفیکیشن کی صورتحال',
+    notificationGranted: 'اجازت مل گئی',
+    notificationDenied: 'اجازت نہیں ملی',
+    notificationDefault: 'درخواست کے لیے کلک کریں',
   },
   ar: {
     dashboard: 'لوحة القيادة',
@@ -1115,7 +1129,14 @@ export const TRANSLATIONS = {
     permanentlyRemoveTeamMember: 'إزالة عضو الفريق نهائيًا؟',
     somethingWentWrong: 'حدث خطأ ما',
     unexpectedError: 'حدث خطأ غير متوقع في هذا القسم.',
-    error: 'خطأ'
+    error: 'خطأ',
+    notificationSettings: 'إعدادات الإشعارات',
+    testNotification: 'إشعار تجريبي',
+    updatePermissions: 'تحديث الأذونات',
+    notificationStatus: 'حالة الإشعارات',
+    notificationGranted: 'مسموح',
+    notificationDenied: 'مرفوض',
+    notificationDefault: 'انقر للطلب',
 },
   hi: {
     dashboard: 'डैशबोर्ड',
@@ -1455,8 +1476,15 @@ export const TRANSLATIONS = {
     permanentlyRemoveTeamMember: 'टीम के सदस्य को स्थायी रूप से निकालें?',
     somethingWentWrong: 'कुछ गलत हो गया',
     unexpectedError: 'इस अनुभाग में एक अप्रत्याशित त्रुटि आई।',
-    error: 'त्रुटि'
-}
+    error: 'त्रुटि',
+    notificationSettings: 'अधिसूचना सेटिंग्स',
+    testNotification: 'परीक्षण अधिसूचना',
+    updatePermissions: 'अनुमतियाँ अपडेट करें',
+    notificationStatus: 'अधिसूचना स्थिति',
+    notificationGranted: 'स्वीकृत',
+    notificationDenied: 'अस्वीकृत',
+    notificationDefault: 'अनुरोध के लिए क्लिक करें',
+},
 };
 
 export const INITIAL_SERVICES: Service[] = [

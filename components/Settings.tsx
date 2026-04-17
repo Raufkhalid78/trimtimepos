@@ -13,9 +13,10 @@ interface SettingsProps {
   dbStatus: 'connected' | 'offline' | 'error';
   dbErrorMessage?: string | null;
   onRefreshStatus?: (isSilent?: boolean) => Promise<void>;
+  onTestNotification?: () => void;
 }
 
-const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, currentUser, onPurgeSales, onLogout, dbStatus, dbErrorMessage, onRefreshStatus }) => {
+const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, currentUser, onPurgeSales, onLogout, dbStatus, dbErrorMessage, onRefreshStatus, onTestNotification }) => {
   const [formData, setFormData] = useState<ShopSettings>(settings);
   const [isCustomCurrency, setIsCustomCurrency] = useState(!CURRENCY_OPTIONS.some(opt => opt.symbol === settings.currency));
   const [newPromo, setNewPromo] = useState<DiscountCode>({ code: '', type: 'percentage', value: 0, description: '' });
@@ -23,6 +24,9 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
   const [testResult, setTestResult] = useState<string | null>(null);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+  const [notifPermission, setNotifPermission] = useState<NotificationPermission>(
+    'Notification' in window ? Notification.permission : 'denied'
+  );
   
   const t = TRANSLATIONS[settings.language];
 
@@ -46,6 +50,12 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
     } else {
         setIsTesting(false);
     }
+  };
+
+  const handleRefreshPermission = async () => {
+    if (!('Notification' in window)) return;
+    const result = await Notification.requestPermission();
+    setNotifPermission(result);
   };
 
   // Sync formData with settings prop when it changes (e.g. after initial DB load)
@@ -259,6 +269,57 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
                 onChange={e => setFormData({...formData, receiptFooter: e.target.value})}
                 className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none h-[52px] resize-none text-sm font-medium dark:text-slate-300 overflow-hidden" 
               />
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Notification Settings */}
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          className="bg-white dark:bg-slate-900 p-6 md:p-8 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm space-y-6"
+        >
+          <div className="flex items-center gap-4 mb-2">
+            <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/20 rounded-xl flex items-center justify-center text-blue-500">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+            </div>
+            <h3 className="text-lg md:text-xl font-bold text-slate-800 dark:text-white">{t.notificationSettings}</h3>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
+            <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-700">
+              <div>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{t.notificationStatus}</p>
+                <div className="flex items-center gap-2">
+                  <div className={`w-2 h-2 rounded-full ${notifPermission === 'granted' ? 'bg-emerald-500' : notifPermission === 'denied' ? 'bg-rose-500' : 'bg-amber-500'}`}></div>
+                  <p className={`font-bold text-sm ${notifPermission === 'granted' ? 'text-emerald-600' : notifPermission === 'denied' ? 'text-rose-600' : 'text-amber-600'}`}>
+                    {notifPermission === 'granted' ? t.notificationGranted : notifPermission === 'denied' ? t.notificationDenied : t.notificationDefault}
+                  </p>
+                </div>
+              </div>
+              <button 
+                type="button"
+                onClick={handleRefreshPermission}
+                className="px-4 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest"
+              >
+                {t.updatePermissions}
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-700">
+              <div>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{t.testNotification}</p>
+                <p className="text-[10px] text-slate-500 font-medium">Send a sample alert</p>
+              </div>
+              <button 
+                type="button"
+                disabled={notifPermission !== 'granted'}
+                onClick={onTestNotification}
+                className="px-4 py-2 bg-blue-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest disabled:opacity-50"
+              >
+                {t.testNotification}
+              </button>
             </div>
           </div>
         </motion.div>
