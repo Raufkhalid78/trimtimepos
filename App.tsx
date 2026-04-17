@@ -2,11 +2,12 @@ import React, { useState, useEffect, Component, ReactNode, ErrorInfo, Suspense, 
 import Sidebar from '@/components/Sidebar';
 import Login from '@/components/Login';
 import InstallBanner from '@/components/InstallBanner';
-import LandingPage from '@/components/LandingPage';
-import SignUp from '@/components/SignUp';
-import SubscriptionBanner from '@/components/SubscriptionBanner';
-import { SubscriptionExpiredScreen } from '@/components/SubscriptionBanner';
-import PricingPage from '@/components/PricingPage';
+const LandingPage = lazy(() => import('@/components/LandingPage'));
+const SignUp = lazy(() => import('@/components/SignUp'));
+const SubscriptionBanner = lazy(() => import('@/components/SubscriptionBanner'));
+const SubscriptionExpiredScreen = lazy(() => import('@/components/SubscriptionBanner').then(m => ({ default: m.SubscriptionExpiredScreen })));
+const PricingPage = lazy(() => import('@/components/PricingPage'));
+
 import { View, Language } from './types';
 import { TRANSLATIONS } from './constants';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -79,18 +80,19 @@ const App: React.FC = () => {
 
   if (authLoading) return <div className="h-screen w-full flex items-center justify-center bg-slate-950"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-amber-500 mx-auto mb-4"></div></div>;
 
-  if (saasView === 'landing') return <LandingPage onGoToSignUp={() => setSaasView('signup')} onGoToLogin={() => setSaasView('login')} />;
-  if (saasView === 'signup') return <SignUp onBack={() => setSaasView('landing')} onSuccess={() => refreshAuth()} />;
-  if (saasView === 'login') return <OwnerLogin onBack={() => setSaasView('landing')} onSuccess={() => refreshAuth()} />;
+  if (saasView === 'landing') return <Suspense fallback={null}><LandingPage onGoToSignUp={() => setSaasView('signup')} onGoToLogin={() => setSaasView('login')} /></Suspense>;
+  if (saasView === 'signup') return <Suspense fallback={null}><SignUp onBack={() => setSaasView('landing')} onSuccess={() => refreshAuth()} /></Suspense>;
+  if (saasView === 'login') return <Suspense fallback={null}><OwnerLogin onBack={() => setSaasView('landing')} onSuccess={() => refreshAuth()} /></Suspense>;
 
   if (subscription && !isSubscriptionValid(subscription)) {
     return (
-      <>
+      <Suspense fallback={null}>
         <SubscriptionExpiredScreen onManageSubscription={() => setIsPricingOpen(true)} onLogout={handleFullSignOut} />
         {isPricingOpen && authUser && currentTenant && <PricingPage tenantId={currentTenant.id} userEmail={authUser.email || ''} language={sessionLanguage} onClose={() => setIsPricingOpen(false)} />}
-      </>
+      </Suspense>
     );
   }
+
 
   if (dataLoading) return <div className="h-screen w-full flex items-center justify-center bg-slate-950"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-amber-500"></div></div>;
 
