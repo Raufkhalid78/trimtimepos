@@ -12,14 +12,20 @@ interface AppointmentsProps {
   customers: Customer[];
   language: Language;
   onUpdateAppointments: (appointments: Appointment[]) => void;
+  onUpdateStatus?: (id: string, status: AppointmentStatus) => void;
   settings: ShopSettings;
+  onRefresh?: () => Promise<void>;
 }
 
 const HOURS = Array.from({ length: 11 }, (_, i) => i + 9); // 9 AM to 7 PM
 
-const Appointments: React.FC<AppointmentsProps> = ({ appointments, staffList, services, customers, language, onUpdateAppointments, settings }) => {
+const Appointments: React.FC<AppointmentsProps> = ({ 
+  appointments, staffList, services, customers, language, 
+  onUpdateAppointments, onUpdateStatus, settings, onRefresh 
+}) => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [isAdding, setIsAdding] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
   const [formData, setFormData] = useState<Partial<Appointment>>({
     staffId: staffList[0]?.id || '',
@@ -107,6 +113,22 @@ const Appointments: React.FC<AppointmentsProps> = ({ appointments, staffList, se
             onChange={(e) => setSelectedDate(new Date(e.target.value))}
             className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-sm font-bold text-slate-800 dark:text-white"
           />
+          {onRefresh && (
+            <button
+              onClick={async () => {
+                setIsRefreshing(true);
+                await onRefresh();
+                setIsRefreshing(false);
+              }}
+              disabled={isRefreshing}
+              className="p-3 bg-white dark:bg-slate-900 text-slate-500 rounded-xl border border-slate-200 dark:border-slate-800 hover:text-amber-500 transition-all active:scale-95 shadow-sm"
+              title="Refresh Bookings"
+            >
+              <svg className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            </button>
+          )}
           <button 
             onClick={() => setIsAdding(true)}
             className="bg-amber-500 text-slate-950 px-6 py-3 rounded-xl font-black flex items-center gap-2 hover:bg-amber-400 transition-all shadow-lg shadow-amber-500/20 text-sm"
@@ -117,23 +139,27 @@ const Appointments: React.FC<AppointmentsProps> = ({ appointments, staffList, se
       </div>
 
       {/* Approval Queue */}
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {appointments.filter(a => a.status === 'unconfirmed').length > 0 && (
           <motion.div 
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-900/30 rounded-[2rem] p-6 mb-6 overflow-hidden no-print"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-900/30 rounded-[2.5rem] p-8 mb-8 no-print shadow-sm relative overflow-visible"
           >
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 bg-amber-500 text-slate-950 rounded-lg flex items-center justify-center font-black text-xs animate-pulse">!</div>
-              <h3 className="text-lg font-bold text-amber-800 dark:text-amber-400">Approval Queue</h3>
-              <span className="text-xs bg-amber-500/20 text-amber-600 dark:text-amber-500 px-2 py-0.5 rounded-full font-bold">
-                {appointments.filter(a => a.status === 'unconfirmed').length} pending requests
-              </span>
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 bg-amber-500 text-slate-950 rounded-xl flex items-center justify-center font-black text-lg animate-pulse shadow-lg shadow-amber-500/20">!</div>
+                <div>
+                  <h3 className="text-xl font-black text-amber-900 dark:text-amber-400 leading-tight">Approval Queue</h3>
+                  <p className="text-amber-700/60 dark:text-amber-500/60 text-[10px] font-bold uppercase tracking-widest">
+                    {appointments.filter(a => a.status === 'unconfirmed').length} {appointments.filter(a => a.status === 'unconfirmed').length === 1 ? 'Pending Request' : 'Pending Requests'}
+                  </p>
+                </div>
+              </div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {appointments.filter(a => a.status === 'unconfirmed').map(app => {
                 const staff = staffList.find(s => s.id === app.staffId);
                 const appServices = services.filter(s => app.serviceIds.includes(s.id));
@@ -142,47 +168,63 @@ const Appointments: React.FC<AppointmentsProps> = ({ appointments, staffList, se
                 return (
                   <motion.div 
                     key={app.id} 
-                    className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-amber-200 dark:border-amber-900/50 shadow-sm"
-                    whileHover={{ scale: 1.02 }}
+                    layout
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="bg-white dark:bg-slate-900/50 rounded-3xl p-5 border border-amber-200/50 dark:border-amber-900/30 shadow-xl shadow-amber-900/5 flex flex-col gap-4 group hover:border-amber-500 transition-colors"
                   >
-                    <div className="flex justify-between items-start mb-3">
-                      <div>
-                        <p className="font-black text-slate-800 dark:text-white line-clamp-1">{app.customerName || 'Guest'}</p>
-                        <p className="text-[10px] text-slate-500 font-bold">{app.customerPhone}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-xs font-black text-amber-500 uppercase tracking-widest">{format(appDate, 'h:mm a')}</p>
-                        <p className="text-[10px] text-slate-400">{format(appDate, 'MMM d')}</p>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-1 mb-4">
-                      <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500">
-                        <span className="w-1 h-1 bg-amber-500 rounded-full"></span>
-                        <span className="line-clamp-1">{appServices.map(s => s.name).join(', ')}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500">
-                        <span className="w-1 h-1 bg-indigo-500 rounded-full"></span>
-                        With {staff?.name}
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-1">
+                          {format(appDate, 'MMM dd • h:mm a')}
+                        </p>
+                        <h4 className="font-black text-lg text-slate-900 dark:text-white truncate">{app.customerName || 'Guest'}</h4>
                       </div>
                     </div>
 
-                    <div className="flex gap-2 mt-2">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                        <span className="text-xs font-bold truncate">With {staff?.name || 'Any Professional'}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                        <span className="text-xs font-bold truncate">
+                          {appServices.length > 0 ? appServices.map(s => s.name).join(', ') : 'Custom Service'}
+                        </span>
+                      </div>
+                      {app.customerPhone && (
+                        <div className="flex items-center gap-2 text-emerald-500">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
+                          <span className="text-xs font-black tracking-widest">{app.customerPhone}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex gap-2 mt-2 pt-4 border-t border-slate-100 dark:border-slate-800">
                       <button
                         onClick={() => {
-                          const updated = appointments.map(a => a.id === app.id ? { ...a, status: 'confirmed' as AppointmentStatus } : a);
-                          onUpdateAppointments(updated);
+                          if (onUpdateStatus) {
+                            onUpdateStatus(app.id, 'confirmed');
+                          } else {
+                            const updated = appointments.map(a => a.id === app.id ? { ...a, status: 'confirmed' as AppointmentStatus } : a);
+                            onUpdateAppointments(updated);
+                          }
                         }}
-                        className="flex-1 py-2 bg-emerald-500 text-white rounded-xl text-xs font-black hover:bg-emerald-400 transition-all"
+                        className="flex-1 py-3 bg-emerald-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/20 active:scale-95"
                       >
                         Confirm
                       </button>
                       <button
                         onClick={() => {
-                          const updated = appointments.map(a => a.id === app.id ? { ...a, status: 'cancelled' as AppointmentStatus } : a);
-                          onUpdateAppointments(updated);
+                          if (onUpdateStatus) {
+                            onUpdateStatus(app.id, 'cancelled');
+                          } else {
+                            const updated = appointments.map(a => a.id === app.id ? { ...a, status: 'cancelled' as AppointmentStatus } : a);
+                            onUpdateAppointments(updated);
+                          }
                         }}
-                        className="flex-1 py-2 bg-rose-100 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400 rounded-xl text-xs font-black hover:bg-rose-200 transition-all"
+                        className="flex-1 py-3 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all active:scale-95"
                       >
                         Decline
                       </button>
@@ -198,7 +240,7 @@ const Appointments: React.FC<AppointmentsProps> = ({ appointments, staffList, se
                           );
                           window.open(link, '_blank');
                         }}
-                        className="p-2 bg-amber-500/10 text-amber-600 rounded-xl hover:bg-amber-500 hover:text-white transition-all"
+                        className="p-3 bg-amber-500/10 text-amber-600 rounded-2xl hover:bg-amber-500 hover:text-white transition-all shadow-sm"
                         title="Notify via WhatsApp"
                       >
                         <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L0 24l6.335-1.662c1.72.937 3.659 1.432 5.631 1.432h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>

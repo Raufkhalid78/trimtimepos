@@ -52,8 +52,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return null;
   });
 
-  const checkAuth = useCallback(async () => {
-    setAuthLoading(true);
+  const checkAuth = useCallback(async (isSilent = false) => {
+    if (!isSilent) setAuthLoading(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
@@ -115,7 +115,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSaasView('landing');
       }
     } finally {
-      setAuthLoading(false);
+      if (!isSilent) setAuthLoading(false);
     }
   }, []);
 
@@ -174,7 +174,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       // Skip auth check if we're in the middle of signup/login flow
       if (suppressAuthCheckRef.current) return;
-      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') checkAuth();
+      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') checkAuth(true);
     });
     return () => authListener.subscription.unsubscribe();
   }, [checkAuth]);

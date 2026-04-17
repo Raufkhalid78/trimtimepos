@@ -2,10 +2,12 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { supabase } from '../supabaseClient';
 import { useAuth } from './AuthContext';
 import { useToast } from './ToastContext';
+import { notificationService } from '../services/notificationService';
+import { format } from 'date-fns';
 import { 
   Service, Product, Staff, Expense, Customer, Sale, 
   AdvancePayment, Supplier, StockLog, ShopSettings, 
-  Appointment, StaffAvailability
+  Appointment, StaffAvailability, AppointmentStatus
 } from '../types';
 import { DEFAULT_SETTINGS } from '../constants';
 import { ensureHashed } from '../services/passwordService';
@@ -36,6 +38,7 @@ interface DataContextType {
   updateSettings: (updated: ShopSettings) => Promise<void>;
   updateSuppliers: (updated: Supplier[]) => Promise<void>;
   updateAppointments: (updated: Appointment[]) => Promise<void>;
+  updateAppointmentStatus: (id: string, status: AppointmentStatus) => Promise<void>;
   updateStaffAvailability: (staffId: string, updated: StaffAvailability[]) => Promise<void>;
   addStockLog: (log: StockLog) => Promise<void>;
   completeSale: (sale: Sale) => Promise<boolean>;
@@ -91,7 +94,24 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       ]);
 
       if (sv.data) setServices(sv.data.map((s: any) => ({ ...s, nameUr: s.name_ur })));
-      if (pr.data) setProducts(pr.data.map((p: any) => ({ ...p, lowStockThreshold: p.low_stock_threshold, nameUr: p.name_ur })));
+      if (pr.data) {
+        const fetchedProducts = pr.data.map((p: any) => ({ 
+          ...p, 
+          lowStockThreshold: p.low_stock_threshold,
+          nameUr: p.name_ur,
+          supplierId: p.supplier_id 
+        }));
+        setProducts(fetchedProducts);
+        
+        // Low stock notification
+        const lowStockItems = fetchedProducts.filter((p: any) => p.stock <= (p.lowStockThreshold || 5));
+        if (lowStockItems.length > 0) {
+          notificationService.show('⚠️ Low Stock Alert', {
+            body: `${lowStockItems.length} items need restocking soon.`,
+            tag: 'low-stock-alert'
+          });
+        }
+      }
       if (st.data) setStaff(st.data.map((s: any) => ({ ...s, commission: typeof s.commission === 'string' ? parseFloat(s.commission) : (s.commission || 0) })));
       if (ex.data) setExpenses(ex.data.map((e: any) => ({ ...e, receiptImage: e.receipt_image })));
       if (cu.data) setCustomers(cu.data.map((c: any) => ({ ...c, createdAt: c.created_at })));
@@ -345,6 +365,20 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (e) { showToast("Failed to sync appointments", "error"); }
   };
 
+  const updateAppointmentStatus = async (id: string, status: AppointmentStatus) => {
+    setAppointments(prev => prev.map(a => a.id === id ? { ...a, status } : a));
+    try {
+      const { error } = await supabase
+        .from('appointments')
+        .update({ status })
+        .eq('id', id);
+      if (error) throw error;
+    } catch (e) {
+      showToast("Failed to update status", "error");
+      // Optionally roll back state if needed, but usually we prefer showing error
+    }
+  };
+
   const updateStaffAvailability = async (staffId: string, updated: StaffAvailability[]) => {
     if (!tenantId) return;
     setStaffAvailability(prev => {
@@ -459,7 +493,50 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    if (currentTenant) fetchData();
+    if (currentTenant) fetchData(true);
+  }, [currentTenant, fetchData]);
+
+  useEffect(() => {
+    if (!currentTenant) return;
+
+    const channel = supabase
+      .channel(`tenant_updates_${currentTenant.id}`)
+      .on(
+        'postgres_changes',
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'appointments',
+          filter: `tenant_id=eq.${currentTenant.id}`
+        },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            const newApp = payload.new;
+            notificationService.show('📅 New Booking!', {
+              body: `${newApp.customer_name || 'Guest'} booked for ${format(new Date(newApp.start_time), 'MMM d, h:mm a')}`,
+              tag: `new-app-${newApp.id}`
+            });
+            // Update local state without full refresh if possible, or just call fetchData(true)
+            fetchData(true);
+          } else if (payload.eventType === 'UPDATE') {
+            const oldApp = payload.old;
+            const newApp = payload.new;
+            
+            if (oldApp.status !== newApp.status) {
+              notificationService.show('🔔 Booking Updated', {
+                body: `Booking for ${newApp.customer_name || 'Guest'} is now ${newApp.status.toUpperCase()}`,
+                tag: `update-app-${newApp.id}`
+              });
+            }
+            fetchData(true);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [currentTenant, fetchData]);
 
   return (
@@ -467,7 +544,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       services, products, staff, expenses, customers, sales, 
       advancePayments, suppliers, stockLogs, appointments, staffAvailability, settings, 
       loading, fetchData, fetchPublicTenantBySlug,
-      updateServices, updateProducts, updateStaff, updateCustomers, updateSettings, updateSuppliers, updateAppointments, updateStaffAvailability,
+      updateServices, updateProducts, updateStaff, updateCustomers, updateSettings, updateSuppliers, updateAppointments, updateAppointmentStatus, updateStaffAvailability,
       addStockLog, completeSale, deleteSales, addExpense, deleteExpense, addAdvance, deleteAdvance, publicCreateAppointment
     }}>
       {children}

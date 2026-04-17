@@ -18,6 +18,7 @@ import { isSubscriptionValid } from './services/subscriptionService';
 import { useToast } from './contexts/ToastContext';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { loginWithEmail } from './services/authService';
+import { notificationService } from './services/notificationService';
 
 interface ErrorBoundaryProps { children: ReactNode; }
 interface ErrorBoundaryState { hasError: boolean; }
@@ -77,6 +78,12 @@ const App: React.FC = () => {
     window.addEventListener('beforeinstallprompt', handler);
     return () => window.removeEventListener('beforeinstallprompt', handler);
   }, []);
+
+  useEffect(() => {
+    if (currentUser && !notificationService.hasPermission()) {
+      notificationService.requestPermission();
+    }
+  }, [currentUser]);
 
   if (authLoading) return <div className="h-screen w-full flex items-center justify-center bg-slate-950"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-amber-500 mx-auto mb-4"></div></div>;
 

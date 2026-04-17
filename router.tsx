@@ -79,9 +79,19 @@ function SettingsWithData() {
 }
 
 function AppointmentsWithData() {
-  const { appointments, staff, services, customers, updateAppointments, settings } = useData();
+  const { appointments, staff, services, customers, updateAppointments, updateAppointmentStatus, settings, fetchData } = useData();
   const { sessionLanguage } = useAuth();
-  return <Appointments appointments={appointments} staffList={staff} services={services} customers={customers} onUpdateAppointments={updateAppointments} language={sessionLanguage} settings={settings} />;
+  return <Appointments 
+    appointments={appointments} 
+    staffList={staff} 
+    services={services} 
+    customers={customers} 
+    onUpdateAppointments={updateAppointments} 
+    onUpdateStatus={updateAppointmentStatus}
+    language={sessionLanguage} 
+    settings={settings} 
+    onRefresh={fetchData} 
+  />;
 }
 
 function LoginRedirect() {

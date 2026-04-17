@@ -1,12 +1,12 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, Suspense, lazy } from 'react';
 import { Sale, Expense, Product, Language, View, Staff } from '../types';
 import { TRANSLATIONS } from '../constants';
 import { motion } from 'framer-motion';
-import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  BarChart, Bar, Cell, PieChart, Pie, Legend
-} from 'recharts';
 import { format, subDays, addDays, isWithinInterval, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, parseISO, getDaysInMonth, isSameMonth, isSameYear, isValid } from 'date-fns';
+
+const RevenueChart = lazy(() => import('./Charts').then(m => ({ default: m.RevenueChart })));
+const ExpensePieChart = lazy(() => import('./Charts').then(m => ({ default: m.ExpensePieChart })));
+const PerformanceBarChart = lazy(() => import('./Charts').then(m => ({ default: m.PerformanceBarChart })));
 
 interface DashboardProps {
   sales: Sale[];
@@ -263,25 +263,9 @@ const Dashboard: React.FC<DashboardProps> = ({ sales, expenses, products, staff,
             </span>
           </div>
           <div className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData}>
-                <defs>
-                  <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }} />
-                <Tooltip
-                  contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '12px', color: '#fff' }}
-                  itemStyle={{ color: '#fbbf24', fontWeight: 800 }}
-                  labelStyle={{ color: '#94a3b8', marginBottom: '4px', fontWeight: 700 }}
-                />
-                <Area type="monotone" dataKey="revenue" stroke="#f59e0b" strokeWidth={4} fillOpacity={1} fill="url(#colorRev)" />
-              </AreaChart>
-            </ResponsiveContainer>
+            <Suspense fallback={<div className="h-full w-full bg-slate-50 animate-pulse rounded-2xl" />}>
+              <RevenueChart data={chartData} />
+            </Suspense>
           </div>
         </div>
 
@@ -290,27 +274,9 @@ const Dashboard: React.FC<DashboardProps> = ({ sales, expenses, products, staff,
           <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight mb-6">{t.expenseBreakdown}</h3>
           <div className="h-[300px] w-full">
             {expenseBreakdown.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={expenseBreakdown}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={80}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    {expenseBreakdown.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '12px', color: '#fff' }}
-                  />
-                  <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: '10px', fontWeight: 700 }} />
-                </PieChart>
-              </ResponsiveContainer>
+              <Suspense fallback={<div className="h-full w-full bg-slate-50 animate-pulse rounded-2xl" />}>
+                <ExpensePieChart data={expenseBreakdown} colors={COLORS} />
+              </Suspense>
             ) : (
               <div className="h-full flex flex-col items-center justify-center text-slate-400">
                 <svg className="w-12 h-12 mb-2 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
@@ -330,18 +296,9 @@ const Dashboard: React.FC<DashboardProps> = ({ sales, expenses, products, staff,
               <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">{t.topServices}</p>
               <div className="h-[250px] w-full">
                 {topPerformers.topServices.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={topPerformers.topServices} layout="vertical" margin={{ left: 20, right: 30 }}>
-                      <XAxis type="number" hide />
-                      <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#64748b' }} width={80} />
-                      <Tooltip
-                        cursor={{ fill: '#f8fafc' }}
-                        contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '12px', color: '#fff' }}
-                        itemStyle={{ color: '#fbbf24', fontWeight: 800 }}
-                      />
-                      <Bar dataKey="value" fill="#f59e0b" radius={[0, 4, 4, 0]} barSize={20} />
-                    </BarChart>
-                  </ResponsiveContainer>
+                  <Suspense fallback={<div className="h-full w-full bg-slate-50 animate-pulse rounded-2xl" />}>
+                    <PerformanceBarChart data={topPerformers.topServices} color="#f59e0b" layout="vertical" />
+                  </Suspense>
                 ) : (
                   <p className="text-sm text-slate-400 italic text-center py-12">{t.noRecords}</p>
                 )}
@@ -352,18 +309,9 @@ const Dashboard: React.FC<DashboardProps> = ({ sales, expenses, products, staff,
               <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">{t.topProducts}</p>
               <div className="h-[250px] w-full">
                 {topPerformers.topProducts.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={topPerformers.topProducts} layout="vertical" margin={{ left: 20, right: 30 }}>
-                      <XAxis type="number" hide />
-                      <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#64748b' }} width={80} />
-                      <Tooltip
-                        cursor={{ fill: '#f8fafc' }}
-                        contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '12px', color: '#fff' }}
-                        itemStyle={{ color: '#3b82f6', fontWeight: 800 }}
-                      />
-                      <Bar dataKey="value" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={20} />
-                    </BarChart>
-                  </ResponsiveContainer>
+                  <Suspense fallback={<div className="h-full w-full bg-slate-50 animate-pulse rounded-2xl" />}>
+                    <PerformanceBarChart data={topPerformers.topProducts} color="#3b82f6" layout="vertical" />
+                  </Suspense>
                 ) : (
                   <p className="text-sm text-slate-400 italic text-center py-12">{t.noRecords}</p>
                 )}
@@ -377,23 +325,9 @@ const Dashboard: React.FC<DashboardProps> = ({ sales, expenses, products, staff,
           <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight mb-6">{t.staffLeaderboard}</h3>
           <div className="h-[300px] w-full">
             {staffLeaderboard.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={staffLeaderboard} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#64748b' }} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#64748b' }} />
-                  <Tooltip
-                    cursor={{ fill: '#f8fafc' }}
-                    contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '12px', color: '#fff' }}
-                    itemStyle={{ color: '#10b981', fontWeight: 800 }}
-                  />
-                  <Bar dataKey="revenue" fill="#10b981" radius={[4, 4, 0, 0]} barSize={40}>
-                    {staffLeaderboard.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={index === 0 ? '#10b981' : '#94a3b8'} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+              <Suspense fallback={<div className="h-full w-full bg-slate-50 animate-pulse rounded-2xl" />}>
+                <PerformanceBarChart data={staffLeaderboard} color="#10b981" layout="horizontal" />
+              </Suspense>
             ) : (
               <div className="h-full flex flex-col items-center justify-center text-slate-400">
                 <p className="text-sm font-bold uppercase tracking-widest">{t.noRecords}</p>

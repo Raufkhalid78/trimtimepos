@@ -1,11 +1,12 @@
-import React, { useState, useRef, useMemo, useEffect } from 'react';
+import React, { useState, useRef, useMemo, useEffect, Suspense, lazy } from 'react';
 import { Sale, Expense, Staff, Language, Customer, ShopSettings, AdvancePayment } from '../types';
 import { TRANSLATIONS } from '../constants';
 import { getFinancialInsights } from '../services/geminiService';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import { parseISO, isValid, isSameMonth, isSameYear, format, getDaysInMonth } from 'date-fns';
+
+const PerformanceBarChart = lazy(() => import('./Charts').then(m => ({ default: m.PerformanceBarChart })));
 
 interface FinanceProps {
   sales: Sale[];
@@ -465,16 +466,9 @@ const Finance: React.FC<FinanceProps> = ({ sales, expenses, staffList, customers
             <div className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] border dark:border-slate-800">
               <h3 className="text-xl font-bold mb-8 flex items-center gap-3">📊 {t.shopPerformance}</h3>
               <div className="h-64 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={[{ name: 'Summary', rev: totalRevenue, exp: totalExpenses }]}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" className="dark:opacity-5" />
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} />
-                    <YAxis axisLine={false} tickLine={false} tickFormatter={(val) => `${currency}${val}`} />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Bar dataKey="rev" name="Revenue" fill="#10b981" radius={[8, 8, 0, 0]} />
-                    <Bar dataKey="exp" name="Expenses" fill="#f43f5e" radius={[8, 8, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+                <Suspense fallback={<div className="h-full w-full bg-slate-50 animate-pulse rounded-2xl" />}>
+                  <PerformanceBarChart data={[{ name: 'Summary', rev: totalRevenue, exp: totalExpenses }]} color="#10b981" layout="horizontal" />
+                </Suspense>
               </div>
             </div>
 
