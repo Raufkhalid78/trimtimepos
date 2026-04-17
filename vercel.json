@@ -7,8 +7,6 @@
     { "source": "/icon.svg", "destination": "/icon.svg" },
     { "source": "/manifest.webmanifest", "destination": "/manifest.webmanifest" },
     { "source": "/assets/(.*)", "destination": "/assets/$1" },
-    { "source": "/((?!api/).*)", "destination": "/index.html" }
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
-
-

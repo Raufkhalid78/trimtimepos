@@ -470,6 +470,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const publicCreateAppointment = async (appointment: Omit<Appointment, 'id'>, targetTenantId: string) => {
+    console.log('📝 Attempting public booking for tenant:', targetTenantId, appointment);
     try {
       const { data, error } = await supabase.from('appointments').insert({
         tenant_id: targetTenantId,
@@ -485,7 +486,12 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         customer_email: appointment.customerEmail || null
       }).select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Public booking insert error:', error);
+        throw error;
+      }
+      
+      console.log('✅ Public booking insert success:', data);
       return true;
     } catch (e) {
       console.error('Public booking error:', e);
@@ -514,10 +520,18 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
           table: 'appointments'
         },
         (payload) => {
-          console.log('🔔 Realtime Event Received:', payload.eventType, payload);
+          console.log('🔔 Realtime Event Received:', payload.eventType, 'Full Payload:', payload);
+          
           // Filter by tenant_id in JS to rule out Supabase filter issues
           const newTenantId = payload.new?.tenant_id || payload.old?.tenant_id;
-          if (newTenantId !== currentTenant.id) return;
+          
+          console.log('🔍 Comparing Tenant IDs:', {
+            eventTenantId: newTenantId,
+            currentContextTenantId: currentTenant.id,
+            match: String(newTenantId) === String(currentTenant.id)
+          });
+
+          if (String(newTenantId) !== String(currentTenant.id)) return;
 
           if (payload.eventType === 'INSERT') {
             const newApp = payload.new;
