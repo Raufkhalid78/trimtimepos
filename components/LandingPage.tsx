@@ -1,6 +1,6 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 
 interface LandingPageProps {
   onGoToSignUp: () => void;
@@ -202,13 +202,41 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGoToSignUp, onGoToLogin }) 
       </section>
 
       {/* ========== FOOTER ========== */}
-      <footer className="border-t border-slate-800 py-8 px-6">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 bg-amber-500 rounded-lg flex items-center justify-center text-slate-950 font-black text-sm">T</div>
-            <span className="font-bold text-slate-500">TrimTime © {new Date().getFullYear()}</span>
+      <footer className="border-t border-slate-800 py-12 px-6">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+            <div className="col-span-1 md:col-span-2">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-8 h-8 bg-amber-500 rounded-lg flex items-center justify-center text-slate-950 font-black text-sm">T</div>
+                <span className="font-bold text-xl tracking-tight">TrimTime</span>
+              </div>
+              <p className="text-slate-500 text-sm max-w-sm leading-relaxed">
+                The most advanced business management platform for grooming professionals. Built to help you scale your business with ease.
+              </p>
+            </div>
+            <div>
+              <h4 className="font-bold text-white mb-4 uppercase tracking-widest text-xs">Product</h4>
+              <ul className="space-y-2 text-sm text-slate-500">
+                <li><a href="#features" className="hover:text-amber-500 transition-colors">Features</a></li>
+                <li><a href="#pricing" className="hover:text-amber-500 transition-colors">Pricing</a></li>
+                <li><button onClick={onGoToLogin} className="hover:text-amber-500 transition-colors">Business Login</button></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-bold text-white mb-4 uppercase tracking-widest text-xs">Legal</h4>
+              <ul className="space-y-2 text-sm text-slate-500">
+                <li><Link to="/privacy" className="hover:text-amber-500 transition-colors">Privacy Policy</Link></li>
+                <li><Link to="/terms" className="hover:text-amber-500 transition-colors">Terms of Service</Link></li>
+                <li><a href="mailto:support@trimtimepos.com" className="hover:text-amber-500 transition-colors">Contact Support</a></li>
+              </ul>
+            </div>
           </div>
-          <p className="text-slate-600 text-sm">POS for Barbers & Beauty Salons</p>
+          <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-4">
+            <span className="text-xs font-bold text-slate-600 tracking-widest uppercase">TrimTime © {new Date().getFullYear()} • All Rights Reserved</span>
+            <div className="flex items-center gap-6">
+              <span className="text-[10px] font-black text-slate-700 uppercase tracking-[0.2em]">Secure Cloud POS</span>
+            </div>
+          </div>
         </div>
       </footer>
     </div>

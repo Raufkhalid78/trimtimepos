@@ -354,8 +354,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await supabase.from('staff_availability').delete().eq('staff_id', staffId);
       if (updated.length) {
-        const rows = updated.map(a => ({ id: a.id, tenant_id: tenantId, staff_id: a.staffId, day_of_week: a.dayOfWeek, start_time: a.startTime, end_time: a.endTime }));
-        const { error } = await supabase.from('staff_availability').upsert(rows);
+        const rows = updated.map(a => ({ tenant_id: tenantId, staff_id: a.staffId, day_of_week: a.dayOfWeek, start_time: a.startTime, end_time: a.endTime }));
+        const { error } = await supabase.from('staff_availability').insert(rows);
         if (error) throw error;
       }
       showToast("Availability updated", "success");

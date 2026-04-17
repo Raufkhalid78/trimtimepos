@@ -15,6 +15,8 @@ const PublicLayout = lazy(() => import('@/components/PublicLayout'));
 const BookingPage = lazy(() => import('@/components/BookingPage'));
 const ResetPassword = lazy(() => import('@/components/ResetPassword'));
 const StaffLogin = lazy(() => import('@/components/StaffLogin'));
+const PrivacyPolicy = lazy(() => import('@/components/PrivacyPolicy'));
+const TermsOfService = lazy(() => import('@/components/TermsOfService'));
 
 const Loading = () => (
   <div className="h-full w-full flex items-center justify-center bg-slate-50 dark:bg-slate-950">
@@ -82,6 +84,16 @@ function AppointmentsWithData() {
   return <Appointments appointments={appointments} staffList={staff} services={services} customers={customers} onUpdateAppointments={updateAppointments} language={sessionLanguage} settings={settings} />;
 }
 
+function LoginRedirect() {
+  const { setSaasView, currentUser } = useAuth();
+  React.useEffect(() => {
+    if (!currentUser) {
+      setSaasView('login');
+    }
+  }, [setSaasView, currentUser]);
+  return <Navigate to="/" replace />;
+}
+
 export const router = createBrowserRouter([
   {
     path: '/',
@@ -113,5 +125,17 @@ export const router = createBrowserRouter([
   {
     path: '/staff-login/:slug',
     element: <Suspense fallback={<Loading />}><StaffLogin /></Suspense>
+  },
+  {
+    path: '/login',
+    element: <LoginRedirect />
+  },
+  {
+    path: '/privacy',
+    element: <Suspense fallback={<Loading />}><PrivacyPolicy /></Suspense>
+  },
+  {
+    path: '/terms',
+    element: <Suspense fallback={<Loading />}><TermsOfService /></Suspense>
   }
 ]);
