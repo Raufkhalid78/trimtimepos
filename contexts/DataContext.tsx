@@ -548,7 +548,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.log('⚠️ Realtime: Subscription closed');
         } else if (status === 'CHANNEL_ERROR') {
           console.error('❌ Realtime: Subscription error for tenant:', currentTenant.id);
-          showToast('Realtime sync error. Please refresh.', 'error');
         } else if (status === 'TIMED_OUT') {
           console.error('❌ Realtime: Subscription timed out');
         }
@@ -557,7 +556,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [currentTenant, fetchData]);
+  }, [currentTenant?.id]); // Only re-subscribe if tenant ID changes
 
   return (
     <DataContext.Provider value={{

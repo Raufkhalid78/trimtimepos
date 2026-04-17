@@ -43,17 +43,25 @@ export class NotificationService {
       ...options
     };
 
-    if (registration && 'showNotification' in registration) {
-      console.log('📲 Showing notification via ServiceWorker');
+    // Prefer standard Window Notification for better reliability in non-PWA environments
+    // Only use ServiceWorker if the window is NOT focused or we are explicitly in a background state
+    const useSW = (registration && 'showNotification' in registration) && document.visibilityState !== 'visible';
+
+    if (useSW) {
+      console.log('📲 Showing notification via ServiceWorker (Background Mode)');
       return (registration as any).showNotification(title, defaultOptions).catch((err: any) => {
         console.error('❌ SW Notification Failed:', err);
         return new Notification(title, defaultOptions);
       });
     } else {
-      console.log('💻 Showing notification via Window API');
+      console.log('💻 Showing notification via Window API (Foreground Mode)');
       try {
         const notification = new Notification(title, defaultOptions);
         notification.onerror = (err) => console.error('❌ Notification display error:', err);
+        notification.onclick = () => {
+          window.focus();
+          notification.close();
+        };
         return notification;
       } catch (err) {
         console.error('❌ Window Notification Failed:', err);
