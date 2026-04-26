@@ -15,13 +15,16 @@ interface AppointmentsProps {
   onUpdateStatus?: (id: string, status: AppointmentStatus) => void;
   settings: ShopSettings;
   onRefresh?: () => Promise<void>;
+  /** Called when the user wants to charge for a completed appointment.
+   *  The parent should open POS with the appointment's services + staff pre-filled. */
+  onConvertToSale?: (appointment: Appointment) => void;
 }
 
 const HOURS = Array.from({ length: 11 }, (_, i) => i + 9); // 9 AM to 7 PM
 
 const Appointments: React.FC<AppointmentsProps> = ({ 
   appointments, staffList, services, customers, language, 
-  onUpdateAppointments, onUpdateStatus, settings, onRefresh 
+  onUpdateAppointments, onUpdateStatus, settings, onRefresh, onConvertToSale
 }) => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [isAdding, setIsAdding] = useState(false);
@@ -468,10 +471,27 @@ const Appointments: React.FC<AppointmentsProps> = ({
                    </div>
                 </div>
 
-                <div className="pt-4 flex gap-4">
+                <div className="pt-4 flex gap-4 flex-wrap">
                   <button type="submit" className="flex-1 py-4 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-2xl transition-all shadow-lg shadow-amber-500/20">
                     {editingAppointment ? 'Save Changes' : 'Create Appointment'}
                   </button>
+                  {/* Appointment → Sale conversion (FEATURE-08) */}
+                  {editingAppointment && onConvertToSale && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        closeModal();
+                        onConvertToSale(editingAppointment);
+                      }}
+                      className="flex items-center gap-2 py-4 px-5 bg-emerald-500 hover:bg-emerald-400 text-white font-black rounded-2xl transition-all shadow-lg shadow-emerald-500/20"
+                      title="Open POS with this appointment's services pre-filled"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                      Charge
+                    </button>
+                  )}
                   {editingAppointment && (
                     <button 
                       type="button" 

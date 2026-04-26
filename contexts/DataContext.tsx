@@ -3,7 +3,8 @@ import { supabase } from '../supabaseClient';
 import { useAuth } from './AuthContext';
 import { useToast } from './ToastContext';
 import { notificationService } from '../services/notificationService';
-import { format } from 'date-fns';
+import { format, subDays } from 'date-fns';
+import { logger } from '../services/logger';
 import { 
   Service, Product, Staff, Expense, Customer, Sale, 
   AdvancePayment, Supplier, StockLog, ShopSettings, 
@@ -77,19 +78,21 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!currentTenant) return;
     if (!isSilent) setLoading(true);
     const tid = currentTenant.id;
+    // BUG-06: Load only last 90 days of sales by default to prevent unbounded queries
+    const salesCutoff = subDays(new Date(), 90).toISOString();
     
     try {
       const [sv, pr, st, ex, cu, sa, se, ap, sup, sl, appts, avail] = await Promise.all([
         supabase.from('services').select('*').eq('tenant_id', tid),
         supabase.from('products').select('*').eq('tenant_id', tid),
-        supabase.from('staff').select('*').eq('tenant_id', tid),
+        supabase.from('staff').select('id, name, role, commission, username, email, tenant_id').eq('tenant_id', tid),
         supabase.from('expenses').select('*').eq('tenant_id', tid),
         supabase.from('customers').select('*').eq('tenant_id', tid),
-        supabase.from('sales').select('*').eq('tenant_id', tid),
+        supabase.from('sales').select('*').eq('tenant_id', tid).gte('timestamp', salesCutoff).order('timestamp', { ascending: false }),
         supabase.from('settings').select('*').eq('tenant_id', tid).single(),
         supabase.from('advance_payments').select('*').eq('tenant_id', tid),
         supabase.from('suppliers').select('*').eq('tenant_id', tid),
-        supabase.from('stock_logs').select('*').eq('tenant_id', tid),
+        supabase.from('stock_logs').select('*').eq('tenant_id', tid).order('timestamp', { ascending: false }).limit(500),
         supabase.from('appointments').select('*').eq('tenant_id', tid),
         supabase.from('staff_availability').select('*').eq('tenant_id', tid)
       ]);
@@ -160,7 +163,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (se.data?.data) setSettings({ ...DEFAULT_SETTINGS, ...se.data.data });
 
     } catch (err) {
-      console.error('Data loading error:', err);
+      logger.error('Data loading error:', err);
       showToast('Error loading shop data', 'error');
     } finally {
       if (!isSilent) setLoading(false);
@@ -172,7 +175,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       // 1. Fetch Tenant by Slug
       const cleanSlug = slug.trim().toLowerCase();
-      console.log('🔍 Fetching tenant by slug:', cleanSlug);
+      logger.log('Fetching tenant by slug:', cleanSlug);
       
       const { data: tenantData, error: tenantError } = await supabase
         .from('tenants')
@@ -182,7 +185,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .single();
 
       if (tenantError || !tenantData) {
-        console.error('❌ Tenant fetch error or not found:', tenantError, tenantData);
+        logger.error('Tenant fetch error or not found:', tenantError);
         setLoading(false);
         return false;
       }
@@ -245,7 +248,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return tenantData;
 
     } catch (err) {
-      console.error('Data loading error:', err);
+      logger.error('Public data loading error:', err);
       showToast('Error loading shop data', 'error');
       setLoading(false);
       return null;
@@ -254,6 +257,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const updateServices = async (updated: Service[]) => {
     if (!tenantId) return;
+    const snapshot = services;
     const currentIds = new Set(services.map(i => i.id));
     const newIds = new Set(updated.map(i => i.id));
     const toDelete = Array.from(currentIds).filter(id => !newIds.has(id));
@@ -265,11 +269,15 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const { error } = await supabase.from('services').upsert(rows);
         if (error) throw error;
       }
-    } catch (e) { showToast("Failed to sync services", "error"); }
+    } catch (e) {
+      setServices(snapshot);
+      showToast("Failed to sync services", "error");
+    }
   };
 
   const updateProducts = async (updated: Product[]) => {
     if (!tenantId) return;
+    const snapshot = products;
     const currentIds = new Set(products.map(i => i.id));
     const newIds = new Set(updated.map(i => i.id));
     const toDelete = Array.from(currentIds).filter(id => !newIds.has(id));
@@ -281,11 +289,15 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const { error } = await supabase.from('products').upsert(rows);
         if (error) throw error;
       }
-    } catch (e) { showToast("Failed to sync products", "error"); }
+    } catch (e) {
+      setProducts(snapshot);
+      showToast("Failed to sync products", "error");
+    }
   };
 
   const updateStaff = async (updated: Staff[]) => {
     if (!tenantId) return;
+    const snapshot = staff;
     const currentIds = new Set(staff.map(i => i.id));
     const newIds = new Set(updated.map(i => i.id));
     const toDelete = Array.from(currentIds).filter(id => !newIds.has(id));
@@ -297,11 +309,15 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const { error } = await supabase.from('staff').upsert(rows);
         if (error) throw error;
       }
-    } catch (e) { showToast("Failed to sync staff", "error"); }
+    } catch (e) {
+      setStaff(snapshot);
+      showToast("Failed to sync staff", "error");
+    }
   };
 
   const updateCustomers = async (updated: Customer[]) => {
     if (!tenantId) return;
+    const snapshot = customers;
     const currentIds = new Set(customers.map(i => i.id));
     const newIds = new Set(updated.map(i => i.id));
     const toDelete = Array.from(currentIds).filter(id => !newIds.has(id));
@@ -313,16 +329,26 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const { error } = await supabase.from('customers').upsert(rows);
         if (error) throw error;
       }
-    } catch (e) { showToast("Failed to sync customers", "error"); }
+    } catch (e) {
+      setCustomers(snapshot);
+      showToast("Failed to sync customers", "error");
+    }
   };
 
   const updateSettings = async (updated: ShopSettings) => {
     if (!tenantId) return;
+    const snapshot = settings;
     setSettings(updated);
     try {
-      const { error } = await supabase.from('settings').upsert({ id: 1, tenant_id: tenantId, data: updated });
+      // BUG-04 FIX: Use tenant_id as conflict key — no more hardcoded id:1
+      const { error } = await supabase
+        .from('settings')
+        .upsert({ tenant_id: tenantId, data: updated }, { onConflict: 'tenant_id' });
       if (error) throw error;
-    } catch (e) { showToast("Failed to save settings", "error"); }
+    } catch (e) {
+      setSettings(snapshot);
+      showToast("Failed to save settings", "error");
+    }
   };
 
   const updateSuppliers = async (updated: Supplier[]) => {
@@ -407,7 +433,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const { error } = await supabase.from('stock_logs').insert({ id: log.id, tenant_id: tenantId, product_id: log.productId, change: log.change, reason: log.reason, timestamp: log.timestamp, user_id: log.userId, notes: log.notes });
       if (error) throw error;
-    } catch (e) { console.error(e); }
+    } catch (e) { logger.error('Stock log sync failed:', e); }
   };
 
   const completeSale = async (sale: Sale) => {
@@ -474,7 +500,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const publicCreateAppointment = async (appointment: Omit<Appointment, 'id'>, targetTenantId: string) => {
-    console.log('📝 Attempting public booking for tenant:', targetTenantId, appointment);
+    logger.log('Attempting public booking for tenant:', targetTenantId);
     try {
       const { data, error } = await supabase.from('appointments').insert({
         tenant_id: targetTenantId,
@@ -491,14 +517,13 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }).select();
 
       if (error) {
-        console.error('❌ Public booking insert error:', error);
+        logger.error('Public booking insert error:', error);
         throw error;
       }
-      
-      console.log('✅ Public booking insert success:', data);
+      logger.log('Public booking insert success:', data);
       return true;
     } catch (e) {
-      console.error('Public booking error:', e);
+      logger.error('Public booking error:', e);
       return false;
     }
   };
@@ -526,45 +551,31 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       channel = supabase
         .channel(`tenant_updates_${currentTenant.id}`)
+        // ── Appointments ──────────────────────────────────────────────────
         .on(
           'postgres_changes',
-          { 
-            event: '*', 
-            schema: 'public', 
-            table: 'appointments'
-          },
+          { event: '*', schema: 'public', table: 'appointments' },
           (payload) => {
-            console.log('🔔 Realtime Event Received:', payload.eventType, 'Full Payload:', payload);
-            
-            // Filter by tenant_id in JS to rule out Supabase filter issues
+            logger.log('Realtime appointments event:', payload.eventType);
             const newPayload = payload.new as any;
             const oldPayload = payload.old as any;
             const newTenantId = newPayload?.tenant_id || oldPayload?.tenant_id;
-            
-            console.log('🔍 Realtime Filter Check:', {
-              eventTenantId: newTenantId,
-              currentTenantId: currentTenant.id,
-              match: String(newTenantId) === String(currentTenant.id)
-            });
-
             if (String(newTenantId) !== String(currentTenant.id)) return;
 
             if (payload.eventType === 'INSERT') {
-              const newApp = payload.new;
+              const newApp = payload.new as any;
               notificationService.show('📅 New Booking Received!', {
-                body: `${newApp.customer_name || 'A customer'} has booked a session at ${format(new Date(newApp.start_time), 'h:mm a')} on ${format(new Date(newApp.start_time), 'MMM d')}.`,
+                body: `${newApp.customer_name || 'A customer'} booked at ${format(new Date(newApp.start_time), 'h:mm a')} on ${format(new Date(newApp.start_time), 'MMM d')}.`,
                 tag: `new-app-${newApp.id}`,
                 icon: '/icon.svg'
               });
-              // Update local state without full refresh if possible, or just call fetchData(true)
               fetchData(true);
             } else if (payload.eventType === 'UPDATE') {
-              const oldApp = payload.old;
-              const newApp = payload.new;
-              
+              const oldApp = payload.old as any;
+              const newApp = payload.new as any;
               if (oldApp.status !== newApp.status) {
                 notificationService.show('🔔 Booking Updated', {
-                  body: `Booking for ${newApp.customer_name || 'Guest'} is now ${newApp.status.toUpperCase()}`,
+                  body: `Booking for ${newApp.customer_name || 'Guest'} is now ${String(newApp.status).toUpperCase()}`,
                   tag: `update-app-${newApp.id}`
                 });
               }
@@ -572,20 +583,31 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
           }
         )
+        // ── Sales (ISSUE-08: multi-device sale sync) ──────────────────────
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'sales' },
+          (payload) => {
+            const row = payload.new as any;
+            if (String(row?.tenant_id) !== String(currentTenant.id)) return;
+            logger.log('Realtime sales INSERT — refreshing');
+            fetchData(true);
+          }
+        )
         .subscribe((status) => {
           if (status === 'SUBSCRIBED') {
-            console.log('✅ Realtime: Subscribed to appointments updates for tenant:', currentTenant.id);
+            logger.log('Realtime: subscribed for tenant', currentTenant.id);
             retryCount = 0;
           } else if (status === 'CLOSED') {
-            console.log('⚠️ Realtime: Subscription closed');
+            logger.warn('Realtime: subscription closed');
           } else if (status === 'CHANNEL_ERROR') {
-            console.error('❌ Realtime: Subscription error for tenant:', currentTenant.id);
+            logger.error('Realtime: subscription error for tenant', currentTenant.id);
           } else if (status === 'TIMED_OUT') {
-            console.error('❌ Realtime: Subscription timed out');
+            logger.error('Realtime: subscription timed out');
             if (retryCount < maxRetries) {
               retryCount++;
-              const delay = 2000 * Math.pow(2, retryCount - 1); // 2s, 4s, 8s
-              console.log(`⏳ Retrying subscription in ${delay}ms (Attempt ${retryCount}/${maxRetries})...`);
+              const delay = 2000 * Math.pow(2, retryCount - 1);
+              logger.log(`Retrying in ${delay}ms (attempt ${retryCount}/${maxRetries})`);
               retryTimeout = setTimeout(setupRealtime, delay);
             }
           }

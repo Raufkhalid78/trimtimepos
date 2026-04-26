@@ -4,61 +4,97 @@
 
 @layer base {
   :root {
-      --brand-amber: #f59e0b;
-      --brand-slate: #0f172a;
+    --brand-amber: #f59e0b;
+    --brand-slate: #0f172a;
   }
-  body { 
-      font-family: 'Plus Jakarta Sans', sans-serif; 
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-smoothing: grayscale;
-      touch-action: manipulation; /* Prevents double-tap zoom delay */
+
+  body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    touch-action: manipulation;
   }
-  
+
   /* Language Specific Fonts */
   :root[lang="ur"] body { font-family: 'Noto Nastaliq Urdu', serif; line-height: 2; }
   :root[lang="fa"] body { font-family: 'Vazirmatn', sans-serif; }
 
   .font-brand { font-family: 'Playfair Display', serif; }
-  
+
   /* Smooth Scrollbars */
-  ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-  }
-  ::-webkit-scrollbar-track {
-      background: transparent;
-  }
-  ::-webkit-scrollbar-thumb {
-      background: #e2e8f0;
-      border-radius: 10px;
-  }
-  .dark ::-webkit-scrollbar-thumb {
-      background: #334155;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-      background: #cbd5e1;
-  }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+  .dark ::-webkit-scrollbar-thumb { background: #334155; }
+  ::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
 
   @media print {
-      .no-print { display: none !important; }
-      .print-only { display: block !important; }
-      body { background: white !important; }
+    .no-print { display: none !important; }
+    .print-only { display: block !important; }
+    body { background: white !important; }
   }
   .print-only { display: none; }
 
-  /* Improved mobile inputs */
-  input, select, textarea {
-      font-size: 16px !important; /* Prevents auto-zoom on iOS */
-  }
+  /* Prevents auto-zoom on iOS */
+  input, select, textarea { font-size: 16px !important; }
 }
 
 @layer utilities {
+  /* Float animation for dashboard mockup */
   .animate-float {
-      animation: subtle-float 4s ease-in-out infinite;
+    animation: subtle-float 5s ease-in-out infinite;
   }
+
+  /* Landing page dot-grid background */
+  .landing-grid-bg {
+    background-image: radial-gradient(circle, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
+
+  /* Gradient text shimmer */
+  .animate-gradient-text {
+    background-size: 200% auto;
+    animation: gradient-shift 4s linear infinite;
+  }
+
+  /* Shimmer effect for skeleton loaders */
+  .animate-shimmer {
+    animation: shimmer 1.8s ease-in-out infinite;
+    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.04) 50%, transparent 100%);
+    background-size: 200% 100%;
+  }
+
+  /* Hide scrollbar but allow scroll */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
 }
 
+/* ── Keyframes ────────────────────────────────────────────────────────────── */
+
 @keyframes subtle-float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-5px); }
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-10px); }
+}
+
+@keyframes gradient-shift {
+  0%   { background-position: 0% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-amber {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+  50%       { box-shadow: 0 0 0 8px rgba(245, 158, 11, 0); }
 }

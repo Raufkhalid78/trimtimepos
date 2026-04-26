@@ -28,21 +28,27 @@ export default defineConfig(({ mode }) => {
           description: "POS & Management Platform for Barbers & Beauty Salons",
           orientation: "portrait",
           icons: [
+            // SVG icon — modern browsers
             {
               src: "/icon.svg",
               sizes: "any",
-              type: "image/svg+xml"
+              type: "image/svg+xml",
+              purpose: "any"
             },
+            // PNG 192 — required for Android and older browsers
+            // ACTION NEEDED: Add icon-192.png to /public/
             {
-              src: "/icon.svg",
+              src: "/icon-192.png",
               sizes: "192x192",
-              type: "image/svg+xml",
-              purpose: "maskable"
+              type: "image/png",
+              purpose: "any"
             },
+            // PNG 512 maskable — required by iOS Safari for home screen install
+            // ACTION NEEDED: Add icon-512.png to /public/
             {
-              src: "/icon.svg",
+              src: "/icon-512.png",
               sizes: "512x512",
-              type: "image/svg+xml",
+              type: "image/png",
               purpose: "maskable"
             }
           ]

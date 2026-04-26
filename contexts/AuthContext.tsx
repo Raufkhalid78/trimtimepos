@@ -1,10 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
+import type { User } from '@supabase/supabase-js';
 import { supabase } from '../supabaseClient';
 import { getCurrentTenant, getCurrentSubscription, getOwnerStaff } from '../services/authService';
 import { Tenant, Subscription, Staff, Language, SaaSView } from '../types';
+import { logger } from '../services/logger';
 
 interface AuthContextType {
-  authUser: any;
+  authUser: User | null;
   currentTenant: Tenant | null;
   subscription: Subscription | null;
   currentUser: Staff | null;
@@ -27,7 +29,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [authUser, setAuthUser] = useState<any>(null);
+  const [authUser, setAuthUser] = useState<User | null>(null);
   const [currentTenant, setCurrentTenant] = useState<Tenant | null>(null);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -110,7 +112,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
     } catch (err) {
-      console.error('Auth check failed:', err);
+      logger.error('Auth check failed:', err);
       if (!suppressAuthCheckRef.current) {
         setSaasView('landing');
       }

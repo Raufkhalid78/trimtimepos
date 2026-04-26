@@ -174,12 +174,10 @@ CREATE TABLE expenses (
 
 CREATE INDEX idx_expenses_tenant ON expenses(tenant_id);
 
--- Settings Table (one row per tenant)
+-- Settings Table (one row per tenant — tenant_id IS the primary key)
 CREATE TABLE settings (
-  id int NOT NULL DEFAULT 1,
-  tenant_id uuid NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-  data jsonb,
-  PRIMARY KEY (id, tenant_id)
+  tenant_id uuid PRIMARY KEY REFERENCES tenants(id) ON DELETE CASCADE,
+  data jsonb
 );
 
 -- Advance Payments Table
@@ -278,106 +276,84 @@ $$;
 -- ==========================================
 -- 4. ROW LEVEL SECURITY POLICIES
 -- ==========================================
--- Every table is locked down so users can ONLY
--- see and modify data belonging to their own tenant.
+-- READ: authenticated users and anon (for public booking page)
+-- WRITE (INSERT/UPDATE/DELETE): only authenticated tenant owners
+--
+-- BUG-02 FIX: Removed 'OR auth.role() = anon' from ALL WITH CHECK clauses.
+-- Previously, any unauthenticated request could write to any table.
 
--- 4a. TENANTS — owner can manage their own tenant
+-- 4a. TENANTS
 ALTER TABLE tenants ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "tenants_policy" ON tenants
-  FOR ALL
-  USING (owner_id = auth.uid() OR auth.role() = 'anon')
-  WITH CHECK (owner_id = auth.uid());
+CREATE POLICY "tenants_select" ON tenants FOR SELECT USING (owner_id = auth.uid());
+CREATE POLICY "tenants_insert" ON tenants FOR INSERT WITH CHECK (owner_id = auth.uid());
+CREATE POLICY "tenants_update" ON tenants FOR UPDATE USING (owner_id = auth.uid()) WITH CHECK (owner_id = auth.uid());
+CREATE POLICY "tenants_delete" ON tenants FOR DELETE USING (owner_id = auth.uid());
 
--- 4b. SUBSCRIPTIONS — scoped to tenant
+-- 4b. SUBSCRIPTIONS
 ALTER TABLE subscriptions ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "subscriptions_policy" ON subscriptions
-  FOR ALL
-  USING (tenant_id = get_user_tenant_id() OR auth.role() = 'anon')
-  WITH CHECK (tenant_id = get_user_tenant_id());
+CREATE POLICY "subscriptions_select" ON subscriptions FOR SELECT USING (tenant_id = get_user_tenant_id());
+CREATE POLICY "subscriptions_write" ON subscriptions FOR ALL USING (tenant_id = get_user_tenant_id()) WITH CHECK (tenant_id = get_user_tenant_id());
 
--- 4c. STAFF — scoped to tenant
+-- 4c. STAFF (anon can read for public booking + staff login page)
 ALTER TABLE staff ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "staff_policy" ON staff
-  FOR ALL
-  USING (tenant_id = get_user_tenant_id() OR auth.role() = 'anon')
-  WITH CHECK (tenant_id = get_user_tenant_id() OR auth.role() = 'anon');
+CREATE POLICY "staff_select" ON staff FOR SELECT USING (true);
+CREATE POLICY "staff_write" ON staff FOR ALL USING (tenant_id = get_user_tenant_id()) WITH CHECK (tenant_id = get_user_tenant_id());
 
--- 4d. SERVICES — scoped to tenant
+-- 4d. SERVICES (anon can read for public booking page)
 ALTER TABLE services ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "services_policy" ON services
-  FOR ALL
-  USING (tenant_id = get_user_tenant_id() OR auth.role() = 'anon')
-  WITH CHECK (tenant_id = get_user_tenant_id() OR auth.role() = 'anon');
+CREATE POLICY "services_select" ON services FOR SELECT USING (true);
+CREATE POLICY "services_write" ON services FOR ALL USING (tenant_id = get_user_tenant_id()) WITH CHECK (tenant_id = get_user_tenant_id());
 
--- 4e. PRODUCTS — scoped to tenant
+-- 4e. PRODUCTS
 ALTER TABLE products ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "products_policy" ON products
-  FOR ALL
-  USING (tenant_id = get_user_tenant_id() OR auth.role() = 'anon')
-  WITH CHECK (tenant_id = get_user_tenant_id() OR auth.role() = 'anon');
+CREATE POLICY "products_select" ON products FOR SELECT USING (tenant_id = get_user_tenant_id());
+CREATE POLICY "products_write" ON products FOR ALL USING (tenant_id = get_user_tenant_id()) WITH CHECK (tenant_id = get_user_tenant_id());
 
--- 4f. CUSTOMERS — scoped to tenant
+-- 4f. CUSTOMERS
 ALTER TABLE customers ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "customers_policy" ON customers
-  FOR ALL
-  USING (tenant_id = get_user_tenant_id() OR auth.role() = 'anon')
-  WITH CHECK (tenant_id = get_user_tenant_id() OR auth.role() = 'anon');
+CREATE POLICY "customers_select" ON customers FOR SELECT USING (tenant_id = get_user_tenant_id());
+CREATE POLICY "customers_write" ON customers FOR ALL USING (tenant_id = get_user_tenant_id()) WITH CHECK (tenant_id = get_user_tenant_id());
 
--- 4g. SALES — scoped to tenant
+-- 4g. SALES
 ALTER TABLE sales ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "sales_policy" ON sales
-  FOR ALL
-  USING (tenant_id = get_user_tenant_id() OR auth.role() = 'anon')
-  WITH CHECK (tenant_id = get_user_tenant_id() OR auth.role() = 'anon');
+CREATE POLICY "sales_select" ON sales FOR SELECT USING (tenant_id = get_user_tenant_id());
+CREATE POLICY "sales_write" ON sales FOR ALL USING (tenant_id = get_user_tenant_id()) WITH CHECK (tenant_id = get_user_tenant_id());
 
--- 4h. EXPENSES — scoped to tenant
+-- 4h. EXPENSES
 ALTER TABLE expenses ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "expenses_policy" ON expenses
-  FOR ALL
-  USING (tenant_id = get_user_tenant_id() OR auth.role() = 'anon')
-  WITH CHECK (tenant_id = get_user_tenant_id() OR auth.role() = 'anon');
+CREATE POLICY "expenses_select" ON expenses FOR SELECT USING (tenant_id = get_user_tenant_id());
+CREATE POLICY "expenses_write" ON expenses FOR ALL USING (tenant_id = get_user_tenant_id()) WITH CHECK (tenant_id = get_user_tenant_id());
 
--- 4i. SETTINGS — scoped to tenant
+-- 4i. SETTINGS (anon can read for public booking page)
 ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "settings_policy" ON settings
-  FOR ALL
-  USING (tenant_id = get_user_tenant_id() OR auth.role() = 'anon')
-  WITH CHECK (tenant_id = get_user_tenant_id() OR auth.role() = 'anon');
+CREATE POLICY "settings_select" ON settings FOR SELECT USING (true);
+CREATE POLICY "settings_write" ON settings FOR ALL USING (tenant_id = get_user_tenant_id()) WITH CHECK (tenant_id = get_user_tenant_id());
 
--- 4j. ADVANCE PAYMENTS — scoped to tenant
+-- 4j. ADVANCE PAYMENTS
 ALTER TABLE advance_payments ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "advance_payments_policy" ON advance_payments
-  FOR ALL
-  USING (tenant_id = get_user_tenant_id() OR auth.role() = 'anon')
-  WITH CHECK (tenant_id = get_user_tenant_id() OR auth.role() = 'anon');
+CREATE POLICY "advance_payments_select" ON advance_payments FOR SELECT USING (tenant_id = get_user_tenant_id());
+CREATE POLICY "advance_payments_write" ON advance_payments FOR ALL USING (tenant_id = get_user_tenant_id()) WITH CHECK (tenant_id = get_user_tenant_id());
 
--- 4k. SUPPLIERS — scoped to tenant
+-- 4k. SUPPLIERS
 ALTER TABLE suppliers ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "suppliers_policy" ON suppliers
-  FOR ALL
-  USING (tenant_id = get_user_tenant_id() OR auth.role() = 'anon')
-  WITH CHECK (tenant_id = get_user_tenant_id() OR auth.role() = 'anon');
+CREATE POLICY "suppliers_select" ON suppliers FOR SELECT USING (tenant_id = get_user_tenant_id());
+CREATE POLICY "suppliers_write" ON suppliers FOR ALL USING (tenant_id = get_user_tenant_id()) WITH CHECK (tenant_id = get_user_tenant_id());
 
--- 4l. STOCK LOGS — scoped to tenant
+-- 4l. STOCK LOGS
 ALTER TABLE stock_logs ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "stock_logs_policy" ON stock_logs
-  FOR ALL
-  USING (tenant_id = get_user_tenant_id() OR auth.role() = 'anon')
-  WITH CHECK (tenant_id = get_user_tenant_id() OR auth.role() = 'anon');
+CREATE POLICY "stock_logs_select" ON stock_logs FOR SELECT USING (tenant_id = get_user_tenant_id());
+CREATE POLICY "stock_logs_write" ON stock_logs FOR ALL USING (tenant_id = get_user_tenant_id()) WITH CHECK (tenant_id = get_user_tenant_id());
 
--- 4m. APPOINTMENTS — scoped to tenant
+-- 4m. APPOINTMENTS (anon can read for conflict check; anon can INSERT unconfirmed only)
 ALTER TABLE appointments ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "appointments_policy" ON appointments
-  FOR ALL
-  USING (tenant_id = get_user_tenant_id() OR auth.role() = 'anon')
-  WITH CHECK (tenant_id = get_user_tenant_id() OR auth.role() = 'anon');
+CREATE POLICY "appointments_select" ON appointments FOR SELECT USING (true);
+CREATE POLICY "appointments_auth_write" ON appointments FOR ALL USING (tenant_id = get_user_tenant_id()) WITH CHECK (tenant_id = get_user_tenant_id());
+CREATE POLICY "appointments_public_insert" ON appointments FOR INSERT WITH CHECK (status = 'unconfirmed');
 
--- 4n. STAFF AVAILABILITY — scoped to tenant
+-- 4n. STAFF AVAILABILITY (anon can read for public booking page)
 ALTER TABLE staff_availability ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "staff_availability_policy" ON staff_availability
-  FOR ALL
-  USING (tenant_id = get_user_tenant_id() OR auth.role() = 'anon')
-  WITH CHECK (tenant_id = get_user_tenant_id() OR auth.role() = 'anon');
+CREATE POLICY "staff_availability_select" ON staff_availability FOR SELECT USING (true);
+CREATE POLICY "staff_availability_write" ON staff_availability FOR ALL USING (tenant_id = get_user_tenant_id()) WITH CHECK (tenant_id = get_user_tenant_id());
 
 
 -- ==========================================
@@ -398,25 +374,6 @@ WHERE t.table_schema = 'public'
 GROUP BY t.table_name
 ORDER BY t.table_name;
 
--- 2. Enable public read access for specific data (Scoped by tenant_id)
--- WARNING: Ensure RLS is enabled on these tables.
-
--- Allow guests to view services and staff of a tenant using the tenant_id
-CREATE POLICY "Public read services" ON public.services 
-  FOR SELECT USING (true);
-
-CREATE POLICY "Public read staff" ON public.staff 
-  FOR SELECT USING (true);
-
-CREATE POLICY "Public read staff availability" ON public.staff_availability 
-  FOR SELECT USING (true);
-
-CREATE POLICY "Public read settings" ON public.settings 
-  FOR SELECT USING (true);
-
-CREATE POLICY "Public read appointments" ON public.appointments 
-  FOR SELECT USING (true);
-
--- Allow guests to create unconfirmed appointments
-CREATE POLICY "Public create appointments" ON public.appointments 
-  FOR INSERT WITH CHECK (status = 'unconfirmed');
+-- NOTE: Public read/write access is now handled per-table in section 4 above.
+-- The policies cover: staff, services, settings, staff_availability (SELECT USING true)
+-- and appointments (SELECT + INSERT unconfirmed for public booking page).

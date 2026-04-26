@@ -1,49 +1,127 @@
-
 import { GoogleGenAI } from "@google/genai";
 import { Sale, Expense, BusinessType } from "../types";
+import { format, startOfMonth, subMonths } from "date-fns";
 
-// Use Vite's import.meta.env to access GEMINI_API_KEY
 const apiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY || (import.meta as any).env?.API_KEY || '';
 const ai = new GoogleGenAI({ apiKey });
 
-export async function getFinancialInsights(sales: Sale[], expenses: Expense[], businessType?: BusinessType) {
-  // Using gemini-2.0-flash for general business analysis tasks
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function getTopServices(sales: Sale[], topN = 5): string {
+  const tally: Record<string, { revenue: number; count: number }> = {};
+  sales.forEach(sale => {
+    if (sale.isRefunded) return;
+    sale.items
+      .filter(i => i.type === 'service')
+      .forEach(i => {
+        if (!tally[i.name]) tally[i.name] = { revenue: 0, count: 0 };
+        tally[i.name].revenue += i.price * i.quantity;
+        tally[i.name].count += i.quantity;
+      });
+  });
+  return Object.entries(tally)
+    .sort((a, b) => b[1].revenue - a[1].revenue)
+    .slice(0, topN)
+    .map(([name, { revenue, count }]) => `${name} ($${revenue.toFixed(2)}, ${count}x)`)
+    .join(', ') || 'No service data';
+}
+
+function getTopExpenseCategories(expenses: Expense[], topN = 3): string {
+  const tally: Record<string, number> = {};
+  expenses.forEach(e => {
+    tally[e.category] = (tally[e.category] || 0) + e.amount;
+  });
+  return Object.entries(tally)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, topN)
+    .map(([cat, amt]) => `${cat}: $${amt.toFixed(2)}`)
+    .join(', ') || 'No expense data';
+}
+
+function getBusiestDay(sales: Sale[]): string {
+  const dayTally: Record<string, number> = {};
+  sales.forEach(sale => {
+    const day = format(new Date(sale.timestamp), 'EEEE');
+    dayTally[day] = (dayTally[day] || 0) + 1;
+  });
+  const sorted = Object.entries(dayTally).sort((a, b) => b[1] - a[1]);
+  return sorted[0] ? `${sorted[0][0]} (${sorted[0][1]} sales)` : 'Not enough data';
+}
+
+function getMonthlyTrend(sales: Sale[]): string {
+  const now = new Date();
+  const thisMonthStart = startOfMonth(now);
+  const lastMonthStart = startOfMonth(subMonths(now, 1));
+
+  const thisMonth = sales
+    .filter(s => !s.isRefunded && new Date(s.timestamp) >= thisMonthStart)
+    .reduce((acc, s) => acc + s.total, 0);
+  const lastMonth = sales
+    .filter(s => {
+      const d = new Date(s.timestamp);
+      return !s.isRefunded && d >= lastMonthStart && d < thisMonthStart;
+    })
+    .reduce((acc, s) => acc + s.total, 0);
+
+  const change = lastMonth > 0
+    ? (((thisMonth - lastMonth) / lastMonth) * 100).toFixed(1)
+    : 'N/A';
+  return `This month: $${thisMonth.toFixed(2)} | Last month: $${lastMonth.toFixed(2)} | Change: ${change}%`;
+}
+
+// ── Main Export ───────────────────────────────────────────────────────────────
+
+export async function getFinancialInsights(
+  sales: Sale[],
+  expenses: Expense[],
+  businessType?: BusinessType
+): Promise<string> {
   const model = 'gemini-2.0-flash';
-  
-  const totalRevenue = sales.reduce((acc, s) => acc + s.total, 0);
+
+  const activeSales = sales.filter(s => !s.isRefunded);
+  const totalRevenue = activeSales.reduce((acc, s) => acc + s.total, 0);
   const totalExpenses = expenses.reduce((acc, e) => acc + e.amount, 0);
   const profit = totalRevenue - totalExpenses;
+  const avgSaleValue = activeSales.length > 0 ? (totalRevenue / activeSales.length) : 0;
 
-  const businessLabel = businessType === 'barbershop' 
-    ? 'Barber Shop' 
-    : businessType === 'beauty_salon' 
-    ? 'Beauty Salon' 
+  const businessLabel =
+    businessType === 'barbershop' ? 'Barber Shop'
+    : businessType === 'beauty_salon' ? 'Beauty Salon'
     : 'Barber Shop & Beauty Salon';
-  
+
   const prompt = `
-    As a business consultant for a ${businessLabel}, analyze the following financial data:
-    Total Revenue: $${totalRevenue}
-    Total Expenses: $${totalExpenses}
-    Net Profit: $${profit}
-    
-    Number of Sales: ${sales.length}
-    Recent Expenses: ${expenses.slice(0, 5).map(e => `${e.category}: $${e.amount}`).join(', ')}
-    
-    Please provide:
-    1. A short summary of the financial health.
-    2. Three actionable tips to increase revenue or reduce costs.
-    3. An observation on sales volume vs expenses.
-    
-    Return the response in a clean, professional format.
-  `;
+You are a business consultant specializing in grooming and beauty salons. Analyze the following data for a ${businessLabel} and give actionable, specific advice.
+
+--- FINANCIAL SUMMARY ---
+Total Revenue: $${totalRevenue.toFixed(2)}
+Total Expenses: $${totalExpenses.toFixed(2)}
+Net Profit: $${profit.toFixed(2)}
+Profit Margin: ${totalRevenue > 0 ? ((profit / totalRevenue) * 100).toFixed(1) : 0}%
+
+--- SALES ANALYSIS ---
+Total Transactions: ${activeSales.length}
+Average Sale Value: $${avgSaleValue.toFixed(2)}
+Busiest Day: ${getBusiestDay(activeSales)}
+Monthly Trend: ${getMonthlyTrend(sales)}
+
+--- TOP SERVICES BY REVENUE ---
+${getTopServices(activeSales)}
+
+--- TOP EXPENSE CATEGORIES ---
+${getTopExpenseCategories(expenses)}
+
+--- INSTRUCTIONS ---
+Please provide in a clean, professional format:
+1. **Financial Health Summary** (2-3 sentences, be specific with the numbers)
+2. **3 Actionable Revenue Tips** (specific to a grooming business at this revenue level)
+3. **1 Cost Reduction Opportunity** (based on the expense data above)
+4. **Key Insight** (one surprising or important observation from the data)
+
+Keep the total response under 350 words. Use markdown formatting with bold headers.
+  `.trim();
 
   try {
-    // Generate content using the recommended structure
-    const response = await ai.models.generateContent({
-      model: model,
-      contents: prompt,
-    });
-    // Accessing .text as a property, not a method
+    const response = await ai.models.generateContent({ model, contents: prompt });
     return response.text || "No insights could be generated.";
   } catch (error) {
     console.error("Gemini Insight Error:", error);

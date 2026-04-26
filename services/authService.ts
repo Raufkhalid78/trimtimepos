@@ -1,6 +1,7 @@
 import { supabase } from '../supabaseClient';
 import { BusinessType, Tenant, Subscription, Staff, PLAN_PRICES } from '../types';
 import { hashPassword } from './passwordService';
+import { logger } from './logger';
 
 // ==========================================
 // AUTH SERVICE — Registration, Login, Tenant Management
@@ -106,7 +107,7 @@ export async function registerNewBusiness(data: SignUpData): Promise<{ success: 
         email: data.email,
       });
 
-    if (staffError) console.error('Staff seed error:', staffError);
+    if (staffError) logger.error('Staff seed error:', staffError);
 
     // 5. Seed additional staff from wizard
     if (data.staffMembers.length > 0) {
@@ -124,7 +125,7 @@ export async function registerNewBusiness(data: SignUpData): Promise<{ success: 
       );
 
       const { error: extraStaffError } = await supabase.from('staff').insert(staffRows);
-      if (extraStaffError) console.error('Extra staff seed error:', extraStaffError);
+      if (extraStaffError) logger.error('Extra staff seed error:', extraStaffError);
     }
 
     // 6. Seed selected services
@@ -139,7 +140,7 @@ export async function registerNewBusiness(data: SignUpData): Promise<{ success: 
       }));
 
       const { error: svcError } = await supabase.from('services').insert(serviceRows);
-      if (svcError) console.error('Service seed error:', svcError);
+      if (svcError) logger.error('Service seed error:', svcError);
     }
 
     // 7. Seed default settings
@@ -169,12 +170,12 @@ export async function registerNewBusiness(data: SignUpData): Promise<{ success: 
         }
       });
 
-    if (settError) console.error('Settings seed error:', settError);
+    if (settError) logger.error('Settings seed error:', settError);
 
     return { success: true, tenantId, slug };
 
   } catch (err: any) {
-    console.error('Registration Error:', err);
+    logger.error('Registration Error:', err);
     return { success: false, error: err.message || 'Registration failed. Please try again.' };
   }
 }
@@ -294,7 +295,8 @@ export async function getOwnerStaff(tenantId: string): Promise<Staff | null> {
 
   const { data, error } = await supabase
     .from('staff')
-    .select('*')
+    // BUG-03 FIX: never select the password hash — it must not reach the client
+    .select('id, name, role, commission, username, email, tenant_id')
     .eq('tenant_id', tenantId)
     .eq('role', 'admin')
     .maybeSingle();
@@ -304,10 +306,10 @@ export async function getOwnerStaff(tenantId: string): Promise<Staff | null> {
   return {
     id: data.id,
     name: data.name,
-    role: data.role as any,
+    role: data.role as 'admin' | 'employee',
     commission: typeof data.commission === 'string' ? parseFloat(data.commission) : (data.commission || 0),
     username: data.username,
-    password: data.password,
+    // password intentionally omitted — never send hash to client
     email: data.email,
   };
 }
