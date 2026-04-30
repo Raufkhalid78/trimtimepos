@@ -1,8 +1,8 @@
 import React, { useState, useMemo, Suspense, lazy } from 'react';
-import { Sale, Expense, Product, Language, View, Staff } from '../types';
+import { Sale, Expense, Product, Language, View, Staff, Appointment } from '../types';
 import { TRANSLATIONS } from '../constants';
 import { motion } from 'framer-motion';
-import { format, subDays, addDays, isWithinInterval, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, parseISO, getDaysInMonth, isSameMonth, isSameYear, isValid } from 'date-fns';
+import { format, subDays, addDays, isWithinInterval, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, parseISO, getDaysInMonth, isSameMonth, isSameYear, isValid, isSameDay } from 'date-fns';
 
 const RevenueChart = lazy(() => import('./Charts').then(m => ({ default: m.RevenueChart })));
 const ExpensePieChart = lazy(() => import('./Charts').then(m => ({ default: m.ExpensePieChart })));
@@ -13,6 +13,8 @@ interface DashboardProps {
   expenses: Expense[];
   products: Product[];
   staff: Staff[];
+  appointments: Appointment[];
+  currentUser: Staff;
   currency: string;
   language: Language;
   onViewChange: (view: View) => void;
@@ -20,7 +22,7 @@ interface DashboardProps {
 
 type DateRange = 'today' | 'week' | 'month' | 'all' | 'custom';
 
-const Dashboard: React.FC<DashboardProps> = ({ sales, expenses, products, staff, currency, language, onViewChange }) => {
+const Dashboard: React.FC<DashboardProps> = ({ sales, expenses, products, staff, appointments, currentUser, currency, language, onViewChange }) => {
   const t = TRANSLATIONS[language];
   const [dateRange, setDateRange] = useState<DateRange>('month');
   const [customRange, setCustomRange] = useState({ start: format(subDays(new Date(), 7), 'yyyy-MM-dd'), end: format(new Date(), 'yyyy-MM-dd') });
@@ -178,45 +180,68 @@ const Dashboard: React.FC<DashboardProps> = ({ sales, expenses, products, staff,
 
   const COLORS = ['#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#f43f5e'];
 
+  const greeting = useMemo(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good Morning';
+    if (hour < 18) return 'Good Afternoon';
+    return 'Good Evening';
+  }, []);
+
+  const todayAppointments = useMemo(() => {
+    const today = new Date();
+    return appointments
+      .filter(a => isSameDay(parseISO(a.startTime), today))
+      .sort((a, b) => parseISO(a.startTime).getTime() - parseISO(b.startTime).getTime())
+      .slice(0, 5);
+  }, [appointments]);
+
+  const recentSales = useMemo(() => {
+    return [...sales]
+      .sort((a, b) => parseISO(b.timestamp).getTime() - parseISO(a.timestamp).getTime())
+      .slice(0, 5);
+  }, [sales]);
+
   return (
     <div className="space-y-6 pb-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
             <span className="w-2 h-8 bg-amber-500 rounded-full"></span>
-            {t.dashboard}
-            <span className="text-[10px] bg-emerald-500/10 text-emerald-500 px-2 py-1 rounded-md uppercase font-black tracking-tighter">Verified Filter: {format(new Date(), 'yyyy-MM')}</span>
+            {greeting}, {currentUser.name}!
           </h2>
           <p className="text-slate-500 dark:text-slate-400 font-medium ml-4 uppercase tracking-widest text-[10px] font-black">{t.commandCenter}</p>
         </div>
 
         <div className="flex flex-col items-end gap-2">
-          <div className="flex bg-slate-100 p-1 rounded-xl self-start">
+          <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl self-start">
             {(['today', 'week', 'month', 'all', 'custom'] as const).map((range) => (
               <button
                 key={range}
                 onClick={() => setDateRange(range)}
-                className={`px-4 py-2 rounded-lg text-[10px] md:text-xs font-black uppercase tracking-wider transition-all ${dateRange === range ? 'bg-white text-amber-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
-                  }`}
+                className={`px-4 py-2 rounded-lg text-[10px] md:text-xs font-black uppercase tracking-wider transition-all ${
+                  dateRange === range
+                    ? 'bg-white dark:bg-slate-700 text-amber-600 dark:text-amber-400 shadow-sm'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                }`}
               >
                 {t[range as keyof typeof t] || range}
               </button>
             ))}
           </div>
           {dateRange === 'custom' && (
-            <div className="flex items-center gap-2 bg-white p-2 rounded-xl border border-slate-100 shadow-sm animate-in fade-in slide-in-from-top-2">
+            <div className="flex items-center gap-2 bg-white dark:bg-slate-800 p-2 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm">
               <input
                 type="date"
                 value={customRange.start}
                 onChange={(e) => setCustomRange(prev => ({ ...prev, start: e.target.value }))}
-                className="text-[10px] font-bold text-slate-600 outline-none"
+                className="text-[10px] font-bold text-slate-600 dark:text-slate-300 outline-none bg-transparent"
               />
-              <span className="text-slate-300">→</span>
+              <span className="text-slate-300 dark:text-slate-600">→</span>
               <input
                 type="date"
                 value={customRange.end}
                 onChange={(e) => setCustomRange(prev => ({ ...prev, end: e.target.value }))}
-                className="text-[10px] font-bold text-slate-600 outline-none"
+                className="text-[10px] font-bold text-slate-600 dark:text-slate-300 outline-none bg-transparent"
               />
             </div>
           )}
@@ -240,7 +265,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sales, expenses, products, staff,
             transition={{ delay: i * 0.1 }}
             className="bg-white dark:bg-slate-900 p-5 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col gap-3"
           >
-            <div className={`w-10 h-10 ${stat.color} rounded-2xl flex items-center justify-center text-white shadow-lg shadow-current/10`}>
+            <div className={`w-10 h-10 ${stat.color} rounded-2xl flex items-center justify-center text-white shadow-lg`}>
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={stat.icon} /></svg>
             </div>
             <div>
@@ -262,10 +287,23 @@ const Dashboard: React.FC<DashboardProps> = ({ sales, expenses, products, staff,
               {dateRange === 'today' ? t.today : dateRange === 'week' ? t.last7Days : dateRange === 'month' ? t.month : dateRange === 'custom' ? t.custom : t.all}
             </span>
           </div>
-          <div className="h-[300px] w-full">
-            <Suspense fallback={<div className="h-full w-full bg-slate-50 animate-pulse rounded-2xl" />}>
-              <RevenueChart data={chartData} />
-            </Suspense>
+          <div className="h-[300px] w-full relative">
+            {filteredSales.length > 0 ? (
+              <Suspense fallback={<div className="h-full w-full bg-slate-50 animate-pulse rounded-2xl" />}>
+                <RevenueChart data={chartData} />
+              </Suspense>
+            ) : (
+              <div className="h-full flex flex-col items-center justify-center text-slate-400">
+                <svg className="w-12 h-12 mb-4 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                <p className="text-xs font-black uppercase tracking-widest mb-4">{t.noRecords}</p>
+                <button 
+                  onClick={() => onViewChange(View.POS)}
+                  className="px-6 py-2 bg-amber-500 text-slate-950 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-amber-400 transition-all shadow-lg shadow-amber-500/20 active:scale-95"
+                >
+                  {t.addSale || 'Add Sale'}
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -279,8 +317,14 @@ const Dashboard: React.FC<DashboardProps> = ({ sales, expenses, products, staff,
               </Suspense>
             ) : (
               <div className="h-full flex flex-col items-center justify-center text-slate-400">
-                <svg className="w-12 h-12 mb-2 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                <p className="text-xs font-bold uppercase tracking-widest">{t.noRecords}</p>
+                <svg className="w-12 h-12 mb-4 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                <p className="text-xs font-black uppercase tracking-widest mb-4">{t.noRecords}</p>
+                <button 
+                  onClick={() => onViewChange(View.FINANCE)}
+                  className="px-6 py-2 bg-slate-900 dark:bg-slate-800 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-lg active:scale-95"
+                >
+                  {t.addExpense || 'Add Expense'}
+                </button>
               </div>
             )}
           </div>
@@ -288,52 +332,62 @@ const Dashboard: React.FC<DashboardProps> = ({ sales, expenses, products, staff,
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Top Performers */}
+        {/* Today's Appointments */}
         <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800">
-          <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight mb-6">{t.topPerformers}</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div>
-              <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">{t.topServices}</p>
-              <div className="h-[250px] w-full">
-                {topPerformers.topServices.length > 0 ? (
-                  <Suspense fallback={<div className="h-full w-full bg-slate-50 animate-pulse rounded-2xl" />}>
-                    <PerformanceBarChart data={topPerformers.topServices} color="#f59e0b" layout="vertical" />
-                  </Suspense>
-                ) : (
-                  <p className="text-sm text-slate-400 italic text-center py-12">{t.noRecords}</p>
-                )}
-              </div>
-            </div>
-
-            <div>
-              <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">{t.topProducts}</p>
-              <div className="h-[250px] w-full">
-                {topPerformers.topProducts.length > 0 ? (
-                  <Suspense fallback={<div className="h-full w-full bg-slate-50 animate-pulse rounded-2xl" />}>
-                    <PerformanceBarChart data={topPerformers.topProducts} color="#3b82f6" layout="vertical" />
-                  </Suspense>
-                ) : (
-                  <p className="text-sm text-slate-400 italic text-center py-12">{t.noRecords}</p>
-                )}
-              </div>
-            </div>
-          </div>
+           <div className="flex items-center justify-between mb-6">
+             <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">{t.appointments || 'Today\'s Schedule'}</h3>
+             <button onClick={() => onViewChange(View.APPOINTMENTS)} className="text-xs font-bold text-amber-500 hover:text-amber-600">View All</button>
+           </div>
+           <div className="space-y-3">
+             {todayAppointments.length > 0 ? todayAppointments.map(apt => (
+               <div key={apt.id} className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-transparent hover:border-slate-100 dark:hover:border-slate-700 transition-all">
+                 <div className="flex items-center gap-3">
+                   <div className="w-10 h-10 bg-white dark:bg-slate-800 rounded-xl flex flex-col items-center justify-center shadow-sm">
+                     <span className="text-[8px] font-black text-slate-400 uppercase leading-none">{format(parseISO(apt.startTime), 'MMM')}</span>
+                     <span className="text-sm font-black text-slate-900 dark:text-white leading-none mt-0.5">{format(parseISO(apt.startTime), 'dd')}</span>
+                   </div>
+                   <div>
+                     <p className="text-xs font-bold text-slate-900 dark:text-white">{apt.customerName || 'Walk-in'}</p>
+                     <p className="text-[10px] text-slate-500">{format(parseISO(apt.startTime), 'hh:mm a')}</p>
+                   </div>
+                 </div>
+                 <span className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${
+                   apt.status === 'completed' ? 'bg-emerald-500/10 text-emerald-500' : 
+                   apt.status === 'confirmed' ? 'bg-blue-500/10 text-blue-500' : 'bg-amber-500/10 text-amber-500'
+                 }`}>
+                   {apt.status}
+                 </span>
+               </div>
+             )) : (
+               <div className="py-12 text-center text-slate-400 italic text-xs">No appointments scheduled for today.</div>
+             )}
+           </div>
         </div>
 
-        {/* Staff Leaderboard */}
+        {/* Recent Sales */}
         <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800">
-          <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight mb-6">{t.staffLeaderboard}</h3>
-          <div className="h-[300px] w-full">
-            {staffLeaderboard.length > 0 ? (
-              <Suspense fallback={<div className="h-full w-full bg-slate-50 animate-pulse rounded-2xl" />}>
-                <PerformanceBarChart data={staffLeaderboard} color="#10b981" layout="horizontal" />
-              </Suspense>
-            ) : (
-              <div className="h-full flex flex-col items-center justify-center text-slate-400">
-                <p className="text-sm font-bold uppercase tracking-widest">{t.noRecords}</p>
-              </div>
-            )}
-          </div>
+          <div className="flex items-center justify-between mb-6">
+             <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">{t.recentSales || 'Recent Sales'}</h3>
+             <button onClick={() => onViewChange(View.POS)} className="text-xs font-bold text-amber-500 hover:text-amber-600">New Sale</button>
+           </div>
+           <div className="space-y-3">
+             {recentSales.length > 0 ? recentSales.map(sale => (
+               <div key={sale.id} className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-transparent hover:border-slate-100 dark:hover:border-slate-700 transition-all">
+                 <div className="flex items-center gap-3">
+                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white font-black text-xs ${sale.paymentMethod === 'cash' ? 'bg-emerald-500 shadow-emerald-500/20' : 'bg-blue-500 shadow-blue-500/20'} shadow-lg`}>
+                     {sale.paymentMethod.charAt(0).toUpperCase()}
+                   </div>
+                   <div>
+                     <p className="text-xs font-bold text-slate-900 dark:text-white">{sale.customerName || 'Walk-in Client'}</p>
+                     <p className="text-[10px] text-slate-500">{format(parseISO(sale.timestamp), 'hh:mm a')} • {sale.staffName}</p>
+                   </div>
+                 </div>
+                 <p className="text-sm font-black text-slate-900 dark:text-white">{currency}{sale.total.toFixed(2)}</p>
+               </div>
+             )) : (
+               <div className="py-12 text-center text-slate-400 italic text-xs">No sales recorded yet.</div>
+             )}
+           </div>
         </div>
       </div>
 

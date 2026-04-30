@@ -46,7 +46,7 @@ const POS: React.FC<POSProps> = ({ services, products, staff, customers, sales, 
     }
   });
   const [lastSale, setLastSale] = useState<Sale | null>(null);
-  const [autoWhatsapp, setAutoWhatsapp] = useState(false);
+  const [autoWhatsapp, setAutoWhatsapp] = useState(() => localStorage.getItem('tt_autoWhatsapp') === 'true');
   
   const [scanningFeedback, setScanningFeedback] = useState<string | null>(null);
   const [feedbackType, setFeedbackType] = useState<'success' | 'error'>('success');
@@ -56,7 +56,13 @@ const POS: React.FC<POSProps> = ({ services, products, staff, customers, sales, 
   const [isSaving, setIsSaving] = useState(false);
   const [newCustomerData, setNewCustomerData] = useState({ name: '', phone: '', email: '' });
   const [isScanning, setIsScanning] = useState(false);
+  const [showHeldSales, setShowHeldSales] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+
+  // Persistence for Auto WhatsApp
+  useEffect(() => {
+    localStorage.setItem('tt_autoWhatsapp', autoWhatsapp.toString());
+  }, [autoWhatsapp]);
   const [showErrorAlert, setShowErrorAlert] = useState<string | null>(null);
   const [showSuccessAlert, setShowSuccessAlert] = useState<string | null>(null);
   
@@ -639,10 +645,20 @@ const POS: React.FC<POSProps> = ({ services, products, staff, customers, sales, 
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-slate-950/80 backdrop-blur-xl z-[150] flex items-center justify-center p-6 no-print">
             <motion.div initial={{ scale: 0.8, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 md:p-10 max-w-md w-full shadow-2xl text-center space-y-8">
               <div className="w-16 h-16 md:w-20 md:h-20 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-500 rounded-full flex items-center justify-center text-3xl md:text-4xl mx-auto shadow-inner">✓</div>
-              <div className="space-y-2">
-                <h3 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white tracking-tight">{t.saleSuccess}</h3>
-                <p className="text-slate-400 dark:text-slate-500 font-medium">{t.orderCompleted}</p>
-              </div>
+               <div className="space-y-2">
+                 <h3 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white tracking-tight">{t.saleSuccess}</h3>
+                 <p className="text-slate-400 dark:text-slate-500 font-medium">{t.orderCompleted}</p>
+                 {lastSale.paymentMethod === 'split' && lastSale.splitDetails && (
+                   <div className="mt-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800/50">
+                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Split Breakdown</p>
+                     <div className="flex justify-between items-center text-xs font-bold text-slate-600 dark:text-slate-300">
+                       <span>Cash: {settings.currency}{lastSale.splitDetails.cash.toFixed(2)}</span>
+                       <span className="w-px h-3 bg-slate-200 dark:bg-slate-700 mx-2" />
+                       <span>Card: {settings.currency}{lastSale.splitDetails.card.toFixed(2)}</span>
+                     </div>
+                   </div>
+                 )}
+               </div>
               <div className="flex flex-col gap-3">
                 {lastCustomer && lastCustomer.phone && (
                   <button onClick={() => sendWhatsappReceipt(lastSale, lastCustomer)} className="w-full bg-emerald-500 text-white py-4 rounded-2xl font-black flex items-center justify-center gap-3 hover:bg-emerald-600 transition-all shadow-xl shadow-emerald-500/20 active:scale-95 text-sm md:text-base">
@@ -844,25 +860,44 @@ const POS: React.FC<POSProps> = ({ services, products, staff, customers, sales, 
                 <h3 className="text-lg md:text-xl font-black text-slate-800 dark:text-white flex items-center gap-2">{t.cart}</h3>
                 <div className="flex gap-2">
                    {/* Held Bills Toggle */}
-                   {heldSales.length > 0 && (
-                      <div className="relative group">
-                          <button className="bg-amber-100 text-amber-600 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider flex items-center gap-1">
+                    {heldSales.length > 0 && (
+                      <div className="relative">
+                          <button 
+                            onClick={() => setShowHeldSales(!showHeldSales)}
+                            className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider flex items-center gap-1 transition-colors ${showHeldSales ? 'bg-amber-500 text-slate-950' : 'bg-amber-100 text-amber-600'}`}
+                          >
                               <span>{t.held} ({heldSales.length})</span>
+                              <svg className={`w-3 h-3 transition-transform ${showHeldSales ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7"/></svg>
                           </button>
-                          <div className="absolute top-full right-0 mt-2 w-64 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 p-2 hidden group-hover:block z-50">
-                              <p className="px-3 py-2 text-[10px] text-slate-400 font-bold uppercase tracking-widest">{t.selectToResume}</p>
-                              <div className="max-h-48 overflow-y-auto space-y-1">
-                                  {heldSales.map(h => (
-                                      <div key={h.id} className="flex items-center gap-2 p-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl cursor-pointer">
-                                          <div onClick={() => retrieveSale(h)} className="flex-1">
-                                              <p className="font-bold text-xs dark:text-white">{new Date(h.timestamp).toLocaleTimeString()}</p>
-                                              <p className="text-[10px] text-slate-500">{h.cart.length} items</p>
-                                          </div>
-                                          <button onClick={() => deleteHeldSale(h.id)} className="p-1.5 text-slate-300 hover:text-rose-500"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
-                                      </div>
-                                  ))}
-                              </div>
-                          </div>
+                          
+                          <AnimatePresence>
+                            {showHeldSales && (
+                              <>
+                                <div className="fixed inset-0 z-40" onClick={() => setShowHeldSales(false)} />
+                                <motion.div 
+                                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                  className="absolute top-full right-0 mt-2 w-64 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-800 p-2 z-50 overflow-hidden"
+                                >
+                                    <p className="px-3 py-2 text-[10px] text-slate-400 font-bold uppercase tracking-widest">{t.selectToResume}</p>
+                                    <div className="max-h-48 overflow-y-auto space-y-1">
+                                        {heldSales.map(h => (
+                                            <div key={h.id} className="flex items-center gap-2 p-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl cursor-pointer group/item">
+                                                <div onClick={() => { retrieveSale(h); setShowHeldSales(false); }} className="flex-1">
+                                                    <p className="font-bold text-xs dark:text-white">{new Date(h.timestamp).toLocaleTimeString()}</p>
+                                                    <p className="text-[10px] text-slate-500">{h.cart.length} items</p>
+                                                </div>
+                                                <button onClick={() => { setShowDeleteConfirm(h.id); setShowHeldSales(false); }} className="p-1.5 text-slate-300 hover:text-rose-500 transition-colors">
+                                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </motion.div>
+                              </>
+                            )}
+                          </AnimatePresence>
                       </div>
                    )}
                    <button onClick={() => setShowMobileCart(false)} className="lg:hidden p-2 text-slate-400 bg-slate-100 dark:bg-slate-800 rounded-full"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"/></svg></button>
@@ -997,6 +1032,13 @@ const POS: React.FC<POSProps> = ({ services, products, staff, customers, sales, 
                                 </div>
                             </div>
                         </div>
+                        <div className="flex justify-between text-[10px] font-bold pt-1">
+                          <span className="text-slate-400">Remaining</span>
+                          <span className={Math.abs(splitDetails.cash + splitDetails.card - totals.total) < 0.01 ? 'text-emerald-500' : 'text-rose-400'}>
+                            {settings.currency}{Math.abs(totals.total - splitDetails.cash - splitDetails.card).toFixed(2)}
+                            {Math.abs(splitDetails.cash + splitDetails.card - totals.total) < 0.01 && ' ✓'}
+                          </span>
+                        </div>
                         <button onClick={() => setPaymentMode('normal')} className="w-full text-[9px] font-bold text-slate-400 uppercase hover:text-slate-600">{t.cancelSplit}</button>
                     </div>
                 )}
@@ -1019,6 +1061,30 @@ const POS: React.FC<POSProps> = ({ services, products, staff, customers, sales, 
                    </div>
                    <button onClick={handleHoldSale} className="bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95">{t.holdBill}</button>
                 </div>
+
+                {/* Auto WhatsApp Toggle */}
+                <div className={`p-4 rounded-2xl border transition-all flex items-center justify-between ${autoWhatsapp ? 'bg-emerald-50/50 border-emerald-100 dark:bg-emerald-500/10 dark:border-emerald-500/20' : 'bg-slate-50 dark:bg-slate-800/50 border-transparent'}`}>
+                    <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${autoWhatsapp ? 'bg-emerald-500 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-400'}`}>
+                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.246 2.248 3.484 5.232 3.484 8.412-.003 6.557-5.338 11.892-11.893 11.892-1.997-.001-3.951-.5-5.688-1.448l-6.309 1.656zm6.224-3.52c1.54.914 3.453 1.403 5.385 1.404h.005c5.632 0 10.211-4.579 10.214-10.211 0-2.729-1.063-5.295-2.993-7.225s-4.496-2.992-7.225-2.993c-5.633 0-10.213 4.58-10.214 10.214 0 2.022.529 3.996 1.531 5.74l-.991 3.618 3.707-.972zm11.233-5.62c-.301-.151-1.782-.879-2.057-.979-.275-.1-.475-.151-.675.151s-.777.979-.952 1.179-.35.225-.65.076c-.301-.151-1.268-.467-2.417-1.492-.892-.795-1.494-1.777-1.669-2.078-.175-.301-.019-.463.131-.613.135-.134.301-.351.451-.526s.201-.3.301-.5c.101-.201.05-.376-.025-.526s-.675-1.629-.925-2.229c-.244-.583-.491-.504-.675-.513-.175-.008-.376-.01-.576-.01s-.526.076-.801.376c-.275.301-1.051 1.028-1.051 2.508s1.076 2.908 1.226 3.109c.151.201 2.118 3.235 5.132 4.537.717.309 1.277.494 1.714.633.72.228 1.375.196 1.892.119.577-.085 1.782-.728 2.032-1.429s.25-.151.25-.376-.101-.351-.401-.502z"/></svg>
+                        </div>
+                        <div>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">{t.autoWhatsapp || 'Auto WhatsApp'}</p>
+                            <p className={`text-[10px] font-bold ${autoWhatsapp ? 'text-emerald-500' : 'text-slate-500 opacity-50'}`}>{autoWhatsapp ? 'Enabled' : 'Disabled'}</p>
+                        </div>
+                    </div>
+                    <button 
+                        onClick={() => setAutoWhatsapp(!autoWhatsapp)}
+                        className={`w-10 h-5 rounded-full relative transition-all ${autoWhatsapp ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'}`}
+                    >
+                        <motion.div 
+                            animate={{ x: autoWhatsapp ? 20 : 2 }}
+                            initial={false}
+                            className="absolute top-1 w-3 h-3 bg-white rounded-full shadow-sm"
+                        />
+                    </button>
+                </div>
+
                 <div className="grid grid-cols-3 gap-2 pb-4">
                    {paymentMode === 'normal' ? (
                        <>
@@ -1038,7 +1104,7 @@ const POS: React.FC<POSProps> = ({ services, products, staff, customers, sales, 
                         </button>
                         <button 
                             disabled={isSaving}
-                            onClick={() => setPaymentMode('split')} 
+                            onClick={() => { setPaymentMode('split'); setSplitDetails({ cash: totals.total, card: 0 }); }} 
                             className="bg-amber-500 text-slate-950 py-4 md:py-5 rounded-2xl font-black text-[10px] md:text-xs uppercase tracking-widest hover:bg-amber-400 transition-all shadow-xl active:scale-95 disabled:opacity-50"
                         >
                             {t.splitPayment || 'Split'}

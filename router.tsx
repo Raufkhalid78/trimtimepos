@@ -11,6 +11,7 @@ const Inventory = lazy(() => import('@/components/Inventory'));
 const StaffManagement = lazy(() => import('@/components/StaffManagement'));
 const Settings = lazy(() => import('@/components/Settings'));
 const Appointments = lazy(() => import('@/components/Appointments'));
+const EmployeeDashboard = lazy(() => import('@/components/EmployeeDashboard'));
 const PublicLayout = lazy(() => import('@/components/PublicLayout'));
 const BookingPage = lazy(() => import('@/components/BookingPage'));
 const ResetPassword = lazy(() => import('@/components/ResetPassword'));
@@ -29,10 +30,40 @@ import { useData } from './contexts/DataContext';
 import { useAuth } from './contexts/AuthContext';
 
 function DashboardWithData() {
-  const { sales, expenses, products, staff, settings } = useData();
-  const { sessionLanguage } = useAuth();
+  const { sales, expenses, products, staff, appointments, settings } = useData();
+  const { currentUser, sessionLanguage } = useAuth();
   const navigate = useNavigate();
-  return <Dashboard sales={sales} expenses={expenses} products={products} staff={staff} currency={settings.currency} language={sessionLanguage} onViewChange={(v) => navigate(`/${v.toLowerCase()}`)} />;
+  
+  if (currentUser?.role === 'employee') {
+    return (
+      <Suspense fallback={<Loading />}>
+        <EmployeeDashboard 
+          sales={sales} 
+          appointments={appointments} 
+          currentUser={currentUser} 
+          currency={settings.currency} 
+          language={sessionLanguage} 
+          onViewChange={(v) => navigate(`/${v.toLowerCase()}`)} 
+        />
+      </Suspense>
+    );
+  }
+
+  return (
+    <Suspense fallback={<Loading />}>
+      <Dashboard 
+        sales={sales} 
+        expenses={expenses} 
+        products={products} 
+        staff={staff} 
+        appointments={appointments}
+        currentUser={currentUser!}
+        currency={settings.currency} 
+        language={sessionLanguage} 
+        onViewChange={(v) => navigate(`/${v.toLowerCase()}`)} 
+      />
+    </Suspense>
+  );
 }
 
 function POSWithData() {

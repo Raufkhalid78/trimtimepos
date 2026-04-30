@@ -19,6 +19,13 @@ const Sidebar: React.FC<SidebarProps> = ({ shopName, userRole, isOpen, onClose, 
   const { sessionLanguage, setSessionLanguage, isDarkMode, setIsDarkMode } = useAuth();
   const t = TRANSLATIONS[sessionLanguage];
   const navigate = useNavigate();
+  const [isMobile, setIsMobile] = React.useState(window.innerWidth < 768);
+
+  React.useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const allItems = [
     { id: 'dashboard', label: t.dashboard, path: '/dashboard', icon: (
@@ -58,7 +65,7 @@ const Sidebar: React.FC<SidebarProps> = ({ shopName, userRole, isOpen, onClose, 
         )}
       </AnimatePresence>
 
-      <motion.div initial={{ x: -280 }} animate={{ x: isOpen || window.innerWidth >= 768 ? 0 : -280 }}
+      <motion.div initial={{ x: -280 }} animate={{ x: isOpen || !isMobile ? 0 : -280 }}
         transition={{ type: "spring", damping: 30, stiffness: 300 }}
         className="w-64 bg-slate-900 h-screen fixed left-0 top-0 flex flex-col text-white no-print shadow-2xl z-[110]"
       >
@@ -82,7 +89,7 @@ const Sidebar: React.FC<SidebarProps> = ({ shopName, userRole, isOpen, onClose, 
             <NavLink
               key={item.id}
               to={item.path}
-              onClick={() => window.innerWidth < 768 && onClose()}
+              onClick={() => isMobile && onClose()}
               className={({ isActive }) => `
                 w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all
                 ${isActive ? 'bg-amber-500 text-slate-950 font-bold shadow-lg shadow-amber-500/10' : 'hover:bg-slate-800/50 text-slate-400 font-medium'}

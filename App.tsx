@@ -2,6 +2,7 @@ import React, { useState, useEffect, Component, ReactNode, ErrorInfo, Suspense, 
 import Sidebar from '@/components/Sidebar';
 import Login from '@/components/Login';
 import InstallBanner from '@/components/InstallBanner';
+import LogoutScreen from '@/components/LogoutScreen';
 const LandingPage = lazy(() => import('@/components/LandingPage'));
 const SignUp = lazy(() => import('@/components/SignUp'));
 const SubscriptionBanner = lazy(() => import('@/components/SubscriptionBanner'));
@@ -53,20 +54,20 @@ const App: React.FC = () => {
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isPricingOpen, setIsPricingOpen] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [showLogoutScreen, setShowLogoutScreen] = useState(false);
+  const [logoutUserName, setLogoutUserName] = useState('');
   
   const location = useLocation();
   const navigate = useNavigate();
   const t = TRANSLATIONS[sessionLanguage];
 
-  const handleFullSignOut = async () => { 
+  const handleFullSignOut = async () => {
+    setLogoutUserName(currentUser?.name || '');
+    setShowLogoutConfirm(false);
     localStorage.removeItem('trimtime_session');
-    await signOut(); 
-    navigate('/'); 
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('trimtime_session');
-    window.location.reload();
+    await signOut();
+    setShowLogoutScreen(true);
   };
 
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -85,25 +86,28 @@ const App: React.FC = () => {
     }
   }, [currentUser]);
 
-  if (authLoading) return <div className="h-screen w-full flex items-center justify-center bg-slate-950"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-amber-500 mx-auto mb-4"></div></div>;
+  const PageLoader = () => <div className="h-screen w-full flex items-center justify-center bg-[#080c14]"><div className="w-12 h-12 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" /></div>;
 
-  if (saasView === 'landing') return <Suspense fallback={null}><LandingPage onGoToSignUp={() => setSaasView('signup')} onGoToLogin={() => setSaasView('login')} /></Suspense>;
-  if (saasView === 'signup') return <Suspense fallback={null}><SignUp onBack={() => setSaasView('landing')} onSuccess={() => refreshAuth()} /></Suspense>;
-  if (saasView === 'login') return <Suspense fallback={null}><OwnerLogin onBack={() => setSaasView('landing')} onSuccess={() => refreshAuth()} /></Suspense>;
+  if (showLogoutScreen) return <LogoutScreen userName={logoutUserName} shopName={settings?.shopName || 'TrimTime'} onDone={() => { setShowLogoutScreen(false); navigate('/'); }} />;
+
+  if (authLoading) return <PageLoader />;
+
+  if (saasView === 'landing') return <Suspense fallback={<PageLoader />}><LandingPage onGoToSignUp={() => setSaasView('signup')} onGoToLogin={() => setSaasView('login')} /></Suspense>;
+  if (saasView === 'signup') return <Suspense fallback={<PageLoader />}><SignUp onBack={() => setSaasView('landing')} onSuccess={() => refreshAuth()} /></Suspense>;
+  if (saasView === 'login') return <Suspense fallback={<PageLoader />}><OwnerLogin onBack={() => setSaasView('landing')} onSuccess={() => refreshAuth()} /></Suspense>;
 
   if (subscription && !isSubscriptionValid(subscription)) {
     return (
-      <Suspense fallback={null}>
-        <SubscriptionExpiredScreen onManageSubscription={() => setIsPricingOpen(true)} onLogout={handleFullSignOut} />
+      <Suspense fallback={<PageLoader />}>
+        <SubscriptionExpiredScreen onManageSubscription={() => setIsPricingOpen(true)} onLogout={() => setShowLogoutConfirm(true)} />
         {isPricingOpen && authUser && currentTenant && <PricingPage tenantId={currentTenant.id} userEmail={authUser.email || ''} language={sessionLanguage} onClose={() => setIsPricingOpen(false)} />}
       </Suspense>
     );
   }
 
+  if (dataLoading) return <PageLoader />;
 
-  if (dataLoading) return <div className="h-screen w-full flex items-center justify-center bg-slate-950"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-amber-500"></div></div>;
-
-  if (!currentUser) return <Login onLogin={loginStaff} staffList={staff} shopName={settings.shopName} onGoToLanding={handleFullSignOut} />;
+  if (!currentUser) return <Login onLogin={loginStaff} staffList={staff} shopName={settings.shopName} onGoToLanding={() => setShowLogoutConfirm(true)} />;
 
   const currentPath = location.pathname.split('/').pop() || 'dashboard';
 
@@ -136,7 +140,9 @@ const App: React.FC = () => {
               <div className="w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center font-black text-slate-950 text-xs">{currentUser.name.charAt(0)}</div>
               <div className="flex flex-col"><span className="text-xs font-bold dark:text-white">{currentUser.name}</span><span className="text-[9px] uppercase font-black text-slate-400">{currentUser.role}</span></div>
             </div>
-            <button onClick={handleFullSignOut} className="p-2.5 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-xl" title={t.logout}>🚪</button>
+            <button onClick={() => setShowLogoutConfirm(true)} className="p-2.5 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-900/20 hover:text-rose-500 transition-all" title={t.logout}>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+          </button>
           </div>
         </header>
 
@@ -158,6 +164,30 @@ const App: React.FC = () => {
       <InstallBanner deferredPrompt={deferredPrompt} onClose={() => setDeferredPrompt(null)} />
 
       {isPricingOpen && authUser && currentTenant && <PricingPage tenantId={currentTenant.id} userEmail={authUser.email || ''} language={sessionLanguage} onClose={() => setIsPricingOpen(false)} />}
+
+      {/* Logout Confirmation Modal */}
+      <AnimatePresence>
+        {showLogoutConfirm && (
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-[500] flex items-center justify-center p-6">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="bg-[#111827] border border-white/10 p-8 rounded-[2rem] max-w-sm w-full shadow-2xl text-center"
+            >
+              <div className="w-14 h-14 bg-rose-500/10 border border-rose-500/20 rounded-2xl flex items-center justify-center mx-auto mb-5">
+                <svg className="w-7 h-7 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+              </div>
+              <h3 className="text-xl font-black text-white mb-2">End Your Session?</h3>
+              <p className="text-slate-400 text-sm mb-8">You'll be signed out securely. Any unsaved changes may be lost.</p>
+              <div className="flex gap-3">
+                <button onClick={() => setShowLogoutConfirm(false)} className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-slate-300 font-bold rounded-xl text-sm transition-colors">Cancel</button>
+                <button onClick={handleFullSignOut} className="flex-1 py-3 bg-rose-500 hover:bg-rose-600 text-white font-black rounded-xl text-sm transition-colors shadow-lg shadow-rose-500/20">Sign Out</button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
@@ -169,6 +199,8 @@ const OwnerLogin: React.FC<{ onBack: () => void; onSuccess: () => void | Promise
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [shake, setShake] = useState(false);
+  const { setSaasView } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -179,6 +211,8 @@ const OwnerLogin: React.FC<{ onBack: () => void; onSuccess: () => void | Promise
       await onSuccess();
     } else {
       setError(result.error || 'Invalid email or password.');
+      setShake(true);
+      setTimeout(() => setShake(false), 600);
       setLoading(false);
     }
   };
@@ -191,50 +225,105 @@ const OwnerLogin: React.FC<{ onBack: () => void; onSuccess: () => void | Promise
     });
     setLoading(false);
     if (error) setError(error.message);
-    else { setError(''); alert('Password reset link sent to your email.'); }
+    else setError('✓ Reset link sent — check your inbox.');
   };
 
   return (
-    <main className="min-h-screen bg-slate-950 flex items-center justify-center p-6 relative overflow-hidden">
-
-      <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-amber-500/10 blur-[120px] rounded-full"></div>
-      <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-indigo-500/10 blur-[120px] rounded-full"></div>
-      <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="max-w-md w-full relative z-10">
-        <div className="text-center mb-12">
-          <motion.div whileHover={{ rotate: 12, scale: 1.1 }} className="w-24 h-24 bg-gradient-to-br from-amber-400 to-amber-600 rounded-[2.5rem] flex items-center justify-center font-brand text-5xl text-slate-950 mx-auto mb-8 shadow-2xl shadow-amber-500/40">T</motion.div>
-          <h1 className="text-4xl font-extrabold font-brand text-white tracking-tighter mb-3">Welcome Back</h1>
-          <p className="text-slate-500 font-bold uppercase tracking-[0.3em] text-[10px]">Business Owner Login</p>
+    <div className="min-h-screen bg-[#080c14] flex overflow-hidden relative">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-32 -right-32 w-[500px] h-[500px] bg-amber-600/15 rounded-full blur-[120px]" />
+        <div className="absolute -bottom-32 -left-32 w-[500px] h-[500px] bg-indigo-600/20 rounded-full blur-[120px]" />
+      </div>
+      <motion.div initial={{ x: -60, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.7 }}
+        className="hidden lg:flex w-[45%] flex-col justify-between p-12 relative z-10">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl flex items-center justify-center font-brand text-lg text-slate-950 shadow-lg shadow-amber-500/30">T</div>
+          <span className="text-white font-black text-lg">TrimTime</span>
         </div>
-        <motion.div className="bg-slate-900/40 backdrop-blur-3xl border border-white/5 p-10 rounded-[3rem] shadow-2xl">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block ml-2">Email Address</label>
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" required
-                className="w-full bg-slate-800/30 border border-slate-700/50 text-white rounded-2xl px-6 py-4 focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all placeholder:text-slate-600 font-medium" />
+        <div className="space-y-6">
+          <div>
+            <div className="inline-flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 rounded-full px-4 py-2 mb-6">
+              <span className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
+              <span className="text-amber-400 text-xs font-black uppercase tracking-widest">Business Owner</span>
             </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between ml-2">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Password</label>
-                <button type="button" onClick={handleResetPassword} className="text-[10px] font-bold text-amber-500 hover:text-amber-400 uppercase tracking-widest transition-colors bg-transparent border-none p-0">Forgot?</button>
+            <h1 className="text-5xl font-black text-white tracking-tight leading-tight font-brand">Manage Your<br /><span className="bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent">Business.</span></h1>
+            <p className="text-slate-400 text-lg mt-4">Full access to analytics, staff management, finances, and POS from one dashboard.</p>
+          </div>
+          {[{ icon: '📊', text: 'Revenue & expense analytics' }, { icon: '👥', text: 'Staff & commission management' }, { icon: '📅', text: 'Appointment scheduling' }].map((f, i) => (
+            <div key={i} className="flex items-center gap-3 text-slate-400"><span className="text-lg">{f.icon}</span><span className="text-sm font-medium">{f.text}</span></div>
+          ))}
+        </div>
+        <p className="text-slate-600 text-xs">Secured with Supabase Auth. Your data is encrypted in transit and at rest.</p>
+      </motion.div>
+      <motion.div initial={{ x: 60, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.7 }}
+        className="flex-1 flex items-center justify-center p-6 relative z-10">
+        <div className="w-full max-w-md">
+          <div className="lg:hidden text-center mb-10">
+            <div className="w-20 h-20 bg-gradient-to-br from-amber-400 to-orange-500 rounded-[1.75rem] flex items-center justify-center font-brand text-4xl text-slate-950 mx-auto mb-5 shadow-2xl shadow-amber-500/40">T</div>
+            <h1 className="text-3xl font-black text-white font-brand">TrimTime</h1>
+            <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mt-2">Business Owner Portal</p>
+          </div>
+          <div className="hidden lg:block mb-10">
+            <h2 className="text-3xl font-black text-white">Owner Sign In</h2>
+            <p className="text-slate-500 mt-1 text-sm">Access your full business dashboard.</p>
+          </div>
+          <motion.div animate={shake ? { x: [-8, 8, -6, 6, 0] } : {}} transition={{ duration: 0.5 }}
+            className="bg-white/[0.04] backdrop-blur-2xl border border-white/8 p-8 rounded-[2rem] shadow-2xl">
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Email Address</label>
+                <div className="relative">
+                  <svg className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                  <input type="email" value={email} onChange={e => { setEmail(e.target.value); setError(''); }} placeholder="you@yourbusiness.com" required
+                    className="w-full bg-white/5 border border-white/10 text-white rounded-xl px-4 py-3.5 pl-11 focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none transition-all placeholder:text-slate-600 font-medium text-sm" />
+                </div>
               </div>
-              <div className="relative">
-                <input type={showPw ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} placeholder="Your password" required
-                  className="w-full bg-slate-800/30 border border-slate-700/50 text-white rounded-2xl px-6 py-4 pr-12 focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all placeholder:text-slate-600 font-medium" />
-                <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors">{showPw ? '🙈' : '👁️'}</button>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Password</label>
+                  <button type="button" onClick={handleResetPassword} className="text-[10px] font-bold text-amber-500 hover:text-amber-400 uppercase tracking-widest transition-colors">Forgot?</button>
+                </div>
+                <div className="relative">
+                  <svg className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                  <input type={showPw ? 'text' : 'password'} value={password} onChange={e => { setPassword(e.target.value); setError(''); }} placeholder="••••••••" required
+                    className="w-full bg-white/5 border border-white/10 text-white rounded-xl px-4 py-3.5 pl-11 pr-12 focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none transition-all placeholder:text-slate-600 font-medium text-sm" />
+                  <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors">
+                    {showPw
+                      ? <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" /></svg>
+                      : <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                    }
+                  </button>
+                </div>
               </div>
-            </div>
-            {error && <div className="bg-rose-500/10 border border-rose-500/20 text-rose-500 text-[11px] font-black uppercase tracking-wider py-3 px-4 rounded-xl text-center">{error}</div>}
-            <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="submit" disabled={loading}
-              className="w-full bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 font-black text-xl py-5 rounded-[1.5rem] shadow-xl shadow-amber-500/10 mt-4 disabled:opacity-60">{loading ? 'Signing in...' : 'Sign In'}</motion.button>
-          </form>
-        </motion.div>
-        <div className="flex flex-col items-center gap-3 mt-8">
-          <p className="text-slate-500 text-sm">Don't have an account? <button type="button" onClick={onBack} className="text-amber-500 font-bold hover:underline underline-offset-4 bg-transparent border-none p-0 outline-none cursor-pointer">Sign Up Free</button></p>
-          <button type="button" onClick={onBack} className="text-slate-600 text-sm font-bold hover:text-slate-400 transition-colors bg-transparent border-none p-0 outline-none cursor-pointer">← Back to Home</button>
+              <AnimatePresence>
+                {error && (
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+                    className={`flex items-center gap-3 border text-xs font-bold py-3 px-4 rounded-xl ${error.startsWith('✓') ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'}`}>
+                    <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    {error}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+              <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }} type="submit" disabled={loading}
+                className="w-full bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 font-black text-sm py-4 rounded-xl shadow-xl shadow-amber-500/20 mt-2 disabled:opacity-60 flex items-center justify-center gap-2">
+                {loading
+                  ? <><svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>Signing in...</>
+                  : <>Sign In <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg></>}
+              </motion.button>
+            </form>
+          </motion.div>
+          <div className="flex flex-col items-center gap-3 mt-6">
+            <p className="text-slate-500 text-sm">Don't have an account?{' '}
+              <button type="button" onClick={() => setSaasView('signup')} className="text-amber-400 font-bold hover:text-amber-300 bg-transparent border-none p-0 cursor-pointer transition-colors">Sign Up Free</button>
+            </p>
+            <button type="button" onClick={onBack} className="text-slate-600 text-sm font-bold hover:text-slate-400 transition-colors flex items-center gap-1">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 17l-5-5m0 0l5-5m-5 5h12" /></svg>
+              Back to Home
+            </button>
+          </div>
         </div>
       </motion.div>
-    </main>
-
+    </div>
   );
 };
 

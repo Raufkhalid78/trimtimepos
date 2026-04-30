@@ -158,6 +158,9 @@ export const TRANSLATIONS = {
     downloadDaily: 'Download Daily',
     downloadWeekly: 'Download Weekly',
     downloadMonthly: 'Download Monthly',
+    autoWhatsapp: 'Auto WhatsApp',
+    addSale: 'Add Sale',
+    recentSales: 'Recent Sales',
 
     // Customers
     directory: 'Directory',
@@ -720,6 +723,9 @@ export const TRANSLATIONS = {
     beard: "داڑھی",
     shave: "شیو",
     face: "چہرہ",
+    autoWhatsapp: 'خودکار واٹس ایپ',
+    addSale: 'فروخت شامل کریں',
+    recentSales: 'حالیہ فروخت',
 
     // Login
     premiumAccess: 'پریمیم ٹرمینل تک رسائی',
@@ -1137,6 +1143,9 @@ export const TRANSLATIONS = {
     notificationGranted: 'مسموح',
     notificationDenied: 'مرفوض',
     notificationDefault: 'انقر للطلب',
+    autoWhatsapp: 'واتساب تلقائي',
+    addSale: 'إضافة بيع',
+    recentSales: 'المبيعات الأخيرة',
 },
   hi: {
     dashboard: 'डैशबोर्ड',
@@ -1484,6 +1493,9 @@ export const TRANSLATIONS = {
     notificationGranted: 'स्वीकृत',
     notificationDenied: 'अस्वीकृत',
     notificationDefault: 'अनुरोध के लिए क्लिक करें',
+    autoWhatsapp: 'स्वचालित व्हाट्सएप',
+    addSale: 'बिक्री जोड़ें',
+    recentSales: 'हाल की बिक्री',
 },
 };
 
