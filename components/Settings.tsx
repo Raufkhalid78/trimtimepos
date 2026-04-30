@@ -813,7 +813,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white dark:bg-slate-900 p-6 md:p-8 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-4">
               <div className="w-14 h-14 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center font-black text-slate-500 uppercase text-xl shadow-inner">
-                  {currentUser?.name.charAt(0)}
+                  {(currentUser?.name || 'U').charAt(0)}
               </div>
               <div>
                   <h3 className="font-bold text-slate-900 dark:text-white text-lg">{currentUser?.name}</h3>

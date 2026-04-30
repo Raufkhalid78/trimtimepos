@@ -525,7 +525,7 @@ const SignUp: React.FC<SignUpProps> = ({ onBack, onSuccess }) => {
                             <div key={i} className="flex items-center justify-between bg-slate-800/30 p-3 rounded-xl border border-slate-700/30">
                               <div className="flex items-center gap-3">
                                 <div className="w-8 h-8 bg-amber-500/20 text-amber-400 rounded-lg flex items-center justify-center font-black text-xs">
-                                  {s.name.charAt(0)}
+                                  {(s.name || 'S').charAt(0)}
                                 </div>
                                 <div>
                                   <p className="text-sm font-bold text-white">{s.name}</p>

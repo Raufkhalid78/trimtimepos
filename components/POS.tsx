@@ -399,7 +399,7 @@ const POS: React.FC<POSProps> = ({ services, products, staff, customers, sales, 
     container.innerHTML = `
       <div style="text-align: center; margin-bottom: 20px;">
         <div style="background-color: #f59e0b; color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; margin: 0 auto 10px;">
-          ${settings.shopName.charAt(0).toUpperCase()}
+          ${(settings?.shopName || 'T').charAt(0).toUpperCase()}
         </div>
         <h2 style="margin: 0; font-size: 20px;">${settings.shopName}</h2>
         <p style="margin: 5px 0 0; font-size: 12px; color: #64748b;">Premium Grooming</p>

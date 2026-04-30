@@ -123,7 +123,7 @@ const App: React.FC = () => {
       <div className="flex-1 flex flex-col min-w-0 md:pl-64 overflow-hidden relative">
         <header className="flex md:hidden items-center justify-between p-4 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 z-50 sticky top-0 shadow-sm">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-amber-500 rounded-lg flex items-center justify-center font-brand text-lg text-slate-950">{settings.shopName.charAt(0)}</div>
+            <div className="w-8 h-8 bg-amber-500 rounded-lg flex items-center justify-center font-brand text-lg text-slate-950">{(settings?.shopName || 'T').charAt(0)}</div>
             <span className="font-bold text-slate-900 dark:text-white truncate max-w-[120px]">{settings.shopName}</span>
           </div>
           <div className="flex gap-2">
@@ -137,7 +137,7 @@ const App: React.FC = () => {
           <div className="flex items-center gap-4">
             <button onClick={() => setIsDarkMode(!isDarkMode)} className="p-2.5 bg-white dark:bg-slate-900 text-slate-400 rounded-xl border border-slate-200 dark:border-slate-800">{isDarkMode ? '🌞' : '🌙'}</button>
             <div className="flex items-center gap-3 bg-white dark:bg-slate-900 p-1.5 pr-4 rounded-full border border-slate-100 dark:border-slate-800 shadow-sm">
-              <div className="w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center font-black text-slate-950 text-xs">{currentUser.name.charAt(0)}</div>
+              <div className="w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center font-black text-slate-950 text-xs">{(currentUser?.name || 'U').charAt(0)}</div>
               <div className="flex flex-col"><span className="text-xs font-bold dark:text-white">{currentUser.name}</span><span className="text-[9px] uppercase font-black text-slate-400">{currentUser.role}</span></div>
             </div>
             <button onClick={() => setShowLogoutConfirm(true)} className="p-2.5 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-900/20 hover:text-rose-500 transition-all" title={t.logout}>

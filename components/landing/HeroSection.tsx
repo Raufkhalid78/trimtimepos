@@ -80,7 +80,7 @@ const DashboardMockup: React.FC = () => {
               <div key={i} className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <div className="w-7 h-7 bg-slate-800 border border-white/5 rounded-lg flex items-center justify-center text-xs font-black text-amber-400">
-                    {sale.name.charAt(0)}
+                    {(sale.name || 'S').charAt(0)}
                   </div>
                   <div>
                     <p className="text-xs font-bold text-white leading-none">{sale.name}</p>

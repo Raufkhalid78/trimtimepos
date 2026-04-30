@@ -203,7 +203,7 @@ const BookingPage: React.FC = () => {
                   className={`flex items-center gap-4 p-5 rounded-[2rem] border transition-all ${selectedStaff?.id === s.id ? 'bg-amber-500 border-amber-400 text-slate-950' : 'bg-slate-900/50 border-white/5 text-slate-300 hover:border-white/10'}`}
                 >
                   <div className={`w-14 h-14 rounded-2xl flex items-center justify-center font-black text-xl ${selectedStaff?.id === s.id ? 'bg-slate-950 text-amber-500' : 'bg-amber-500/10 text-amber-500'}`}>
-                    {s.name.charAt(0)}
+                    {(s.name || 'S').charAt(0)}
                   </div>
                   <div className="text-left">
                     <p className="font-bold text-lg">{s.name}</p>

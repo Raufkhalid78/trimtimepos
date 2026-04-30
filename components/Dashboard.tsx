@@ -375,7 +375,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sales, expenses, products, staff,
                <div key={sale.id} className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-transparent hover:border-slate-100 dark:hover:border-slate-700 transition-all">
                  <div className="flex items-center gap-3">
                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white font-black text-xs ${sale.paymentMethod === 'cash' ? 'bg-emerald-500 shadow-emerald-500/20' : 'bg-blue-500 shadow-blue-500/20'} shadow-lg`}>
-                     {sale.paymentMethod.charAt(0).toUpperCase()}
+                     {(sale.paymentMethod || 'cash').charAt(0).toUpperCase()}
                    </div>
                    <div>
                      <p className="text-xs font-bold text-slate-900 dark:text-white">{sale.customerName || 'Walk-in Client'}</p>

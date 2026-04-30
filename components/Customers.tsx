@@ -152,7 +152,7 @@ const Customers: React.FC<CustomersProps> = ({ customers, sales, onUpdateCustome
               >
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400 text-sm font-black uppercase shadow-inner">
-                    {customer.name.charAt(0)}
+                    {(customer.name || 'C').charAt(0)}
                   </div>
                   <div>
                     <h4 className="font-bold text-slate-800 dark:text-white text-sm truncate max-w-[140px] md:max-w-[120px]">{customer.name}</h4>
@@ -204,7 +204,7 @@ const Customers: React.FC<CustomersProps> = ({ customers, sales, onUpdateCustome
                 <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-center md:items-start text-center md:text-left">
                   <div className="w-full md:w-1/3 md:border-r border-slate-100 dark:border-slate-800 md:pr-8 flex flex-col items-center md:items-start">
                     <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-amber-100 dark:bg-amber-900/20 text-amber-600 dark:text-amber-500 flex items-center justify-center text-3xl md:text-4xl font-black mb-4 shadow-inner">
-                      {selectedCustomer.name.charAt(0)}
+                      {(selectedCustomer.name || 'C').charAt(0)}
                     </div>
                     <h3 className="text-xl md:text-2xl font-black text-slate-800 dark:text-white truncate w-full px-2 md:px-0">{selectedCustomer.name}</h3>
                     <p className="text-slate-400 dark:text-slate-500 text-xs md:text-sm mb-4 truncate w-full px-2 md:px-0">{selectedCustomer.email || 'No email'}</p>

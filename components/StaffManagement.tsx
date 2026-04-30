@@ -93,7 +93,7 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ staffList, onUpdateSt
           <div key={staff.id} className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm relative overflow-hidden">
             <div className="flex items-center gap-4 mb-4">
                <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-black text-slate-500 dark:text-slate-400 uppercase shadow-inner text-lg">
-                  {staff.name.charAt(0)}
+                  {(staff.name || 'S').charAt(0)}
                </div>
                <div>
                   <h3 className="font-bold text-slate-800 dark:text-slate-200 text-lg">{staff.name}</h3>
@@ -168,7 +168,7 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ staffList, onUpdateSt
                   <td className="px-8 py-6">
                     <div className="flex items-center gap-4">
                       <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-black text-slate-500 dark:text-slate-400 uppercase shadow-inner">
-                        {staff.name.charAt(0)}
+                        {(staff.name || 'S').charAt(0)}
                       </div>
                       <div>
                         <p className="font-bold text-slate-800 dark:text-slate-200 text-sm">{staff.name}</p>
