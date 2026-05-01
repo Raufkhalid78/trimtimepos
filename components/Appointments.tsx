@@ -114,7 +114,7 @@ const Appointments: React.FC<AppointmentsProps> = ({
             type="date" 
             value={selectedDate.toISOString().split('T')[0]} 
             onChange={(e) => setSelectedDate(new Date(e.target.value))}
-            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-sm font-bold text-slate-800 dark:text-white"
+            className="tt-input px-4 py-2"
           />
           {onRefresh && (
             <button
@@ -124,7 +124,7 @@ const Appointments: React.FC<AppointmentsProps> = ({
                 setIsRefreshing(false);
               }}
               disabled={isRefreshing}
-              className="p-3 bg-white dark:bg-slate-900 text-slate-500 rounded-xl border border-slate-200 dark:border-slate-800 hover:text-amber-500 transition-all active:scale-95 shadow-sm"
+              className="p-3 bg-[var(--tt-surface-2)] text-[var(--tt-text-muted)] rounded-xl border border-[var(--tt-border)] hover:text-[var(--tt-amber)] transition-all active:scale-95 shadow-sm"
               title="Refresh Bookings"
             >
               <svg className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -174,14 +174,14 @@ const Appointments: React.FC<AppointmentsProps> = ({
                     layout
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="bg-white dark:bg-slate-900/50 rounded-3xl p-5 border border-amber-200/50 dark:border-amber-900/30 shadow-xl shadow-amber-900/5 flex flex-col gap-4 group hover:border-amber-500 transition-colors"
+                    className="tt-card p-5 border-[var(--tt-amber)]/20 shadow-xl shadow-amber-900/5 flex flex-col gap-4 group hover:border-[var(--tt-amber)] transition-colors"
                   >
                     <div className="flex justify-between items-start">
                       <div className="flex-1 min-w-0">
                         <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-1">
                           {format(appDate, 'MMM dd • h:mm a')}
                         </p>
-                        <h4 className="font-black text-lg text-slate-900 dark:text-white truncate">{app.customerName || 'Guest'}</h4>
+                        <h4 className="font-black text-lg text-[var(--tt-text-main)] truncate">{app.customerName || 'Guest'}</h4>
                       </div>
                     </div>
 
@@ -258,7 +258,7 @@ const Appointments: React.FC<AppointmentsProps> = ({
       </AnimatePresence>
 
       {/* Calendar Grid */}
-      <div className="flex-1 bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col min-h-[600px]">
+      <div className="flex-1 tt-card overflow-hidden flex flex-col min-h-[600px]">
         <div className="flex-1 overflow-auto relative">
           <table className="w-full min-w-[800px] border-collapse relative">
             <thead className="sticky top-0 bg-slate-50 dark:bg-slate-800 z-10">
@@ -274,7 +274,7 @@ const Appointments: React.FC<AppointmentsProps> = ({
             <tbody>
               {HOURS.map(hour => (
                 <tr key={hour}>
-                  <td className="p-4 border-b border-r dark:border-slate-700 text-xs font-bold text-slate-500 dark:text-slate-400 text-right uppercase sticky left-0 bg-white dark:bg-slate-900">
+                  <td className="p-4 border-b border-r border-[var(--tt-border)] text-xs font-bold text-[var(--tt-text-muted)] text-right uppercase sticky left-0 bg-[var(--tt-surface)]">
                     {hour === 12 ? '12 PM' : hour > 12 ? `${hour - 12} PM` : `${hour} AM`}
                   </td>
                   {staffList.map(staff => {
@@ -347,7 +347,7 @@ const Appointments: React.FC<AppointmentsProps> = ({
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white dark:bg-slate-900 rounded-[2.5rem] w-full max-w-lg p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto"
+              className="tt-card w-full max-w-lg p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto"
             >
               <button onClick={closeModal} className="absolute top-6 right-6 p-2 bg-slate-50 dark:bg-slate-800 rounded-full text-slate-400">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12"/></svg>

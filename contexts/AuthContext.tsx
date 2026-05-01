@@ -14,11 +14,13 @@ interface AuthContextType {
   saasView: SaaSView;
   sessionLanguage: Language;
   isDarkMode: boolean;
+  isTourCompleted: boolean;
   
   setSaasView: (view: SaaSView) => void;
   setSessionLanguage: (lang: Language) => void;
   setIsDarkMode: (dark: boolean) => void;
   setCurrentUser: (user: Staff | null) => void;
+  completeTour: () => void;
   
   refreshSubscription: (tenantId?: string) => Promise<void>;
   refreshAuth: () => Promise<void>;
@@ -36,7 +38,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [saasView, setSaasView] = useState<SaaSView>('landing');
   
   const [sessionLanguage, setSessionLanguage] = useState<Language>(() => (localStorage.getItem('trimtime_lang') as Language) || 'en');
-  const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('trimtime_theme') === 'dark');
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const saved = localStorage.getItem('trimtime_theme');
+    return saved ? saved === 'dark' : true;
+  });
+  const [isTourCompleted, setIsTourCompleted] = useState(() => localStorage.getItem('trimtime_tour_completed_v1') === 'true');
 
   // Ref to track whether we're in the middle of a signup/login flow.
   // When true, the onAuthStateChange listener will NOT re-run checkAuth(),
@@ -163,6 +169,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setSaasView('landing');
   };
 
+  const completeTour = useCallback(() => {
+    localStorage.setItem('trimtime_tour_completed_v1', 'true');
+    setIsTourCompleted(true);
+  }, []);
+
   const refreshSubscription = async (tenantIdToUse?: string) => {
     const id = tenantIdToUse || currentTenant?.id;
     if (id) {
@@ -183,6 +194,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', isDarkMode);
+    document.body.classList.toggle('dark', isDarkMode);
     localStorage.setItem('trimtime_theme', isDarkMode ? 'dark' : 'light');
   }, [isDarkMode]);
 
@@ -192,10 +204,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem('trimtime_lang', sessionLanguage);
   }, [sessionLanguage]);
 
+  useEffect(() => {
+    const handleRestartOnboarding = () => {
+      localStorage.removeItem('trimtime_tour_completed_v1');
+      setIsTourCompleted(false);
+    };
+    window.addEventListener('restart-onboarding', handleRestartOnboarding);
+    return () => window.removeEventListener('restart-onboarding', handleRestartOnboarding);
+  }, []);
+
   return (
     <AuthContext.Provider value={{
-      authUser, currentTenant, subscription, currentUser, authLoading, saasView, sessionLanguage, isDarkMode,
-      setSaasView: handleSetSaasView, setSessionLanguage, setIsDarkMode, setCurrentUser,
+      authUser, currentTenant, subscription, currentUser, authLoading, saasView, sessionLanguage, isDarkMode, isTourCompleted,
+      setSaasView: handleSetSaasView, setSessionLanguage, setIsDarkMode, setCurrentUser, completeTour,
       refreshSubscription, refreshAuth, loginStaff, signOut
     }}>
       {children}

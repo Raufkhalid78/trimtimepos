@@ -80,7 +80,7 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ staffList, onUpdateSt
         </div>
         <button 
           onClick={() => setIsAdding(true)}
-          className="bg-slate-950 dark:bg-slate-800 text-white px-6 py-3 rounded-xl font-black flex items-center gap-2 hover:bg-slate-800 transition-all shadow-lg text-sm w-full sm:w-auto justify-center"
+          className="bg-[var(--tt-surface-2)] text-[var(--tt-text-main)] px-6 py-3 rounded-xl font-black flex items-center gap-2 hover:bg-[var(--tt-surface)] transition-all shadow-lg text-sm w-full sm:w-auto justify-center"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
           {t.addStaff}
@@ -90,9 +90,9 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ staffList, onUpdateSt
       {/* Mobile View (Cards) */}
       <div className="md:hidden space-y-4">
         {staffList.map(staff => (
-          <div key={staff.id} className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm relative overflow-hidden">
+          <div key={staff.id} className="tt-card p-5 relative overflow-hidden">
             <div className="flex items-center gap-4 mb-4">
-               <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-black text-slate-500 dark:text-slate-400 uppercase shadow-inner text-lg">
+               <div className="w-12 h-12 rounded-full bg-[var(--tt-surface-2)] flex items-center justify-center font-black text-[var(--tt-text-muted)] uppercase shadow-inner text-lg">
                   {(staff.name || 'S').charAt(0)}
                </div>
                <div>
@@ -102,13 +102,13 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ staffList, onUpdateSt
             </div>
             
             <div className="grid grid-cols-2 gap-4 mb-4">
-               <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl">
+               <div className="bg-[var(--tt-surface-2)] p-3 rounded-xl">
                   <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">{t.role}</p>
                   <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest border ${staff.role === 'admin' ? 'bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-900/30' : 'bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-900/30'}`}>
                       {staff.role === 'admin' ? t.admin : t.employee}
                   </span>
                </div>
-               <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl">
+               <div className="bg-[var(--tt-surface-2)] p-3 rounded-xl">
                   <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">{t.commission}</p>
                   <p className="font-black text-slate-900 dark:text-white">{staff.commission}%</p>
                </div>
@@ -127,7 +127,7 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ staffList, onUpdateSt
                    });
                    setIsAdding(true);
                  }}
-                 className="flex-1 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold text-sm hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                 className="flex-1 py-3 rounded-xl bg-[var(--tt-surface-2)] text-[var(--tt-text-main)] font-bold text-sm hover:bg-[var(--tt-surface)] transition-colors"
                >
                  {t.editProfessional}
                </button>
@@ -150,7 +150,7 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ staffList, onUpdateSt
       </div>
 
       {/* Desktop View (Table) */}
-      <div className="hidden md:block bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
+      <div className="hidden md:block tt-card overflow-hidden">
         <div className="overflow-x-auto scrollbar-hide">
           <table className="w-full text-left min-w-[650px]">
             <thead>
@@ -225,7 +225,7 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ staffList, onUpdateSt
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
-              className="bg-white dark:bg-slate-900 rounded-t-[2.5rem] sm:rounded-[2.5rem] w-full max-w-md p-8 md:p-10 shadow-2xl overflow-y-auto max-h-[90vh]"
+              className="tt-card w-full max-w-md p-8 md:p-10 shadow-2xl overflow-y-auto max-h-[90vh]"
             >
               <div className="flex justify-between items-center mb-8">
                 <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">{editingStaff ? t.editProfessional : t.addToTeam}</h3>
@@ -332,7 +332,7 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ staffList, onUpdateSt
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white dark:bg-slate-900 rounded-[2rem] p-8 max-w-md w-full shadow-2xl border border-slate-100 dark:border-slate-800"
+              className="tt-card p-8 max-w-md w-full shadow-2xl"
             >
               <div className="w-16 h-16 bg-rose-100 dark:bg-rose-900/30 text-rose-600 rounded-full flex items-center justify-center mb-6 mx-auto">
                 <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>

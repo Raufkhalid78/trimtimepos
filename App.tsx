@@ -1,8 +1,10 @@
 import React, { useState, useEffect, Component, ReactNode, ErrorInfo, Suspense, lazy } from 'react';
 import Sidebar from '@/components/Sidebar';
+import TopBar from '@/components/TopBar';
 import Login from '@/components/Login';
 import InstallBanner from '@/components/InstallBanner';
 import LogoutScreen from '@/components/LogoutScreen';
+import OnboardingTour from '@/components/OnboardingTour';
 const LandingPage = lazy(() => import('@/components/LandingPage'));
 const SignUp = lazy(() => import('@/components/SignUp'));
 const SubscriptionBanner = lazy(() => import('@/components/SubscriptionBanner'));
@@ -53,6 +55,7 @@ const App: React.FC = () => {
   const { loading: dataLoading, settings, staff } = useData();
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => localStorage.getItem('trimtime_sidebar_collapsed') === 'true');
   const [isPricingOpen, setIsPricingOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showLogoutScreen, setShowLogoutScreen] = useState(false);
@@ -86,6 +89,10 @@ const App: React.FC = () => {
     }
   }, [currentUser]);
 
+  useEffect(() => {
+    localStorage.setItem('trimtime_sidebar_collapsed', isSidebarCollapsed.toString());
+  }, [isSidebarCollapsed]);
+
   const PageLoader = () => <div className="h-screen w-full flex items-center justify-center bg-[#080c14]"><div className="w-12 h-12 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" /></div>;
 
   if (showLogoutScreen) return <LogoutScreen userName={logoutUserName} shopName={settings?.shopName || 'TrimTime'} onDone={() => { setShowLogoutScreen(false); navigate('/'); }} />;
@@ -112,43 +119,25 @@ const App: React.FC = () => {
   const currentPath = location.pathname.split('/').pop() || 'dashboard';
 
   return (
-    <div className="flex h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden font-sans transition-colors duration-300">
+    <div className="flex h-screen bg-[var(--tt-bg)] overflow-hidden font-sans transition-colors duration-300">
       <Sidebar
         shopName={settings.shopName} userRole={currentUser.role}
         isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)}
         dbStatus="connected"
         subscription={subscription}
+        isCollapsed={isSidebarCollapsed}
+        onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
       />
 
-      <div className="flex-1 flex flex-col min-w-0 md:pl-64 overflow-hidden relative">
-        <header className="flex md:hidden items-center justify-between p-4 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 z-50 sticky top-0 shadow-sm">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-amber-500 rounded-lg flex items-center justify-center font-brand text-lg text-slate-950">{(settings?.shopName || 'T').charAt(0)}</div>
-            <span className="font-bold text-slate-900 dark:text-white truncate max-w-[120px]">{settings.shopName}</span>
-          </div>
-          <div className="flex gap-2">
-            <button onClick={() => setIsDarkMode(!isDarkMode)} className="p-2 text-slate-400 bg-slate-50 dark:bg-slate-800 rounded-lg">{isDarkMode ? '🌞' : '🌙'}</button>
-            <button onClick={() => setIsSidebarOpen(true)} className="p-2 text-slate-900 dark:text-white bg-amber-500 rounded-lg"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 6h16M4 12h16m-7 6h7" /></svg></button>
-          </div>
-        </header>
-
-        <header className="hidden md:flex justify-between items-center px-8 py-6 no-print">
-          <h1 className="text-2xl font-black text-slate-900 dark:text-white font-brand capitalize">{currentPath}</h1>
-          <div className="flex items-center gap-4">
-            <button onClick={() => setIsDarkMode(!isDarkMode)} className="p-2.5 bg-white dark:bg-slate-900 text-slate-400 rounded-xl border border-slate-200 dark:border-slate-800">{isDarkMode ? '🌞' : '🌙'}</button>
-            <div className="flex items-center gap-3 bg-white dark:bg-slate-900 p-1.5 pr-4 rounded-full border border-slate-100 dark:border-slate-800 shadow-sm">
-              <div className="w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center font-black text-slate-950 text-xs">{(currentUser?.name || 'U').charAt(0)}</div>
-              <div className="flex flex-col"><span className="text-xs font-bold dark:text-white">{currentUser.name}</span><span className="text-[9px] uppercase font-black text-slate-400">{currentUser.role}</span></div>
-            </div>
-            <button onClick={() => setShowLogoutConfirm(true)} className="p-2.5 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-900/20 hover:text-rose-500 transition-all" title={t.logout}>
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
-          </button>
-          </div>
-        </header>
+      <div className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${isSidebarCollapsed ? 'md:pl-20' : 'md:pl-[260px]'} overflow-hidden relative`}>
+        <TopBar 
+          onToggleSidebar={() => setIsSidebarOpen(true)}
+          onLogout={() => setShowLogoutConfirm(true)}
+        />
 
         <SubscriptionBanner subscription={subscription} onManageSubscription={() => setIsPricingOpen(true)} />
 
-        <main className="flex-1 overflow-y-auto p-4 md:p-8 relative scrollbar-hide">
+        <main className="flex-1 overflow-y-auto p-4 md:p-8 relative scrollbar-hide min-h-0">
           <ErrorBoundary key={location.pathname}>
             <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-10 w-10 border-t-2 border-amber-500"></div></div>}>
               <AnimatePresence mode='wait'>
@@ -162,6 +151,8 @@ const App: React.FC = () => {
       </div>
 
       <InstallBanner deferredPrompt={deferredPrompt} onClose={() => setDeferredPrompt(null)} />
+
+      <OnboardingTour />
 
       {isPricingOpen && authUser && currentTenant && <PricingPage tenantId={currentTenant.id} userEmail={authUser.email || ''} language={sessionLanguage} onClose={() => setIsPricingOpen(false)} />}
 

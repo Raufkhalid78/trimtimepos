@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, UserRole, Language, Subscription } from '../types';
 import { TRANSLATIONS } from '../constants';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -9,16 +9,19 @@ import { useAuth } from '../contexts/AuthContext';
 interface SidebarProps {
   shopName: string;
   userRole: UserRole;
-  isOpen: boolean;
+  isOpen: boolean; // Mobile drawer open
   onClose: () => void;
   subscription?: Subscription | null;
   dbStatus: 'connected' | 'offline' | 'error';
+  isCollapsed: boolean;
+  onToggleCollapse: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ shopName, userRole, isOpen, onClose, subscription, dbStatus }) => {
-  const { sessionLanguage, setSessionLanguage, isDarkMode, setIsDarkMode } = useAuth();
+const Sidebar: React.FC<SidebarProps> = ({ 
+  shopName, userRole, isOpen, onClose, subscription, dbStatus, isCollapsed, onToggleCollapse 
+}) => {
+  const { sessionLanguage, setSessionLanguage, isDarkMode } = useAuth();
   const t = TRANSLATIONS[sessionLanguage];
-  const navigate = useNavigate();
   const [isMobile, setIsMobile] = React.useState(window.innerWidth < 768);
 
   React.useEffect(() => {
@@ -27,7 +30,7 @@ const Sidebar: React.FC<SidebarProps> = ({ shopName, userRole, isOpen, onClose, 
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const allItems = [
+  const navItems = [
     { id: 'dashboard', label: t.dashboard, path: '/dashboard', icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
     ), roles: ['admin', 'employee'] },
@@ -54,72 +57,110 @@ const Sidebar: React.FC<SidebarProps> = ({ shopName, userRole, isOpen, onClose, 
     ), roles: ['admin', 'employee'] },
   ];
 
-  const visibleItems = allItems.filter(item => item.roles.includes(userRole));
+  const visibleItems = navItems.filter(item => item.roles.includes(userRole));
 
   return (
     <>
       <AnimatePresence>
-        {isOpen && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}
-            className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-[100] md:hidden" />
+        {isOpen && isMobile && (
+          <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            exit={{ opacity: 0 }} 
+            onClick={onClose}
+            className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-[100] md:hidden" 
+          />
         )}
       </AnimatePresence>
 
-      <motion.div initial={{ x: -280 }} animate={{ x: isOpen || !isMobile ? 0 : -280 }}
-        transition={{ type: "spring", damping: 30, stiffness: 300 }}
-        className="w-64 bg-slate-900 h-screen fixed left-0 top-0 flex flex-col text-white no-print shadow-2xl z-[110]"
+      <motion.aside
+        initial={false}
+        animate={{ 
+          width: isMobile ? (isOpen ? 280 : 0) : (isCollapsed ? 80 : 260),
+          x: isMobile && !isOpen ? -280 : 0
+        }}
+        transition={{ type: "spring", damping: 25, stiffness: 200 }}
+        className="fixed left-0 top-0 h-screen bg-[var(--tt-bg)] border-r border-[var(--tt-border)] z-[110] flex flex-col no-print shadow-xl"
       >
-        <div className="p-6 border-b border-slate-800/50">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 bg-amber-500 rounded-xl flex items-center justify-center font-brand text-xl text-slate-950 shadow-lg shadow-amber-500/20">{(shopName || 'T').charAt(0)}</div>
-              <div className="min-w-0">
-                <h1 className="text-lg font-black font-brand tracking-tight truncate w-28">{shopName}</h1>
-                {subscription && <SubscriptionBadge subscription={subscription} />}
-              </div>
+        {/* Logo Section */}
+        <div className="h-16 flex items-center px-4 border-b border-[var(--tt-border)] overflow-hidden shrink-0">
+          <div className="flex items-center gap-3 min-w-[200px]">
+            <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl flex items-center justify-center font-brand text-2xl text-slate-950 shadow-lg shadow-amber-500/20 shrink-0">
+              {(shopName || 'T').charAt(0)}
             </div>
-            <button onClick={onClose} className="md:hidden p-1 text-slate-500 hover:text-white transition-colors">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
-            </button>
+            <motion.div
+              animate={{ opacity: isCollapsed && !isMobile ? 0 : 1 }}
+              className="flex flex-col min-w-0"
+            >
+              <h1 className="text-lg font-black font-brand tracking-tight truncate text-[var(--tt-text-main)]">
+                {shopName}
+              </h1>
+              {subscription && <SubscriptionBadge subscription={subscription} />}
+            </motion.div>
           </div>
         </div>
-        
-        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+
+        {/* Navigation */}
+        <nav className="flex-1 p-3 space-y-1 overflow-y-auto overflow-x-hidden scrollbar-hide mt-2">
           {visibleItems.map(item => (
             <NavLink
               key={item.id}
               to={item.path}
+              id={`nav-${item.id}`}
               onClick={() => isMobile && onClose()}
               className={({ isActive }) => `
-                w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all
-                ${isActive ? 'bg-amber-500 text-slate-950 font-bold shadow-lg shadow-amber-500/10' : 'hover:bg-slate-800/50 text-slate-400 font-medium'}
+                group flex items-center gap-4 px-3.5 py-3 rounded-2xl transition-all relative
+                ${isActive 
+                  ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-bold shadow-lg shadow-amber-500/20' 
+                  : 'text-[var(--tt-text-muted)] hover:bg-[var(--tt-surface-2)] hover:text-[var(--tt-text-main)]'}
               `}
             >
-              {item.icon}
-              <span className="text-sm">{item.label}</span>
+              <div className="shrink-0">{item.icon}</div>
+              <motion.span 
+                animate={{ opacity: isCollapsed && !isMobile ? 0 : 1, x: isCollapsed && !isMobile ? -10 : 0 }}
+                className="text-sm whitespace-nowrap"
+              >
+                {item.label}
+              </motion.span>
+              
+              {isCollapsed && !isMobile && (
+                <div className="absolute left-full ml-4 px-3 py-2 bg-slate-900 text-white text-xs font-bold rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-[200] shadow-xl">
+                  {item.label}
+                </div>
+              )}
             </NavLink>
           ))}
         </nav>
 
-        <div className="p-4 border-t border-slate-800/50 space-y-4">
-          <div className="flex bg-slate-800/50 rounded-xl p-1 gap-1">
-             <button onClick={() => setSessionLanguage('en')} className={`flex-1 py-2 rounded-lg text-[10px] font-black transition-all ${sessionLanguage === 'en' ? 'bg-slate-700 text-amber-500' : 'text-slate-500'}`}>EN</button>
-             <button onClick={() => setSessionLanguage('ur')} className={`flex-1 py-2 rounded-lg text-[10px] font-black transition-all ${sessionLanguage === 'ur' ? 'bg-slate-700 text-amber-500' : 'text-slate-500'}`}>UR</button>
-          </div>
-          
+        {/* Bottom Section */}
+        <div className="p-3 border-t border-[var(--tt-border)] space-y-3 shrink-0">
+
           <div className="flex items-center justify-between px-2">
-            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{t.database}</span>
-            <div className={`flex items-center gap-1.5`}>
-              <div className={`w-1.5 h-1.5 rounded-full ${dbStatus === 'connected' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-rose-500'}`}></div>
-              <span className={`text-[9px] font-black uppercase tracking-widest ${dbStatus === 'connected' ? 'text-emerald-500' : 'text-rose-500'}`}>
-                {dbStatus === 'connected' ? t.online : t.offline}
-              </span>
+            <div className={`flex items-center gap-2 group cursor-help`} title={dbStatus === 'connected' ? 'Database Online' : 'Database Offline'}>
+              <div className={`w-2 h-2 rounded-full ${dbStatus === 'connected' ? 'bg-emerald-500 tt-glow-emerald animate-pulse' : 'bg-rose-500'}`}></div>
+              {!isCollapsed || isMobile ? (
+                <span className={`text-[9px] font-black uppercase tracking-widest ${dbStatus === 'connected' ? 'text-emerald-500' : 'text-rose-500'}`}>
+                  {dbStatus === 'connected' ? t.online : t.offline}
+                </span>
+              ) : null}
             </div>
+
+            {!isMobile && (
+              <button 
+                onClick={onToggleCollapse}
+                className="p-1.5 text-[var(--tt-text-muted)] hover:text-[var(--tt-text-main)] hover:bg-[var(--tt-surface-2)] rounded-lg transition-colors"
+              >
+                <svg className={`w-4 h-4 transition-transform duration-300 ${isCollapsed ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+                </svg>
+              </button>
+            )}
           </div>
         </div>
-      </motion.div>
+      </motion.aside>
     </>
   );
 };
 
 export default Sidebar;
+

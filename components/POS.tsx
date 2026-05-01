@@ -643,7 +643,7 @@ const POS: React.FC<POSProps> = ({ services, products, staff, customers, sales, 
       <AnimatePresence>
         {lastSale && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-slate-950/80 backdrop-blur-xl z-[150] flex items-center justify-center p-6 no-print">
-            <motion.div initial={{ scale: 0.8, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 md:p-10 max-w-md w-full shadow-2xl text-center space-y-8">
+            <motion.div initial={{ scale: 0.8, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} className="tt-card p-8 md:p-10 max-w-md w-full shadow-2xl text-center space-y-8">
               <div className="w-16 h-16 md:w-20 md:h-20 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-500 rounded-full flex items-center justify-center text-3xl md:text-4xl mx-auto shadow-inner">✓</div>
                <div className="space-y-2">
                  <h3 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white tracking-tight">{t.saleSuccess}</h3>
@@ -697,11 +697,11 @@ const POS: React.FC<POSProps> = ({ services, products, staff, customers, sales, 
           <div className="flex-1 flex gap-2">
             <div className="flex-1 relative">
                 <svg className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                <input type="text" placeholder={isRefundMode ? t.searchRefund : t.searchCatalog} value={isRefundMode ? refundSearchTerm : searchTerm} onChange={(e) => isRefundMode ? setRefundSearchTerm(e.target.value) : setSearchTerm(e.target.value)} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl py-3 md:py-3.5 pl-11 pr-4 md:pl-12 md:pr-6 outline-none focus:ring-4 focus:ring-amber-500/10 shadow-sm text-sm font-medium dark:text-slate-200" />
+                <input type="text" placeholder={isRefundMode ? t.searchRefund : t.searchCatalog} value={isRefundMode ? refundSearchTerm : searchTerm} onChange={(e) => isRefundMode ? setRefundSearchTerm(e.target.value) : setSearchTerm(e.target.value)} className="tt-input py-3 md:py-3.5 pl-11 pr-4 md:pl-12 md:pr-6" />
             </div>
-            <button onClick={toggleScanner} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-amber-500 transition-all shadow-sm"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg></button>
+            <button onClick={toggleScanner} className="bg-[var(--tt-surface)] border border-[var(--tt-border)] rounded-2xl px-4 flex items-center justify-center text-[var(--tt-text-muted)] hover:text-[var(--tt-amber)] transition-all shadow-sm"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg></button>
           </div>
-          <div className="flex bg-white dark:bg-slate-900 p-1 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm self-start sm:self-auto">
+          <div className="flex bg-[var(--tt-surface)] p-1 rounded-2xl border border-[var(--tt-border)] shadow-sm self-start sm:self-auto">
             <button onClick={() => { setIsRefundMode(false); setActiveTab('services'); }} className={`px-4 md:px-6 py-2 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest transition-all ${!isRefundMode && activeTab === 'services' ? 'bg-amber-500 text-slate-950 shadow-md' : 'text-slate-400 hover:text-slate-600'}`}>{t.services}</button>
             <button onClick={() => { setIsRefundMode(false); setActiveTab('products'); }} className={`px-4 md:px-6 py-2 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest transition-all ${!isRefundMode && activeTab === 'products' ? 'bg-amber-500 text-slate-950 shadow-md' : 'text-slate-400 hover:text-slate-600'}`}>{t.products}</button>
             <button onClick={() => setIsRefundMode(true)} className={`px-4 md:px-6 py-2 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest transition-all ${isRefundMode ? 'bg-rose-500 text-white shadow-md' : 'text-slate-400 hover:text-rose-500'}`}>{t.refunds}</button>
@@ -709,26 +709,28 @@ const POS: React.FC<POSProps> = ({ services, products, staff, customers, sales, 
         </div>
         <div className="flex-1 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 pr-1 scrollbar-hide pb-24 lg:pb-0">
           {!isRefundMode ? filteredItems.map(item => (
-            <motion.button layout key={item.id} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => addToCart(item, activeTab === 'services' ? 'service' : 'product')} className="bg-white dark:bg-slate-900 p-4 md:p-5 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-all text-left flex flex-col justify-between group h-32 md:h-40 relative overflow-hidden">
+            <motion.button layout key={item.id} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => addToCart(item, activeTab === 'services' ? 'service' : 'product')} 
+              className="tt-card p-5 hover:border-[var(--tt-amber)] transition-all text-left flex flex-col justify-between group h-36 md:h-44 relative overflow-hidden"
+            >
               <div className="relative z-10 w-full">
-                <span className={`text-[8px] md:text-[9px] font-black uppercase tracking-widest px-2 py-0.5 md:py-1 rounded-lg mb-1 md:mb-2 inline-block ${activeTab === 'services' ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400' : 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400'}`}>
+                <span className={`tt-badge mb-2 inline-block ${activeTab === 'services' ? 'bg-amber-500/10 text-amber-500' : 'bg-indigo-500/10 text-indigo-400'}`}>
                   {activeTab === 'services' ? ((t as any)[((item as Service).category || '').toLowerCase()] || (item as Service).category) : 'Retail'}
                 </span>
-                <h4 className="font-bold text-slate-800 dark:text-slate-200 text-xs md:text-sm leading-tight line-clamp-2">
+                <h4 className="font-bold text-[var(--tt-text-main)] text-sm md:text-base leading-tight line-clamp-2">
                     {getItemName(item)}
                 </h4>
               </div>
               <div className="flex items-center justify-between relative z-10">
-                <p className="text-base md:text-lg font-black text-slate-900 dark:text-white">{settings.currency}{item.price}</p>
-                <div className="w-7 h-7 md:w-8 md:h-8 bg-slate-900 dark:bg-slate-800 text-white rounded-full flex items-center justify-center opacity-100 lg:opacity-0 group-hover:opacity-100 transition-all">
-                  <svg className="w-3.5 h-3.5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                <p className="text-lg md:text-xl font-black text-[var(--tt-text-main)] tracking-tighter">{settings.currency}{item.price}</p>
+                <div className="w-8 h-8 bg-white text-slate-950 rounded-xl flex items-center justify-center opacity-100 lg:opacity-0 group-hover:opacity-100 transition-all shadow-lg">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
                 </div>
               </div>
             </motion.button>
           )) : (
             <div className="col-span-full space-y-4">
                 {/* Refund Interface */}
-                <div className="bg-white dark:bg-slate-900 p-6 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm">
+                <div className="tt-card p-6 shadow-sm">
                     <h3 className="text-lg font-black text-slate-900 dark:text-white mb-4">{t.refunds}</h3>
                     <p className="text-xs text-slate-500 mb-6">{t.searchReturnMessage}</p>
                     
@@ -821,7 +823,7 @@ const POS: React.FC<POSProps> = ({ services, products, staff, customers, sales, 
         {(cart.length > 0 && !showMobileCart && isMobile) && (
             <motion.div 
                 initial={{ y: 100 }} animate={{ y: 0 }} exit={{ y: 100 }}
-                className="fixed bottom-0 left-0 right-0 p-4 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 lg:hidden z-50 flex items-center justify-between shadow-[0_-5px_20px_rgba(0,0,0,0.1)] pb-8 md:pb-6"
+                className="fixed bottom-0 left-0 right-0 p-4 bg-[var(--tt-surface)] border-t border-[var(--tt-border)] lg:hidden z-50 flex items-center justify-between shadow-[0_-5px_20px_rgba(0,0,0,0.1)] pb-8 md:pb-6"
             >
                 <div>
                    <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">{cart.reduce((a, b) => a + b.quantity, 0)} Items</p>
@@ -854,7 +856,7 @@ const POS: React.FC<POSProps> = ({ services, products, staff, customers, sales, 
               animate={isMobile ? { y: 0 } : { x: 0 }}
               exit={isMobile ? { y: '100%' } : { x: 400 }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className={`fixed bottom-0 left-0 right-0 lg:static lg:w-96 flex flex-col bg-white dark:bg-slate-900 rounded-t-[2.5rem] lg:rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-2xl lg:shadow-xl overflow-hidden z-[80] h-[90vh] lg:h-auto`}
+              className={`fixed bottom-0 left-0 right-0 lg:static lg:w-96 flex flex-col bg-[var(--tt-surface)] rounded-t-[2.5rem] lg:rounded-[2.5rem] border border-[var(--tt-border)] shadow-2xl lg:shadow-xl overflow-hidden z-[80] h-[90vh] lg:h-auto`}
             >
               <div className="p-5 md:p-6 border-b border-slate-50 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20 flex justify-between items-center">
                 <h3 className="text-lg md:text-xl font-black text-slate-800 dark:text-white flex items-center gap-2">{t.cart}</h3>
@@ -878,7 +880,7 @@ const POS: React.FC<POSProps> = ({ services, products, staff, customers, sales, 
                                   initial={{ opacity: 0, y: 10, scale: 0.95 }}
                                   animate={{ opacity: 1, y: 0, scale: 1 }}
                                   exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                  className="absolute top-full right-0 mt-2 w-64 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-800 p-2 z-50 overflow-hidden"
+                                  className="absolute top-full right-0 mt-2 w-64 bg-[var(--tt-surface-2)] rounded-2xl shadow-2xl border border-[var(--tt-border)] p-2 z-50 overflow-hidden"
                                 >
                                     <p className="px-3 py-2 text-[10px] text-slate-400 font-bold uppercase tracking-widest">{t.selectToResume}</p>
                                     <div className="max-h-48 overflow-y-auto space-y-1">
@@ -998,7 +1000,7 @@ const POS: React.FC<POSProps> = ({ services, products, staff, customers, sales, 
                 )}
 
                 {paymentMode === 'split' && (
-                    <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-amber-100 dark:border-amber-900/30 space-y-3 shadow-inner">
+                    <div className="bg-[var(--tt-surface-2)] p-4 rounded-2xl border border-[var(--tt-amber)]/20 space-y-3 shadow-inner">
                         <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest">{t.splitPayment}</p>
                         <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-1">
@@ -1045,9 +1047,9 @@ const POS: React.FC<POSProps> = ({ services, products, staff, customers, sales, 
 
                 <div className="flex gap-2">
                    <div className="flex-1 relative group">
-                        <input value={discountCode} onChange={e => setDiscountCode(e.target.value.toUpperCase())} placeholder="PROMO" className="w-full bg-white dark:bg-slate-900 border-none rounded-xl px-4 py-3 text-xs font-black uppercase tracking-widest dark:text-white shadow-sm" />
+                        <input value={discountCode} onChange={e => setDiscountCode(e.target.value.toUpperCase())} placeholder="PROMO" className="w-full bg-[var(--tt-surface-2)] border-none rounded-xl px-4 py-3 text-xs font-black uppercase tracking-widest text-[var(--tt-text-main)] shadow-sm" />
                         {/* Quick Discount Dropdown */}
-                        <div className="absolute bottom-full left-0 mb-2 w-48 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 p-2 hidden group-focus-within:block z-50">
+                        <div className="absolute bottom-full left-0 mb-2 w-48 bg-[var(--tt-surface-2)] rounded-2xl shadow-xl border border-[var(--tt-border)] p-2 hidden group-focus-within:block z-50">
                             <p className="px-3 py-2 text-[10px] text-slate-400 font-bold uppercase tracking-widest">{t.quickDiscount}</p>
                             <div className="grid grid-cols-2 gap-1 p-1">
                                 {[5, 10, 15, 20].map(v => (
@@ -1130,7 +1132,7 @@ const POS: React.FC<POSProps> = ({ services, products, staff, customers, sales, 
       <AnimatePresence>
         {isScanning && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-[200] flex items-center justify-center p-4">
-            <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-[2rem] overflow-hidden shadow-2xl relative">
+            <div className="w-full max-w-md tt-card overflow-hidden shadow-2xl relative">
                 <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
                     <h3 className="font-black text-slate-900 dark:text-white text-lg flex items-center gap-2">
                         <svg className="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
@@ -1194,7 +1196,7 @@ const POS: React.FC<POSProps> = ({ services, products, staff, customers, sales, 
                       initial={{ y: "100%" }}
                       animate={{ y: 0 }}
                       exit={{ y: "100%" }}
-                      className="bg-white dark:bg-slate-900 rounded-t-[2.5rem] sm:rounded-[2.5rem] w-full max-w-md p-8 md:p-10 shadow-2xl"
+                      className="tt-card w-full max-w-md p-8 md:p-10 shadow-2xl"
                   >
                       <div className="flex justify-between items-center mb-6">
                           <h3 className="text-xl font-black text-slate-900 dark:text-white">{t.quickAddClient}</h3>
@@ -1255,7 +1257,7 @@ const POS: React.FC<POSProps> = ({ services, products, staff, customers, sales, 
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white dark:bg-slate-900 rounded-[2rem] p-8 max-w-md w-full shadow-2xl border border-slate-100 dark:border-slate-800"
+              className="tt-card p-8 max-w-md w-full shadow-2xl"
             >
               <div className="w-16 h-16 bg-rose-100 dark:bg-rose-900/30 text-rose-600 rounded-full flex items-center justify-center mb-6 mx-auto">
                 <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>

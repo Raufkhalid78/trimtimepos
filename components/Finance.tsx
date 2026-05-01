@@ -363,29 +363,29 @@ const Finance: React.FC<FinanceProps> = ({ sales, expenses, staffList, customers
       <motion.div
         animate={{ y: isTabBarVisible ? 0 : -80, opacity: isTabBarVisible ? 1 : 0 }}
         transition={{ duration: 0.25 }}
-        className="flex bg-white dark:bg-slate-900 p-1.5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 overflow-x-auto no-scrollbar sticky top-0 z-40"
+        className="flex bg-[var(--tt-surface)] p-1.5 rounded-2xl shadow-sm border border-[var(--tt-border)] overflow-x-auto no-scrollbar sticky top-0 z-40"
       >
         <div className="flex gap-1 min-w-max w-full">
           {currentUser.role === 'admin' && (
             <>
-              <button onClick={() => setActiveTab('overview')} className={`flex-1 md:flex-none px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'overview' ? 'bg-amber-500 text-slate-950' : 'text-slate-400'}`}>{t.overview}</button>
-              <button onClick={() => setActiveTab('transactions')} className={`flex-1 md:flex-none px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'transactions' ? 'bg-amber-500 text-slate-950' : 'text-slate-400'}`}>{t.transactions}</button>
-              <button onClick={() => setActiveTab('payroll')} className={`flex-1 md:flex-none px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'payroll' ? 'bg-amber-500 text-slate-950' : 'text-slate-400'}`}>{t.payroll}</button>
-              <button onClick={() => setActiveTab('cash-drawer')} className={`flex-1 md:flex-none px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'cash-drawer' ? 'bg-amber-500 text-slate-950' : 'text-slate-400'}`}>{t.cashDrawer}</button>
+              <button onClick={() => setActiveTab('overview')} className={`flex-1 md:flex-none px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'overview' ? 'bg-[var(--tt-amber)] text-slate-950 shadow-lg shadow-[var(--tt-amber-glow)]' : 'text-[var(--tt-text-muted)] hover:text-[var(--tt-text-main)]'}`}>{t.overview}</button>
+              <button onClick={() => setActiveTab('transactions')} className={`flex-1 md:flex-none px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'transactions' ? 'bg-[var(--tt-amber)] text-slate-950 shadow-lg shadow-[var(--tt-amber-glow)]' : 'text-[var(--tt-text-muted)] hover:text-[var(--tt-text-main)]'}`}>{t.transactions}</button>
+              <button onClick={() => setActiveTab('payroll')} className={`flex-1 md:flex-none px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'payroll' ? 'bg-[var(--tt-amber)] text-slate-950 shadow-lg shadow-[var(--tt-amber-glow)]' : 'text-[var(--tt-text-muted)] hover:text-[var(--tt-text-main)]'}`}>{t.payroll}</button>
+              <button onClick={() => setActiveTab('cash-drawer')} className={`flex-1 md:flex-none px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'cash-drawer' ? 'bg-[var(--tt-amber)] text-slate-950 shadow-lg shadow-[var(--tt-amber-glow)]' : 'text-[var(--tt-text-muted)] hover:text-[var(--tt-text-main)]'}`}>{t.cashDrawer}</button>
             </>
           )}
-          <button onClick={() => setActiveTab('expenses')} className={`flex-1 md:flex-none px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'expenses' ? 'bg-amber-500 text-slate-950' : 'text-slate-400'}`}>{t.expenses}</button>
+          <button onClick={() => setActiveTab('expenses')} className={`flex-1 md:flex-none px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'expenses' ? 'bg-[var(--tt-amber)] text-slate-950 shadow-lg shadow-[var(--tt-amber-glow)]' : 'text-[var(--tt-text-muted)] hover:text-[var(--tt-text-main)]'}`}>{t.expenses}</button>
         </div>
       </motion.div>
 
       {/* Date Filter Selection */}
-      <div className="flex gap-4 items-center bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-100 dark:border-slate-800">
+      <div className="flex gap-4 items-center bg-[var(--tt-surface)] p-4 rounded-3xl border border-[var(--tt-border)] shadow-sm">
         <div className="flex-1 flex flex-col gap-1">
-          <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">{t.selectMonth}</label>
+          <label className="text-[10px] font-black uppercase text-[var(--tt-text-muted)] tracking-widest px-2">{t.selectMonth}</label>
           <select
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-            className="w-full bg-slate-50 dark:bg-slate-800 rounded-xl px-4 py-2.5 text-sm font-bold border-none focus:ring-2 focus:ring-amber-500"
+            className="tt-input py-2.5"
           >
             {Array.from({ length: 12 }, (_, i) => (
               <option key={i} value={i}>
@@ -395,11 +395,11 @@ const Finance: React.FC<FinanceProps> = ({ sales, expenses, staffList, customers
           </select>
         </div>
         <div className="flex-1 flex flex-col gap-1">
-          <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">{t.selectYear}</label>
+          <label className="text-[10px] font-black uppercase text-[var(--tt-text-muted)] tracking-widest px-2">{t.selectYear}</label>
           <select
             value={selectedYear}
             onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-            className="w-full bg-slate-50 dark:bg-slate-800 rounded-xl px-4 py-2.5 text-sm font-bold border-none focus:ring-2 focus:ring-amber-500"
+            className="tt-input py-2.5"
           >
             {Array.from({ length: 5 }, (_, i) => {
               const year = new Date().getFullYear() - 2 + i;
@@ -414,78 +414,80 @@ const Finance: React.FC<FinanceProps> = ({ sales, expenses, staffList, customers
           <motion.div key="ov" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-8">
             {/* P&L and Tax Summary */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] border dark:border-slate-800">
-                <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-lg font-black uppercase tracking-tight">📈 {t.profitAndLoss}</h3>
-                  <button onClick={handleExportPL} className="text-[10px] font-black text-amber-600 bg-amber-50 px-3 py-1 rounded-full uppercase tracking-widest">{t.exportCSV}</button>
+              <div className="tt-card p-8 md:p-10">
+                <div className="flex justify-between items-center mb-8">
+                  <h3 className="text-xl font-black uppercase tracking-tight text-[var(--tt-text-main)]">📈 {t.profitAndLoss}</h3>
+                  <button onClick={handleExportPL} className="text-[10px] font-black text-[var(--tt-amber)] bg-[var(--tt-amber)]/10 px-4 py-1.5 rounded-full uppercase tracking-widest hover:bg-[var(--tt-amber)]/20 transition-colors">{t.exportCSV}</button>
                 </div>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
-                    <span className="text-sm font-bold text-slate-500 dark:text-slate-400">{t.revenue}</span>
-                    <span className="font-black text-slate-900 dark:text-white">{currency}{totalRevenue.toFixed(2)}</span>
+                <div className="space-y-5">
+                  <div className="flex justify-between items-center p-4 bg-[var(--tt-surface-2)] rounded-2xl border border-[var(--tt-border)]">
+                    <span className="text-sm font-bold text-[var(--tt-text-muted)]">{t.revenue}</span>
+                    <span className="font-black text-[var(--tt-text-main)] text-lg">{currency}{totalRevenue.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
-                    <span className="text-sm font-bold text-slate-500 dark:text-slate-400">{t.costOfGoods}</span>
-                    <span className="font-black text-rose-500 dark:text-rose-400">-{currency}{totalCostOfGoods.toFixed(2)}</span>
+                  <div className="flex justify-between items-center p-4 bg-[var(--tt-surface-2)] rounded-2xl border border-[var(--tt-border)]">
+                    <span className="text-sm font-bold text-[var(--tt-text-muted)]">{t.costOfGoods}</span>
+                    <span className="font-black text-rose-500">-{currency}{totalCostOfGoods.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between items-center p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl">
-                    <span className="text-sm font-bold text-emerald-700">{t.grossProfit}</span>
-                    <span className="font-black text-emerald-600">{currency}{grossProfit.toFixed(2)}</span>
+                  <div className="flex justify-between items-center p-4 bg-emerald-500/10 rounded-2xl border border-emerald-500/20">
+                    <span className="text-sm font-black text-emerald-500 uppercase tracking-widest">{t.grossProfit}</span>
+                    <span className="font-black text-emerald-500 text-lg">{currency}{grossProfit.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
-                    <span className="text-sm font-bold text-slate-500 dark:text-slate-400">{t.expenses}</span>
-                    <span className="font-black text-rose-500 dark:text-rose-400">-{currency}{totalExpenses.toFixed(2)}</span>
+                  <div className="flex justify-between items-center p-4 bg-[var(--tt-surface-2)] rounded-2xl border border-[var(--tt-border)]">
+                    <span className="text-sm font-bold text-[var(--tt-text-muted)]">{t.expenses}</span>
+                    <span className="font-black text-rose-500">-{currency}{totalExpenses.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between items-center p-4 bg-slate-900 text-white rounded-2xl shadow-xl">
-                    <span className="text-sm font-black uppercase tracking-widest">{t.netProfit}</span>
-                    <span className="text-xl font-black text-amber-400">{currency}{netProfit.toFixed(2)}</span>
+                  <div className="p-6 bg-white text-slate-950 rounded-[2rem] shadow-2xl shadow-white/5 mt-8 border border-white/20">
+                    <div className="flex justify-between items-center">
+                       <span className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">{t.netProfit}</span>
+                       <span className="text-3xl font-black tracking-tighter">{currency}{netProfit.toFixed(0)}</span>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] border dark:border-slate-800">
+              <div className="tt-card p-6">
                 <h3 className="text-lg font-black uppercase tracking-tight mb-6">🧾 {t.taxSummary}</h3>
                 <div className="space-y-4">
-                  <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
-                    <span className="text-sm font-bold text-slate-500 dark:text-slate-400">{t.taxableRevenue}</span>
-                    <span className="font-black text-slate-900 dark:text-white">{currency}{totalRevenue.toFixed(2)}</span>
+                  <div className="flex justify-between items-center p-3 bg-[var(--tt-surface-2)] rounded-xl border border-[var(--tt-border)]">
+                    <span className="text-sm font-bold text-[var(--tt-text-muted)]">{t.taxableRevenue}</span>
+                    <span className="font-black text-[var(--tt-text-main)]">{currency}{totalRevenue.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
-                    <span className="text-sm font-bold text-slate-500">{t.taxCollected}</span>
-                    <span className="font-black text-amber-600">{currency}{totalTax.toFixed(2)}</span>
+                  <div className="flex justify-between items-center p-3 bg-[var(--tt-surface-2)] rounded-xl border border-[var(--tt-border)]">
+                    <span className="text-sm font-bold text-[var(--tt-text-muted)]">{t.taxCollected}</span>
+                    <span className="font-black text-[var(--tt-amber)]">{currency}{totalTax.toFixed(2)}</span>
                   </div>
-                  <div className="p-4 bg-amber-50 dark:bg-amber-900/10 rounded-2xl border border-amber-100 dark:border-amber-900/20">
-                    <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">{t.taxLiability}</p>
-                    <p className="text-2xl font-black text-slate-900 dark:text-white">{currency}{totalTax.toFixed(2)}</p>
-                    <p className="text-[10px] text-slate-400 mt-2 italic">{t.basedOn} {settings.taxRate}% {settings.taxType} tax rate.</p>
+                  <div className="p-4 bg-[var(--tt-amber-glow)] rounded-2xl border border-[var(--tt-amber)]/20">
+                    <p className="text-[10px] font-black text-[var(--tt-amber)] uppercase tracking-widest mb-1">{t.taxLiability}</p>
+                    <p className="text-2xl font-black text-[var(--tt-text-main)]">{currency}{totalTax.toFixed(2)}</p>
+                    <p className="text-[10px] text-[var(--tt-text-muted)] mt-2 italic">{t.basedOn} {settings.taxRate}% {settings.taxType} tax rate.</p>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] border dark:border-slate-800">
-              <h3 className="text-xl font-bold mb-8 flex items-center gap-3">📊 {t.shopPerformance}</h3>
+            <div className="tt-card p-6">
+              <h3 className="text-xl font-bold mb-8 flex items-center gap-3 text-[var(--tt-text-main)]">📊 {t.shopPerformance}</h3>
               <div className="h-64 w-full">
-                <Suspense fallback={<div className="h-full w-full bg-slate-50 animate-pulse rounded-2xl" />}>
-                  <PerformanceBarChart data={[{ name: 'Summary', rev: totalRevenue, exp: totalExpenses }]} color="#10b981" layout="horizontal" />
+                <Suspense fallback={<div className="h-full w-full bg-[var(--tt-surface-2)] animate-pulse rounded-2xl" />}>
+                  <PerformanceBarChart data={[{ name: 'Summary', rev: totalRevenue, exp: totalExpenses }]} color="var(--tt-emerald)" layout="horizontal" />
                 </Suspense>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] border dark:border-slate-800">
-                <h3 className="font-bold mb-4">{t.commissionReport}</h3>
+              <div className="tt-card p-6">
+                <h3 className="font-bold mb-4 text-[var(--tt-text-main)]">{t.commissionReport}</h3>
                 <div className="space-y-3">
                   {staffList.filter(s => s.role === 'employee').map(s => {
                     const sRev = filteredSales.filter(x => String(x.staffId) === String(s.id)).reduce((a, b) => a + b.total, 0);
                     const commissionEarned = (sRev * (s.commission || 0)) / 100;
                     return (
-                      <div key={s.id} className="flex justify-between items-center p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl">
+                      <div key={s.id} className="flex justify-between items-center p-4 bg-[var(--tt-surface-2)] border border-[var(--tt-border)] rounded-2xl">
                         <div className="flex flex-col">
-                          <span className="text-sm font-bold">{s.name}</span>
-                          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">{t.revenue}: {currency}{sRev.toFixed(2)} ({s.commission || 0}%)</span>
+                          <span className="text-sm font-bold text-[var(--tt-text-main)]">{s.name}</span>
+                          <span className="text-[10px] text-[var(--tt-text-muted)] font-bold uppercase tracking-tighter">{t.revenue}: {currency}{sRev.toFixed(2)} ({s.commission || 0}%)</span>
                         </div>
-                        <span className="font-black text-emerald-600">{currency}{commissionEarned.toFixed(2)}</span>
+                        <span className="font-black text-[var(--tt-emerald)]">{currency}{commissionEarned.toFixed(2)}</span>
                       </div>
                     );
                   })}
@@ -507,38 +509,38 @@ const Finance: React.FC<FinanceProps> = ({ sales, expenses, staffList, customers
 
         {activeTab === 'transactions' && (
           <motion.div key="tr" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-6">
-            <div className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] border dark:border-slate-800 flex justify-between items-center">
+            <div className="tt-card p-6 flex justify-between items-center">
               <div>
-                <h3 className="text-lg font-black uppercase tracking-tight">{t.transactionHistory}</h3>
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
-                  {enrichedSales.length} {t.totalSales} | <span className="text-emerald-500">Filtered for: {`${selectedYear}-${(selectedMonth + 1).toString().padStart(2, '0')}`}</span>
+                <h3 className="text-lg font-black uppercase tracking-tight text-[var(--tt-text-main)]">{t.transactionHistory}</h3>
+                <p className="text-[10px] text-[var(--tt-text-muted)] font-bold uppercase tracking-widest">
+                  {enrichedSales.length} {t.totalSales} | <span className="text-[var(--tt-emerald)]">Filtered for: {`${selectedYear}-${(selectedMonth + 1).toString().padStart(2, '0')}`}</span>
                 </p>
               </div>
-              <button onClick={handleExportCSV} className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-4 py-2 rounded-xl uppercase tracking-widest flex items-center gap-2">
+              <button onClick={handleExportCSV} className="text-[10px] font-black text-[var(--tt-emerald)] bg-[var(--tt-emerald)]/10 px-4 py-2 rounded-xl uppercase tracking-widest flex items-center gap-2 hover:bg-[var(--tt-emerald)]/20 transition-colors">
                 <span>📥</span> {t.exportCSV}
               </button>
             </div>
-            <div className="bg-white dark:bg-slate-900 rounded-[2rem] border dark:border-slate-800 overflow-hidden">
-              <div className="p-4 border-b dark:border-slate-800 flex justify-between items-center">
+            <div className="tt-card overflow-hidden">
+              <div className="p-4 border-b border-[var(--tt-border)] flex justify-between items-center">
                 <div className="flex items-center gap-2">
-                  <input type="checkbox" onChange={toggleAll} checked={selectedTransactions.size === enrichedSales.length && enrichedSales.length > 0} className="w-5 h-5 rounded text-amber-500" />
-                  <span className="text-xs font-bold">{selectedTransactions.size} Selected</span>
+                  <input type="checkbox" onChange={toggleAll} checked={selectedTransactions.size === enrichedSales.length && enrichedSales.length > 0} className="w-5 h-5 rounded text-[var(--tt-amber)] bg-[var(--tt-surface-2)] border-[var(--tt-border)]" />
+                  <span className="text-xs font-bold text-[var(--tt-text-main)]">{selectedTransactions.size} Selected</span>
                 </div>
-                {selectedTransactions.size > 0 && <button onClick={handleDeleteSelected} className="text-rose-500 text-xs font-black uppercase min-h-[44px] px-4 flex items-center touch-manipulation active:opacity-70">{t.deleteSelected}</button>}
+                {selectedTransactions.size > 0 && <button onClick={handleDeleteSelected} className="text-[var(--tt-rose)] text-xs font-black uppercase min-h-[44px] px-4 flex items-center touch-manipulation active:opacity-70">{t.deleteSelected}</button>}
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
-                  <thead className="bg-slate-50 dark:bg-slate-800/50 text-[10px] font-black uppercase text-slate-400">
+                  <thead className="bg-[var(--tt-surface-2)] text-[10px] font-black uppercase text-[var(--tt-text-muted)]">
                     <tr><th className="p-4 w-10"></th><th className="p-4">{t.time}</th><th className="p-4">{t.details}</th><th className="p-4">{t.total}</th><th className="p-4">{t.action}</th></tr>
                   </thead>
-                  <tbody className="divide-y dark:divide-slate-800">
+                  <tbody className="divide-y border-[var(--tt-border)]">
                     {enrichedSales.slice().reverse().map(sale => (
-                      <tr key={sale.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
-                        <td className="p-4"><input type="checkbox" checked={selectedTransactions.has(sale.id)} onChange={() => toggleSelection(sale.id)} className="w-5 h-5 rounded text-amber-500" /></td>
-                        <td className="p-4 text-xs font-bold">{new Date(sale.timestamp).toLocaleDateString(language)}</td>
-                        <td className="p-4"><p className="text-sm font-bold">{sale.staffName}</p><p className="text-xs text-slate-400">{sale.customerName}</p></td>
-                        <td className="p-4 font-black">{currency}{sale.total.toFixed(2)}</td>
-                        <td className="p-4"><button onClick={() => setViewingSale(sale)} className="text-amber-500 font-bold text-xs">{t.view}</button></td>
+                      <tr key={sale.id} className="hover:bg-[var(--tt-surface-2)]/50 transition-colors">
+                        <td className="p-4"><input type="checkbox" checked={selectedTransactions.has(sale.id)} onChange={() => toggleSelection(sale.id)} className="w-5 h-5 rounded text-[var(--tt-amber)] bg-[var(--tt-surface-2)] border-[var(--tt-border)]" /></td>
+                        <td className="p-4 text-xs font-bold text-[var(--tt-text-main)]">{new Date(sale.timestamp).toLocaleDateString(language)}</td>
+                        <td className="p-4"><p className="text-sm font-bold text-[var(--tt-text-main)]">{sale.staffName}</p><p className="text-xs text-[var(--tt-text-muted)]">{sale.customerName}</p></td>
+                        <td className="p-4 font-black text-[var(--tt-text-main)]">{currency}{sale.total.toFixed(2)}</td>
+                        <td className="p-4"><button onClick={() => setViewingSale(sale)} className="text-[var(--tt-amber)] font-bold text-xs">{t.view}</button></td>
                       </tr>
                     ))}
                   </tbody>
@@ -550,32 +552,32 @@ const Finance: React.FC<FinanceProps> = ({ sales, expenses, staffList, customers
 
         {activeTab === 'expenses' && (
           <motion.div key="ex" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-6">
-            <div className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] border dark:border-slate-800">
+            <div className="tt-card p-6">
               <form onSubmit={handleAddExpenseSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
-                  <input type="text" placeholder={t.category} value={newExp.category} onChange={e => setNewExp({ ...newExp, category: e.target.value })} className="bg-slate-50 dark:bg-slate-800 rounded-xl px-4 py-3 text-sm" required />
-                  <input type="number" placeholder={t.amount} value={newExp.amount} onChange={e => setNewExp({ ...newExp, amount: e.target.value })} className="bg-slate-50 dark:bg-slate-800 rounded-xl px-4 py-3 text-sm" required />
+                  <input type="text" placeholder={t.category} value={newExp.category} onChange={e => setNewExp({ ...newExp, category: e.target.value })} className="tt-input" required />
+                  <input type="number" placeholder={t.amount} value={newExp.amount} onChange={e => setNewExp({ ...newExp, amount: e.target.value })} className="tt-input" required />
                 </div>
-                <input type="text" placeholder={t.description} value={newExp.description} onChange={e => setNewExp({ ...newExp, description: e.target.value })} className="w-full bg-slate-50 dark:bg-slate-800 rounded-xl px-4 py-3 text-sm" />
+                <input type="text" placeholder={t.description} value={newExp.description} onChange={e => setNewExp({ ...newExp, description: e.target.value })} className="tt-input" />
                 <div className="flex gap-4">
-                  <label className="flex-1 cursor-pointer bg-slate-50 dark:bg-slate-800 border-2 border-dashed rounded-xl p-3 text-center text-slate-400 text-xs font-bold">
+                  <label className="flex-1 cursor-pointer bg-[var(--tt-surface-2)] border-2 border-dashed border-[var(--tt-border)] rounded-2xl p-3 text-center text-[var(--tt-text-muted)] text-xs font-bold hover:border-[var(--tt-amber)]/50 transition-colors">
                     {newExp.receiptImage ? '✅ Attached' : '📸 Image'}
                     <input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageUpload} className="hidden" />
                   </label>
-                  <button type="submit" className="flex-1 bg-amber-500 text-slate-900 py-3 rounded-xl font-black uppercase text-xs">{t.save}</button>
+                  <button type="submit" className="tt-button-primary flex-1 py-3 text-xs">{t.save}</button>
                 </div>
               </form>
             </div>
             <div className="space-y-3">
               {filteredExpenses.slice().reverse().map(exp => (
-                <div key={exp.id} className="bg-white dark:bg-slate-900 p-4 rounded-2xl border dark:border-slate-800 flex justify-between items-center transition-all hover:border-amber-500/30">
+                <div key={exp.id} className="tt-card p-4 flex justify-between items-center transition-all hover:border-[var(--tt-amber)]/30">
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center">🧾</div>
-                    <div><p className="font-bold dark:text-white">{exp.category}</p><p className="text-[10px] opacity-50 dark:text-slate-400">{exp.date}</p></div>
+                    <div className="w-10 h-10 rounded-lg bg-[var(--tt-surface-2)] border border-[var(--tt-border)] flex items-center justify-center text-lg">🧾</div>
+                    <div><p className="font-bold text-[var(--tt-text-main)]">{exp.category}</p><p className="text-[10px] text-[var(--tt-text-muted)] font-bold">{exp.date}</p></div>
                   </div>
                   <div className="text-right">
-                    <p className="font-black text-rose-500 dark:text-rose-400">{currency}{exp.amount.toFixed(2)}</p>
-                    <button onClick={() => onDeleteExpense(exp.id)} className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[10px] text-slate-400 hover:text-rose-500 active:text-rose-600 transition-colors uppercase font-bold touch-manipulation">{t.delete}</button>
+                    <p className="font-black text-[var(--tt-rose)]">{currency}{exp.amount.toFixed(2)}</p>
+                    <button onClick={() => onDeleteExpense(exp.id)} className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[10px] text-[var(--tt-text-muted)] hover:text-[var(--tt-rose)] active:text-[var(--tt-rose)] transition-colors uppercase font-bold touch-manipulation">{t.delete}</button>
                   </div>
                 </div>
               ))}
@@ -586,13 +588,13 @@ const Finance: React.FC<FinanceProps> = ({ sales, expenses, staffList, customers
         {activeTab === 'payroll' && (
           <motion.div key="py" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="md:col-span-1 bg-white dark:bg-slate-900 p-6 rounded-[2rem] border dark:border-slate-800">
-                <h3 className="font-bold mb-4 flex items-center gap-2">💸 {t.addAdvance}</h3>
+              <div className="md:col-span-1 tt-card p-6">
+                <h3 className="font-bold mb-4 flex items-center gap-2 text-[var(--tt-text-main)]">💸 {t.addAdvance}</h3>
                 <form onSubmit={handleAddAdvanceSubmit} className="space-y-4">
                   <select
                     value={newAdvance.staffId}
                     onChange={e => setNewAdvance({ ...newAdvance, staffId: e.target.value })}
-                    className="w-full bg-slate-50 dark:bg-slate-800 rounded-xl px-4 py-3 text-sm"
+                    className="tt-input"
                     required
                   >
                     <option value="">{t.chooseProfessional}</option>
@@ -605,7 +607,7 @@ const Finance: React.FC<FinanceProps> = ({ sales, expenses, staffList, customers
                     placeholder={t.amount}
                     value={newAdvance.amount}
                     onChange={e => setNewAdvance({ ...newAdvance, amount: e.target.value })}
-                    className="w-full bg-slate-50 dark:bg-slate-800 rounded-xl px-4 py-3 text-sm"
+                    className="tt-input"
                     required
                   />
                   <input
@@ -613,26 +615,26 @@ const Finance: React.FC<FinanceProps> = ({ sales, expenses, staffList, customers
                     placeholder={t.description}
                     value={newAdvance.description}
                     onChange={e => setNewAdvance({ ...newAdvance, description: e.target.value })}
-                    className="w-full bg-slate-50 dark:bg-slate-800 rounded-xl px-4 py-3 text-sm"
+                    className="tt-input"
                   />
-                  <button type="submit" className="w-full bg-amber-500 text-slate-900 py-3 rounded-xl font-black uppercase text-xs">
+                  <button type="submit" className="tt-button-primary w-full py-3 text-xs">
                     {t.saveChanges}
                   </button>
                 </form>
 
                 <div className="mt-8 space-y-3">
-                  <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{t.history}</h4>
+                  <h4 className="text-[10px] font-black uppercase text-[var(--tt-text-muted)] tracking-widest">{t.history}</h4>
                   {filteredAdvances.slice().reverse().map(adv => {
                     const staff = staffList.find(s => s.id === adv.staffId);
                     return (
-                      <div key={adv.id} className="p-3 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl flex justify-between items-center transition-all hover:border-amber-500/30">
+                      <div key={adv.id} className="p-3 bg-[var(--tt-surface-2)] border border-[var(--tt-border)] rounded-xl flex justify-between items-center transition-all hover:border-[var(--tt-amber)]/30">
                         <div>
-                          <p className="text-xs font-bold dark:text-white">{staff?.name || 'Unknown'}</p>
-                          <p className="text-[10px] text-slate-400">{adv.date}</p>
+                          <p className="text-xs font-bold text-[var(--tt-text-main)]">{staff?.name || 'Unknown'}</p>
+                          <p className="text-[10px] text-[var(--tt-text-muted)]">{adv.date}</p>
                         </div>
                         <div className="text-right flex items-center gap-3">
-                          <p className="text-xs font-black text-amber-600 dark:text-amber-500">{currency}{adv.amount.toFixed(2)}</p>
-                          <button onClick={() => onDeleteAdvance(adv.id)} className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[9px] text-rose-500 font-bold uppercase hover:underline active:opacity-70 touch-manipulation">{t.remove}</button>
+                          <p className="text-xs font-black text-[var(--tt-amber)]">{currency}{adv.amount.toFixed(2)}</p>
+                          <button onClick={() => onDeleteAdvance(adv.id)} className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[9px] text-[var(--tt-rose)] font-bold uppercase hover:underline active:opacity-70 touch-manipulation">{t.remove}</button>
                         </div>
                       </div>
                     );
@@ -640,8 +642,8 @@ const Finance: React.FC<FinanceProps> = ({ sales, expenses, staffList, customers
                 </div>
               </div>
 
-              <div className="md:col-span-2 bg-white dark:bg-slate-900 p-6 rounded-[2rem] border dark:border-slate-800">
-                <h3 className="font-bold mb-6 flex items-center gap-2">🧾 {t.payoutSummary}</h3>
+              <div className="md:col-span-2 tt-card p-6">
+                <h3 className="font-bold mb-6 flex items-center gap-2 text-[var(--tt-text-main)]">🧾 {t.payoutSummary}</h3>
                 <div className="space-y-4">
                   {staffList.filter(s => s.role === 'employee').map(s => {
                     const sSales = filteredSales.filter(x => String(x.staffId) === String(s.id));
@@ -659,31 +661,31 @@ const Finance: React.FC<FinanceProps> = ({ sales, expenses, staffList, customers
                     const finalPayout = Math.max(0, commissionEarned - totalAdvances);
 
                     return (
-                      <div key={s.id} className="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-3xl border border-slate-100 dark:border-slate-800">
+                      <div key={s.id} className="p-6 bg-[var(--tt-surface-2)] rounded-3xl border border-[var(--tt-border)] shadow-sm">
                         <div className="flex justify-between items-start mb-4">
                           <div>
-                            <h4 className="text-lg font-black">{s.name}</h4>
-                            <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">{t.commission}: {s.commission}%</p>
+                            <h4 className="text-lg font-black text-[var(--tt-text-main)]">{s.name}</h4>
+                            <p className="text-xs text-[var(--tt-text-muted)] font-bold uppercase tracking-widest">{t.commission}: {s.commission}%</p>
                           </div>
                           <div className="text-right">
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t.totalSales}</p>
-                            <p className="text-xl font-black">{currency}{sRev.toFixed(2)}</p>
+                            <p className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest">{t.totalSales}</p>
+                            <p className="text-xl font-black text-[var(--tt-text-main)]">{currency}{sRev.toFixed(2)}</p>
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-4 border-t dark:border-slate-700">
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-4 border-t border-[var(--tt-border)]">
                           <div>
-                            <p className="text-[10px] font-black text-slate-400 uppercase mb-1">{t.netCommission}</p>
-                            <p className="font-bold text-emerald-600">{currency}{commissionEarned.toFixed(2)}</p>
+                            <p className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase mb-1">{t.netCommission}</p>
+                            <p className="font-bold text-[var(--tt-emerald)]">{currency}{commissionEarned.toFixed(2)}</p>
                             {settings.deductExpensesFromCommission && (
-                              <p className="text-[9px] text-rose-400 italic">{t.afterExpenseShare}</p>
+                              <p className="text-[9px] text-[var(--tt-rose)] italic">{t.afterExpenseShare}</p>
                             )}
                           </div>
                           <div>
-                            <p className="text-[10px] font-black text-slate-400 uppercase mb-1">{t.totalAdvances}</p>
-                            <p className="font-bold text-amber-600">-{currency}{totalAdvances.toFixed(2)}</p>
+                            <p className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase mb-1">{t.totalAdvances}</p>
+                            <p className="font-bold text-[var(--tt-amber)]">-{currency}{totalAdvances.toFixed(2)}</p>
                           </div>
-                          <div className="col-span-2 md:col-span-1 bg-amber-500 text-slate-950 p-3 rounded-2xl text-center">
+                          <div className="col-span-2 md:col-span-1 bg-[var(--tt-amber)] text-slate-950 p-3 rounded-2xl text-center shadow-lg shadow-[var(--tt-amber-glow)]">
                             <p className="text-[10px] font-black uppercase mb-1">{t.finalPayout}</p>
                             <p className="text-lg font-black">{currency}{finalPayout.toFixed(2)}</p>
                           </div>
@@ -699,61 +701,61 @@ const Finance: React.FC<FinanceProps> = ({ sales, expenses, staffList, customers
         {activeTab === 'cash-drawer' && (
           <motion.div key="cd" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] border dark:border-slate-800">
-                <h3 className="text-lg font-black uppercase tracking-tight mb-6">💰 {t.cashDrawer}</h3>
+              <div className="tt-card p-6">
+                <h3 className="text-lg font-black uppercase tracking-tight mb-6 text-[var(--tt-text-main)]">💰 {t.cashDrawer}</h3>
 
                 {!cashDrawer.isOpen ? (
                   <div className="space-y-4">
-                    <p className="text-sm text-slate-500 mb-4">{t.drawerClosedMessage}</p>
+                    <p className="text-sm text-[var(--tt-text-muted)] mb-4">{t.drawerClosedMessage}</p>
                     <div className="flex gap-2">
                       <input
                         type="number"
                         id="startingCashInput"
                         placeholder={t.startingCash}
-                        className="flex-1 bg-slate-50 dark:bg-slate-800 rounded-xl px-4 py-3 text-sm"
+                        className="tt-input"
                       />
                       <button
                         onClick={() => {
                           const val = parseFloat((document.getElementById('startingCashInput') as HTMLInputElement).value);
                           if (!isNaN(val)) handleOpenDrawer(val);
                         }}
-                        className="bg-amber-500 text-slate-900 px-6 py-3 rounded-xl font-black uppercase text-xs"
+                        className="tt-button-primary px-6 py-3 text-xs"
                       >
                         {t.openDrawer}
                       </button>
                     </div>
                     {cashDrawer.lastClosed && (
-                      <p className="text-[10px] text-slate-400 mt-4">{t.lastClosed}: {new Date(cashDrawer.lastClosed).toLocaleString()}</p>
+                      <p className="text-[10px] text-[var(--tt-text-muted)] mt-4">{t.lastClosed}: {new Date(cashDrawer.lastClosed).toLocaleString()}</p>
                     )}
                   </div>
                 ) : (
                   <div className="space-y-6">
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{t.startingCash}</p>
-                        <p className="text-xl font-black">{currency}{cashDrawer.startingCash.toFixed(2)}</p>
+                      <div className="p-4 bg-[var(--tt-surface-2)] rounded-2xl border border-[var(--tt-border)]">
+                        <p className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest mb-1">{t.startingCash}</p>
+                        <p className="text-xl font-black text-[var(--tt-text-main)]">{currency}{cashDrawer.startingCash.toFixed(2)}</p>
                       </div>
-                      <div className="p-4 bg-emerald-50 dark:bg-emerald-900/10 rounded-2xl">
-                        <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">{t.expectedCash}</p>
-                        <p className="text-xl font-black">{currency}{(cashDrawer.startingCash + filteredSales.filter(s => s.paymentMethod === 'cash' && cashDrawer.startTime && s.timestamp >= cashDrawer.startTime).reduce((a, b) => a + b.total, 0)).toFixed(2)}</p>
+                      <div className="p-4 bg-[var(--tt-emerald)]/10 rounded-2xl border border-[var(--tt-emerald)]/20">
+                        <p className="text-[10px] font-black text-[var(--tt-emerald)] uppercase tracking-widest mb-1">{t.expectedCash}</p>
+                        <p className="text-xl font-black text-[var(--tt-text-main)]">{currency}{(cashDrawer.startingCash + filteredSales.filter(s => s.paymentMethod === 'cash' && cashDrawer.startTime && s.timestamp >= cashDrawer.startTime).reduce((a, b) => a + b.total, 0)).toFixed(2)}</p>
                       </div>
                     </div>
 
-                    <div className="space-y-4 pt-4 border-t dark:border-slate-800">
-                      <p className="text-sm font-bold">{t.closeDrawer}</p>
+                    <div className="space-y-4 pt-4 border-t border-[var(--tt-border)]">
+                      <p className="text-sm font-bold text-[var(--tt-text-main)]">{t.closeDrawer}</p>
                       <div className="flex gap-2">
                         <input
                           type="number"
                           id="actualCashInput"
                           placeholder={t.actualCash}
-                          className="flex-1 bg-slate-50 dark:bg-slate-800 rounded-xl px-4 py-3 text-sm"
+                          className="tt-input"
                         />
                         <button
                           onClick={() => {
                             const val = parseFloat((document.getElementById('actualCashInput') as HTMLInputElement).value);
                             if (!isNaN(val)) handleCloseDrawer(val);
                           }}
-                          className="bg-rose-500 text-white px-6 py-3 rounded-xl font-black uppercase text-xs"
+                          className="bg-[var(--tt-rose)] text-white px-6 py-3 rounded-xl font-black uppercase text-xs shadow-lg shadow-[var(--tt-rose)]/20 active:scale-95 transition-transform"
                         >
                           {t.closeDrawer}
                         </button>
@@ -763,25 +765,25 @@ const Finance: React.FC<FinanceProps> = ({ sales, expenses, staffList, customers
                 )}
               </div>
 
-              <div className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] border dark:border-slate-800">
-                <h3 className="text-lg font-black uppercase tracking-tight mb-6">📊 Session Summary</h3>
+              <div className="tt-card p-6">
+                <h3 className="text-lg font-black uppercase tracking-tight mb-6 text-[var(--tt-text-main)]">📊 Session Summary</h3>
                 <div className="space-y-4">
-                  <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
-                    <span className="text-sm font-bold text-slate-500">{t.cashSales}</span>
-                    <span className="font-black text-emerald-600">+{currency}{filteredSales.filter(s => s.paymentMethod === 'cash' && cashDrawer.startTime && s.timestamp >= cashDrawer.startTime).reduce((a, b) => a + b.total, 0).toFixed(2)}</span>
+                  <div className="flex justify-between items-center p-3 bg-[var(--tt-surface-2)] rounded-xl border border-[var(--tt-border)]">
+                    <span className="text-sm font-bold text-[var(--tt-text-muted)]">{t.cashSales}</span>
+                    <span className="font-black text-[var(--tt-emerald)]">+{currency}{filteredSales.filter(s => s.paymentMethod === 'cash' && cashDrawer.startTime && s.timestamp >= cashDrawer.startTime).reduce((a, b) => a + b.total, 0).toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
-                    <span className="text-sm font-bold text-slate-500">{t.cardSales}</span>
-                    <span className="font-black text-blue-600">+{currency}{filteredSales.filter(s => s.paymentMethod === 'card' && cashDrawer.startTime && s.timestamp >= cashDrawer.startTime).reduce((a, b) => a + b.total, 0).toFixed(2)}</span>
+                  <div className="flex justify-between items-center p-3 bg-[var(--tt-surface-2)] rounded-xl border border-[var(--tt-border)]">
+                    <span className="text-sm font-bold text-[var(--tt-text-muted)]">{t.cardSales}</span>
+                    <span className="font-black text-[var(--tt-blue)]">+{currency}{filteredSales.filter(s => s.paymentMethod === 'card' && cashDrawer.startTime && s.timestamp >= cashDrawer.startTime).reduce((a, b) => a + b.total, 0).toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
-                    <span className="text-sm font-bold text-slate-500">{t.splitSales}</span>
-                    <span className="font-black text-indigo-600">+{currency}{filteredSales.filter(s => s.paymentMethod === 'split' && cashDrawer.startTime && s.timestamp >= cashDrawer.startTime).reduce((a, b) => a + b.total, 0).toFixed(2)}</span>
+                  <div className="flex justify-between items-center p-3 bg-[var(--tt-surface-2)] rounded-xl border border-[var(--tt-border)]">
+                    <span className="text-sm font-bold text-[var(--tt-text-muted)]">{t.splitSales}</span>
+                    <span className="font-black text-[var(--tt-violet)]">+{currency}{filteredSales.filter(s => s.paymentMethod === 'split' && cashDrawer.startTime && s.timestamp >= cashDrawer.startTime).reduce((a, b) => a + b.total, 0).toFixed(2)}</span>
                   </div>
-                  <div className="pt-4 border-t dark:border-slate-800">
+                  <div className="pt-4 border-t border-[var(--tt-border)]">
                     <div className="flex justify-between items-center">
-                      <span className="text-sm font-black uppercase tracking-widest">{t.totalSessionRevenue}</span>
-                      <span className="text-xl font-black text-slate-900">{currency}{totalRevenue.toFixed(2)}</span>
+                      <span className="text-sm font-black uppercase tracking-widest text-[var(--tt-text-main)]">{t.totalSessionRevenue}</span>
+                      <span className="text-xl font-black text-[var(--tt-text-main)]">{currency}{totalRevenue.toFixed(2)}</span>
                     </div>
                   </div>
                 </div>

@@ -62,7 +62,7 @@ const AvailabilityModal: React.FC<AvailabilityModalProps> = ({ staff, availabili
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
-        className="bg-white dark:bg-slate-900 rounded-[2.5rem] w-full max-w-xl p-8 md:p-10 shadow-2xl overflow-y-auto max-h-[85vh]"
+        className="tt-card w-full max-w-xl p-8 md:p-10 shadow-2xl overflow-y-auto max-h-[85vh]"
       >
         <div className="flex justify-between items-center mb-8">
           <div>
@@ -80,7 +80,7 @@ const AvailabilityModal: React.FC<AvailabilityModalProps> = ({ staff, availabili
             const isActive = !!dayAvail;
             
             return (
-              <div key={dayName} className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${isActive ? 'bg-slate-50 dark:bg-slate-800 border-amber-500/30' : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 opacity-60'}`}>
+              <div key={dayName} className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${isActive ? 'bg-[var(--tt-surface-2)] border-[var(--tt-amber)]/30' : 'bg-[var(--tt-surface)] border-[var(--tt-border)] opacity-60'}`}>
                 <div className="flex items-center gap-4">
                   <button 
                     onClick={() => toggleDay(idx)}
@@ -99,14 +99,14 @@ const AvailabilityModal: React.FC<AvailabilityModalProps> = ({ staff, availabili
                       type="time" 
                       value={dayAvail.startTime} 
                       onChange={(e) => updateTime(idx, 'start', e.target.value)}
-                      className="bg-white dark:bg-slate-900 border-0 rounded-xl px-3 py-2 text-xs font-bold focus:ring-2 focus:ring-amber-500/20 outline-none"
+                      className="bg-[var(--tt-surface)] border-0 rounded-xl px-3 py-2 text-xs font-bold focus:ring-2 focus:ring-[var(--tt-amber)]/20 outline-none text-[var(--tt-text-main)]"
                     />
                     <span className="text-slate-400 font-bold">to</span>
                     <input 
                       type="time" 
                       value={dayAvail.endTime} 
                       onChange={(e) => updateTime(idx, 'end', e.target.value)}
-                      className="bg-white dark:bg-slate-900 border-0 rounded-xl px-3 py-2 text-xs font-bold focus:ring-2 focus:ring-amber-500/20 outline-none"
+                      className="bg-[var(--tt-surface)] border-0 rounded-xl px-3 py-2 text-xs font-bold focus:ring-2 focus:ring-[var(--tt-amber)]/20 outline-none text-[var(--tt-text-main)]"
                     />
                   </div>
                 )}

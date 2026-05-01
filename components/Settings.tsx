@@ -125,38 +125,66 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
         <p className="text-slate-500 dark:text-slate-400 text-sm">{t.fineTune}</p>
       </div>
 
+      {/* Onboarding Controls */}
+      <motion.div 
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="tt-card p-6 flex flex-col md:flex-row items-center justify-between gap-4 border-l-4 border-l-[var(--tt-amber)]"
+      >
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-full bg-[var(--tt-amber-glow)] flex items-center justify-center text-[var(--tt-amber)]">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
+          <div>
+            <h3 className="font-bold text-slate-800 dark:text-white">Need a refresher?</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Replay the platform tutorial to see how Obsidian works.</p>
+          </div>
+        </div>
+        <button 
+          onClick={() => {
+            // We need to access setIsTourCompleted from context.
+            // Since it's not in props, we'll assume we can use the window event or refactor.
+            // Actually, let's use a custom event that App.tsx or AuthContext can listen to.
+            window.dispatchEvent(new CustomEvent('restart-onboarding'));
+          }}
+          className="px-6 py-3 bg-[var(--tt-amber)] text-slate-950 rounded-xl font-black text-sm shadow-lg shadow-[var(--tt-amber-glow)] hover:scale-105 active:scale-95 transition-all"
+        >
+          Take the Tour
+        </button>
+      </motion.div>
+
       {currentUser?.role === 'admin' ? (
       <form onSubmit={handleSubmit} className="space-y-6 md:space-y-8">
         {/* Database Diagnostics - Moved OUT of the admin check entirely */}
         <motion.div 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white dark:bg-slate-900 p-6 md:p-8 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm space-y-6"
+          className="tt-card p-6 md:p-8 space-y-6"
         >
           <div className="flex items-center gap-4 mb-2">
-            <div className="w-10 h-10 bg-amber-50 dark:bg-amber-900/20 rounded-xl flex items-center justify-center text-amber-500">
+            <div className="w-10 h-10 bg-[var(--tt-amber-glow)] rounded-xl flex items-center justify-center text-[var(--tt-amber)]">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
             </div>
-            <h3 className="text-lg md:text-xl font-bold text-slate-800 dark:text-white">{t.shopBranding}</h3>
+            <h3 className="text-lg md:text-xl font-bold text-[var(--tt-text-main)]">{t.shopBranding}</h3>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
             <div>
-              <label className="text-[10px] font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest block mb-2 ml-1">{t.terminalIdentity}</label>
+              <label className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest block mb-2 ml-1">{t.terminalIdentity}</label>
               <input 
                 type="text" 
                 value={formData.shopName}
                 onChange={e => setFormData({...formData, shopName: e.target.value})}
-                className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200" 
+                className="tt-input" 
               />
             </div>
 
             <div>
-              <label className="text-[10px] font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest block mb-2 ml-1">{t.language} / زبان</label>
+              <label className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest block mb-2 ml-1">{t.language} / زبان</label>
               <select 
                 value={formData.language}
                 onChange={e => setFormData({...formData, language: e.target.value as Language})}
-                className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200"
+                className="tt-input"
               >
                 <option value="en">English (US)</option>
                 <option value="ur">Urdu (اردو)</option>
@@ -166,11 +194,11 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
             </div>
             
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest block ml-1">{t.preferredCurrency}</label>
+              <label className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest block ml-1">{t.preferredCurrency}</label>
               <select 
                 value={isCustomCurrency ? 'CUSTOM' : formData.currency}
                 onChange={e => handleCurrencyChange(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200"
+                className="tt-input"
               >
                 {CURRENCY_OPTIONS.map(opt => (
                   <option key={opt.symbol} value={opt.symbol}>{opt.label}</option>
@@ -191,7 +219,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
                       placeholder="Symbol (e.g. Rs.)"
                       value={formData.currency}
                       onChange={e => setFormData({...formData, currency: e.target.value})}
-                      className="w-full bg-slate-100 dark:bg-slate-800/50 border-0 rounded-2xl px-5 py-3 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200" 
+                      className="tt-input py-3" 
                     />
                   </motion.div>
                 )}
@@ -199,11 +227,11 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
             </div>
 
             <div>
-              <label className="text-[10px] font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest block mb-2 ml-1">{t.countryCode}</label>
+              <label className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest block mb-2 ml-1">{t.countryCode}</label>
               <select 
                 value={formData.countryCode}
                 onChange={e => setFormData({...formData, countryCode: e.target.value})}
-                className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200"
+                className="tt-input"
               >
                 {COUNTRY_CODES.map(code => (
                   <option key={code.code} value={code.code}>{code.label}</option>
@@ -212,19 +240,19 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
             </div>
 
             <div>
-              <label className="text-[10px] font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest block mb-2 ml-1">{t.taxCalculation}</label>
-              <div className="flex bg-slate-50 dark:bg-slate-800 p-1 rounded-2xl border border-slate-100 dark:border-slate-700">
+              <label className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest block mb-2 ml-1">{t.taxCalculation}</label>
+              <div className="flex bg-[var(--tt-surface-2)] p-1 rounded-2xl border border-[var(--tt-border)]">
                 <button 
                   type="button"
                   onClick={() => setFormData({...formData, taxType: 'excluded'})}
-                  className={`flex-1 py-2.5 rounded-xl font-bold text-xs transition-all ${formData.taxType === 'excluded' ? 'bg-white dark:bg-slate-700 shadow-sm text-slate-900 dark:text-white' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
+                  className={`flex-1 py-2.5 rounded-xl font-bold text-xs transition-all ${formData.taxType === 'excluded' ? 'bg-[var(--tt-surface)] shadow-sm text-[var(--tt-text-main)]' : 'text-[var(--tt-text-muted)] hover:text-[var(--tt-text-main)]'}`}
                 >
                   {t.excluded}
                 </button>
                 <button 
                   type="button"
                   onClick={() => setFormData({...formData, taxType: 'included'})}
-                  className={`flex-1 py-2.5 rounded-xl font-bold text-xs transition-all ${formData.taxType === 'included' ? 'bg-white dark:bg-slate-700 shadow-sm text-slate-900 dark:text-white' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
+                  className={`flex-1 py-2.5 rounded-xl font-bold text-xs transition-all ${formData.taxType === 'included' ? 'bg-[var(--tt-surface)] shadow-sm text-[var(--tt-text-main)]' : 'text-[var(--tt-text-muted)] hover:text-[var(--tt-text-main)]'}`}
                 >
                   {t.included}
                 </button>
@@ -232,7 +260,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
             </div>
 
             <div>
-              <label className="text-[10px] font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest block mb-2 ml-1">{t.taxRate}</label>
+              <label className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest block mb-2 ml-1">{t.taxRate}</label>
               <div className="relative">
                 <input 
                   type="number" 
@@ -241,33 +269,33 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
                   max="100"
                   value={formData.taxRate}
                   onChange={e => setFormData({...formData, taxRate: parseFloat(e.target.value) || 0})}
-                  className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none pr-12 text-sm font-bold dark:text-slate-200" 
+                  className="tt-input pr-12" 
                 />
-                <span className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-600 font-black">%</span>
+                <span className="absolute right-5 top-1/2 -translate-y-1/2 text-[var(--tt-text-muted)] font-black">%</span>
               </div>
             </div>
 
-            <div className="md:col-span-2 bg-slate-50 dark:bg-slate-800/50 p-6 rounded-3xl border border-slate-100 dark:border-slate-700/50 flex items-center justify-between">
+            <div className="md:col-span-2 bg-[var(--tt-surface-2)] p-6 rounded-3xl border border-[var(--tt-border)] flex items-center justify-between">
               <div className="flex-1 pr-4">
-                <h4 className="text-sm font-bold text-slate-800 dark:text-white mb-1">{t.deductExpenses}</h4>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">{t.deductExpensesDesc}</p>
+                <h4 className="text-sm font-bold text-[var(--tt-text-main)] mb-1">{t.deductExpenses}</h4>
+                <p className="text-[10px] text-[var(--tt-text-muted)] leading-relaxed">{t.deductExpensesDesc}</p>
               </div>
               <div className="flex items-center">
                 <input 
                   type="checkbox" 
                   checked={formData.deductExpensesFromCommission}
                   onChange={e => setFormData({...formData, deductExpensesFromCommission: e.target.checked})}
-                  className="w-6 h-6 rounded-lg text-amber-500 focus:ring-amber-500 border-slate-300 dark:border-slate-700 bg-transparent"
+                  className="w-6 h-6 rounded-lg text-[var(--tt-amber)] focus:ring-[var(--tt-amber)] border-[var(--tt-border)] bg-transparent"
                 />
               </div>
             </div>
 
             <div className="md:col-span-2">
-              <label className="text-[10px] font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest block mb-2 ml-1">{t.receiptFooter}</label>
+              <label className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest block mb-2 ml-1">{t.receiptFooter}</label>
               <textarea 
                 value={formData.receiptFooter}
                 onChange={e => setFormData({...formData, receiptFooter: e.target.value})}
-                className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none h-[52px] resize-none text-sm font-medium dark:text-slate-300 overflow-hidden" 
+                className="tt-input h-[52px] resize-none overflow-hidden" 
               />
             </div>
           </div>
@@ -278,22 +306,22 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05 }}
-          className="bg-white dark:bg-slate-900 p-6 md:p-8 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm space-y-6"
+          className="tt-card p-6 md:p-8 space-y-6"
         >
           <div className="flex items-center gap-4 mb-2">
-            <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/20 rounded-xl flex items-center justify-center text-blue-500">
+            <div className="w-10 h-10 bg-[var(--tt-blue)]/10 rounded-xl flex items-center justify-center text-[var(--tt-blue)]">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
             </div>
-            <h3 className="text-lg md:text-xl font-bold text-slate-800 dark:text-white">{t.notificationSettings}</h3>
+            <h3 className="text-lg md:text-xl font-bold text-[var(--tt-text-main)]">{t.notificationSettings}</h3>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
-            <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-700">
+            <div className="flex items-center justify-between p-4 bg-[var(--tt-surface-2)] rounded-2xl border border-[var(--tt-border)]">
               <div>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{t.notificationStatus}</p>
+                <p className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest mb-1">{t.notificationStatus}</p>
                 <div className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${notifPermission === 'granted' ? 'bg-emerald-500' : notifPermission === 'denied' ? 'bg-rose-500' : 'bg-amber-500'}`}></div>
-                  <p className={`font-bold text-sm ${notifPermission === 'granted' ? 'text-emerald-600' : notifPermission === 'denied' ? 'text-rose-600' : 'text-amber-600'}`}>
+                  <div className={`w-2 h-2 rounded-full ${notifPermission === 'granted' ? 'bg-[var(--tt-emerald)]' : notifPermission === 'denied' ? 'bg-[var(--tt-rose)]' : 'bg-[var(--tt-amber)]'}`}></div>
+                  <p className={`font-bold text-sm ${notifPermission === 'granted' ? 'text-[var(--tt-emerald)]' : notifPermission === 'denied' ? 'text-[var(--tt-rose)]' : 'text-[var(--tt-amber)]'}`}>
                     {notifPermission === 'granted' ? t.notificationGranted : notifPermission === 'denied' ? t.notificationDenied : t.notificationDefault}
                   </p>
                 </div>
@@ -301,22 +329,22 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
               <button 
                 type="button"
                 onClick={handleRefreshPermission}
-                className="px-4 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest"
+                className="px-4 py-2 bg-[var(--tt-surface)] border border-[var(--tt-border)] rounded-xl text-[10px] font-black uppercase tracking-widest text-[var(--tt-text-main)] hover:bg-[var(--tt-surface-2)] transition-colors"
               >
                 {t.updatePermissions}
               </button>
             </div>
 
-            <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-700">
+            <div className="flex items-center justify-between p-4 bg-[var(--tt-surface-2)] rounded-2xl border border-[var(--tt-border)]">
               <div>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{t.testNotification}</p>
-                <p className="text-[10px] text-slate-500 font-medium">Send a sample alert</p>
+                <p className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest mb-1">{t.testNotification}</p>
+                <p className="text-[10px] text-[var(--tt-text-muted)] font-medium">Send a sample alert</p>
               </div>
               <button 
                 type="button"
                 disabled={notifPermission !== 'granted'}
                 onClick={onTestNotification}
-                className="px-4 py-2 bg-blue-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest disabled:opacity-50"
+                className="px-4 py-2 bg-[var(--tt-blue)] text-white rounded-xl text-[10px] font-black uppercase tracking-widest disabled:opacity-50 shadow-lg shadow-[var(--tt-blue)]/20 active:scale-95 transition-all"
               >
                 {t.testNotification}
               </button>
@@ -329,33 +357,33 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-white dark:bg-slate-900 p-6 md:p-8 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm space-y-6"
+          className="tt-card p-6 md:p-8 space-y-6"
         >
           <div className="flex items-center gap-4 mb-2">
-            <div className="w-10 h-10 bg-purple-50 dark:bg-purple-900/20 rounded-xl flex items-center justify-center text-purple-500">
+            <div className="w-10 h-10 bg-[var(--tt-violet)]/10 rounded-xl flex items-center justify-center text-[var(--tt-violet)]">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
             </div>
-            <h3 className="text-lg md:text-xl font-bold text-slate-800 dark:text-white">{t.promoCodes}</h3>
+            <h3 className="text-lg md:text-xl font-bold text-[var(--tt-text-main)]">{t.promoCodes}</h3>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Form to Add New */}
-            <div className="lg:col-span-1 bg-slate-50 dark:bg-slate-800/50 p-5 rounded-2xl border border-slate-100 dark:border-slate-700/50 space-y-4">
-               <h4 className="font-bold text-slate-700 dark:text-slate-300 text-sm">{t.addPromo}</h4>
+            <div className="lg:col-span-1 bg-[var(--tt-surface-2)] p-5 rounded-2xl border border-[var(--tt-border)] space-y-4">
+               <h4 className="font-bold text-[var(--tt-text-main)] text-sm">{t.addPromo}</h4>
                <div>
                   <input 
                     type="text" 
                     placeholder={t.code}
                     value={newPromo.code}
                     onChange={e => setNewPromo({...newPromo, code: e.target.value.toUpperCase()})}
-                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-xs font-black uppercase dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+                    className="tt-input py-3 uppercase"
                   />
                </div>
                <div className="grid grid-cols-2 gap-3">
                    <select 
                       value={newPromo.type}
                       onChange={e => setNewPromo({...newPromo, type: e.target.value as 'percentage' | 'fixed'})}
-                      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-3 text-xs font-bold dark:text-white focus:outline-none"
+                      className="tt-input py-3"
                    >
                       <option value="percentage">{t.percentage}</option>
                       <option value="fixed">{t.fixed}</option>
@@ -365,7 +393,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
                     placeholder={t.value}
                     value={newPromo.value || ''}
                     onChange={e => setNewPromo({...newPromo, value: parseFloat(e.target.value) || 0})}
-                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-3 text-xs font-bold dark:text-white focus:outline-none"
+                    className="tt-input py-3"
                   />
                </div>
                <div>
@@ -374,13 +402,13 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
                     placeholder={t.description}
                     value={newPromo.description}
                     onChange={e => setNewPromo({...newPromo, description: e.target.value})}
-                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-xs font-medium dark:text-white focus:outline-none"
+                    className="tt-input py-3"
                   />
                </div>
                <button 
                  type="button"
                  onClick={addPromoCode}
-                 className="w-full bg-purple-500 hover:bg-purple-600 text-white py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-colors"
+                 className="w-full bg-[var(--tt-violet)] text-white py-3 rounded-xl font-bold text-xs uppercase tracking-wider shadow-lg shadow-[var(--tt-violet)]/20 active:scale-95 transition-all"
                >
                  Add Code (Auto-Save)
                </button>
@@ -389,25 +417,25 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
             {/* List of Existing */}
             <div className="lg:col-span-2 space-y-3 max-h-80 overflow-y-auto scrollbar-hide">
                {(formData.promoCodes || []).length === 0 ? (
-                 <p className="text-slate-400 text-sm italic text-center py-8">{t.noActivePromoCodes}</p>
+                 <p className="text-[var(--tt-text-muted)] text-sm italic text-center py-8">{t.noActivePromoCodes}</p>
                ) : (
                  (formData.promoCodes || []).map((code, idx) => (
-                   <div key={idx} className="flex items-center justify-between bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm">
+                   <div key={idx} className="flex items-center justify-between tt-card p-4 hover:border-[var(--tt-violet)]/30 transition-all">
                       <div className="flex items-center gap-4">
-                         <div className="bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest border border-purple-100 dark:border-purple-900/30">
+                         <div className="bg-[var(--tt-violet)]/10 text-[var(--tt-violet)] px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest border border-[var(--tt-violet)]/20">
                             {code.code}
                          </div>
                          <div>
-                            <p className="text-sm font-bold text-slate-800 dark:text-white">
+                            <p className="text-sm font-bold text-[var(--tt-text-main)]">
                                {code.type === 'percentage' ? `${code.value}% OFF` : `-${settings.currency}${code.value} OFF`}
                             </p>
-                            <p className="text-[10px] text-slate-400 dark:text-slate-300 font-medium">{code.description}</p>
+                            <p className="text-[10px] text-[var(--tt-text-muted)] font-medium">{code.description}</p>
                          </div>
                       </div>
                       <button 
                         type="button"
                         onClick={() => removePromoCode(code.code)}
-                        className="p-2 text-slate-300 hover:text-rose-500 transition-colors"
+                        className="p-2 text-[var(--tt-text-muted)] hover:text-[var(--tt-rose)] transition-colors"
                       >
                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                       </button>
@@ -422,16 +450,16 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
-          className="bg-white dark:bg-slate-900 p-6 md:p-8 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm space-y-6"
+          className="tt-card p-6 md:p-8 space-y-6"
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-10 h-10 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl flex items-center justify-center text-emerald-500">
+              <div className="w-10 h-10 bg-[var(--tt-emerald)]/10 rounded-xl flex items-center justify-center text-[var(--tt-emerald)]">
                   <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.246 2.248 3.484 5.232 3.484 8.412-.003 6.557-5.338 11.892-11.893 11.892-1.997-.001-3.951-.5-5.688-1.448l-6.309 1.656zm6.224-3.52c1.54.914 3.453 1.403 5.385 1.404h.005c5.632 0 10.211-4.579 10.214-10.211 0-2.729-1.063-5.295-2.993-7.225s-4.496-2.992-7.225-2.993c-5.633 0-10.213 4.58-10.214 10.214 0 2.022.529 3.996 1.531 5.74l-.991 3.618 3.707-.972zm11.233-5.62c-.301-.151-1.782-.879-2.057-.979-.275-.1-.475-.151-.675.151s-.777.979-.952 1.179-.35.225-.65.076c-.301-.151-1.268-.467-2.417-1.492-.892-.795-1.494-1.777-1.669-2.078-.175-.301-.019-.463.131-.613.135-.134.301-.351.451-.526s.201-.3.301-.5c.101-.201.05-.376-.025-.526s-.675-1.629-.925-2.229c-.244-.583-.491-.504-.675-.513-.175-.008-.376-.01-.576-.01s-.526.076-.801.376c-.275.301-1.051 1.028-1.051 2.508s1.076 2.908 1.226 3.109c.151.201 2.118 3.235 5.132 4.537.717.309 1.277.494 1.714.633.72.228 1.375.196 1.892.119.577-.085 1.782-.728 2.032-1.429s.25-.151.25-.376-.101-.351-.401-.502z"/></svg>
               </div>
               <div>
-                <h3 className="text-lg font-bold text-slate-800 dark:text-white">{t.whatsAppSummaries}</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">{t.enableWhatsApp}</p>
+                <h3 className="text-lg font-bold text-[var(--tt-text-main)]">{t.whatsAppSummaries}</h3>
+                <p className="text-xs text-[var(--tt-text-muted)]">{t.enableWhatsApp}</p>
               </div>
             </div>
             <div className="flex items-center">
@@ -439,39 +467,38 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
                 type="checkbox" 
                 checked={formData.whatsappEnabled}
                 onChange={e => setFormData({...formData, whatsappEnabled: e.target.checked})}
-                className="w-6 h-6 rounded-lg text-amber-500 focus:ring-amber-500 border-slate-300 dark:border-slate-700 bg-transparent"
+                className="w-6 h-6 rounded-lg text-[var(--tt-amber)] focus:ring-[var(--tt-amber)] border-[var(--tt-border)] bg-transparent"
               />
             </div>
           </div>
 
           <div className={`space-y-4 transition-all duration-300 ${formData.whatsappEnabled ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}>
             <div>
-              <label className="text-[10px] font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest block mb-2 ml-1">{t.businessMobile}</label>
+              <label className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest block mb-2 ml-1">{t.businessMobile}</label>
               <input 
                 type="tel" 
                 placeholder="+1234567890"
                 value={formData.whatsappNumber}
                 onChange={e => setFormData({...formData, whatsappNumber: e.target.value})}
-                className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200" 
+                className="tt-input" 
               />
             </div>
           </div>
         </motion.div>
 
-        {/* Loyalty Program Settings */}
         <motion.div 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
-          className="bg-white dark:bg-slate-900 p-6 md:p-8 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm space-y-6"
+          className="tt-card p-6 md:p-8 space-y-6"
         >
            <div className="flex items-center gap-4 mb-2">
-                <div className="w-10 h-10 bg-amber-50 dark:bg-amber-900/20 rounded-xl flex items-center justify-center text-amber-500">
+                <div className="w-10 h-10 bg-[var(--tt-amber-glow)] rounded-xl flex items-center justify-center text-[var(--tt-amber)]">
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>
                 </div>
                 <div className="flex-1">
-                    <h3 className="text-lg md:text-xl font-bold text-slate-800 dark:text-white">{t.loyaltyProgram || 'Loyalty Program'}</h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{t.loyaltyProgramDesc || 'Reward customers with points on every purchase'}</p>
+                    <h3 className="text-lg md:text-xl font-bold text-[var(--tt-text-main)]">{t.loyaltyProgram || 'Loyalty Program'}</h3>
+                    <p className="text-xs text-[var(--tt-text-muted)] mt-1">{t.loyaltyProgramDesc || 'Reward customers with points on every purchase'}</p>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input 
@@ -480,39 +507,39 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
                     onChange={e => setFormData({...formData, loyaltyEnabled: e.target.checked})}
                     className="sr-only peer"
                   />
-                  <div className="w-14 h-7 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:bg-amber-500 transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:after:translate-x-full shadow-inner" />
+                  <div className="w-14 h-7 bg-[var(--tt-surface-2)] peer-focus:outline-none rounded-full peer peer-checked:bg-[var(--tt-amber)] transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:after:translate-x-full shadow-inner" />
                 </label>
            </div>
            
            <div className={`space-y-4 transition-all duration-300 ${formData.loyaltyEnabled ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}>
              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                <div>
-                 <label className="text-[10px] font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest block mb-2 ml-1">{t.pointsPerCurrency || 'Points Per Currency Unit'}</label>
+                 <label className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest block mb-2 ml-1">{t.pointsPerCurrency || 'Points Per Currency Unit'}</label>
                  <input 
                    type="number" 
                    min="0.1"
                    step="0.1"
                    value={formData.pointsPerCurrency}
                    onChange={e => setFormData({...formData, pointsPerCurrency: parseFloat(e.target.value) || 1})}
-                   className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200" 
+                   className="tt-input" 
                  />
-                 <p className="text-[9px] text-slate-400 mt-1 ml-1">{t.pointsPerCurrencyHelp || `e.g., 1 = earn 1 point per ${formData.currency}1 spent`}</p>
+                 <p className="text-[9px] text-[var(--tt-text-muted)] mt-1 ml-1">{t.pointsPerCurrencyHelp || `e.g., 1 = earn 1 point per ${formData.currency}1 spent`}</p>
                </div>
                <div>
-                 <label className="text-[10px] font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest block mb-2 ml-1">{t.minPointsRedeem || 'Minimum Points to Redeem'}</label>
+                 <label className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest block mb-2 ml-1">{t.minPointsRedeem || 'Minimum Points to Redeem'}</label>
                  <input 
                    type="number" 
                    min="1"
                    value={formData.minPointsToRedeem}
                    onChange={e => setFormData({...formData, minPointsToRedeem: parseInt(e.target.value) || 100})}
-                   className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200" 
+                   className="tt-input" 
                  />
-                 <p className="text-[9px] text-slate-400 mt-1 ml-1">{t.minPointsRedeemHelp || 'Customers need at least this many points before they can redeem'}</p>
+                 <p className="text-[9px] text-[var(--tt-text-muted)] mt-1 ml-1">{t.minPointsRedeemHelp || 'Customers need at least this many points before they can redeem'}</p>
                </div>
              </div>
-             <div className="bg-amber-50 dark:bg-amber-900/10 p-4 rounded-2xl border border-amber-100 dark:border-amber-900/30">
-                 <p className="text-xs text-amber-800 dark:text-amber-300 font-medium leading-relaxed">
-                   <strong>ℹ️ {t.howItWorks || 'How it works'}:</strong> {t.loyaltyExplanation || `Customers earn ${formData.pointsPerCurrency} point(s) per ${formData.currency}1 spent. Once they accumulate ${formData.minPointsToRedeem}+ points, they can redeem them at checkout. 1 point = ${formData.currency}1 discount.`}
+             <div className="bg-[var(--tt-amber-glow)] p-4 rounded-2xl border border-[var(--tt-amber)]/20">
+                 <p className="text-xs text-[var(--tt-amber)] font-medium leading-relaxed">
+                    <strong>ℹ️ {t.howItWorks || 'How it works'}:</strong> {t.loyaltyExplanation || `Customers earn ${formData.pointsPerCurrency} point(s) per ${formData.currency}1 spent. Once they accumulate ${formData.minPointsToRedeem}+ points, they can redeem them at checkout. 1 point = ${formData.currency}1 discount.`}
                  </p>
              </div>
            </div>
@@ -523,21 +550,21 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-white dark:bg-slate-900 p-6 md:p-8 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm space-y-6"
+          className="tt-card p-6 md:p-8 space-y-6"
         >
            <div className="flex items-center gap-4 mb-2">
-                <div className="w-10 h-10 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl flex items-center justify-center text-indigo-500">
+                <div className="w-10 h-10 bg-[var(--tt-blue)]/10 rounded-xl flex items-center justify-center text-[var(--tt-blue)]">
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 </div>
                 <div>
-                    <h3 className="text-lg md:text-xl font-bold text-slate-800 dark:text-white">{t.monthlySalesCycle}</h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{t.configureBusinessMonth}</p>
+                    <h3 className="text-lg md:text-xl font-bold text-[var(--tt-text-main)]">{t.monthlySalesCycle}</h3>
+                    <p className="text-xs text-[var(--tt-text-muted)] mt-1">{t.configureBusinessMonth}</p>
                 </div>
            </div>
            
            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
               <div>
-                  <label className="text-[10px] font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest block mb-2 ml-1">{t.billingCycle}</label>
+                  <label className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest block mb-2 ml-1">{t.billingCycle}</label>
                   <div className="relative">
                     <input 
                       type="number" 
@@ -545,13 +572,13 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
                       max="28"
                       value={formData.billingCycleDay || 1}
                       onChange={e => setFormData({...formData, billingCycleDay: Math.min(28, Math.max(1, parseInt(e.target.value) || 1))})}
-                      className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-4 focus:ring-4 focus:ring-indigo-500/10 outline-none pr-12 text-sm font-bold dark:text-slate-200" 
+                      className="tt-input pr-12" 
                     />
-                    <span className="absolute right-5 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400 dark:text-slate-600 uppercase">{t.billingDay}</span>
+                    <span className="absolute right-5 top-1/2 -translate-y-1/2 text-[10px] font-black text-[var(--tt-text-muted)] uppercase">{t.billingDay}</span>
                   </div>
               </div>
-              <div className="bg-indigo-50 dark:bg-indigo-900/10 p-4 rounded-2xl border border-indigo-100 dark:border-indigo-900/30">
-                  <p className="text-xs text-indigo-800 dark:text-indigo-300 font-medium leading-relaxed">
+              <div className="bg-[var(--tt-blue)]/10 p-4 rounded-2xl border border-[var(--tt-blue)]/20">
+                  <p className="text-xs text-[var(--tt-blue)] font-medium leading-relaxed">
                     <strong>📅 {t.reportingPeriod || 'Reporting Period'}:</strong> {t.billingCycleDescription || `Your financial reports and dashboard will use day ${formData.billingCycleDay} as the start of each business month.`}
                   </p>
               </div>
@@ -565,16 +592,16 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-white dark:bg-slate-900 p-6 md:p-8 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm space-y-6"
+          className="tt-card p-6 md:p-8 space-y-6"
         >
           <div className="flex items-center justify-between gap-4 mb-2">
             <div className="flex items-center gap-4">
-              <div className="w-10 h-10 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl flex items-center justify-center text-indigo-500">
+              <div className="w-10 h-10 bg-[var(--tt-blue)]/10 rounded-xl flex items-center justify-center text-[var(--tt-blue)]">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
               </div>
               <div>
-                <h3 className="text-lg md:text-xl font-bold text-slate-800 dark:text-white">{t.onlineBooking}</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{t.enableBooking}</p>
+                <h3 className="text-lg md:text-xl font-bold text-[var(--tt-text-main)]">{t.onlineBooking}</h3>
+                <p className="text-xs text-[var(--tt-text-muted)] mt-1">{t.enableBooking}</p>
               </div>
             </div>
             <button 
@@ -585,7 +612,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
                 setFormData(newSettings);
                 onUpdateSettings(newSettings);
               }}
-              className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none ${formData.bookingEnabled ? 'bg-amber-500' : 'bg-slate-200 dark:bg-slate-700'}`}
+              className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none ${formData.bookingEnabled ? 'bg-[var(--tt-amber)]' : 'bg-[var(--tt-surface-2)]'}`}
             >
               <span className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${formData.bookingEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
             </button>
@@ -600,34 +627,34 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
                 className="space-y-4 pt-2"
               >
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest block ml-1">{t.bookingSlug}</label>
+                  <label className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest block ml-1">{t.bookingSlug}</label>
                   <div className="flex gap-2">
                     <div className="flex-1 relative">
-                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-bold pointer-events-none">
-                        trimtimepos.com/book/
+                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--tt-text-muted)] text-sm font-bold pointer-events-none">
+                        {window.location.hostname === 'localhost' ? 'localhost:3000' : window.location.hostname}/book/
                       </div>
                       <input 
                         type="text" 
                         value={formData.bookingSlug}
                         onChange={e => setFormData({...formData, bookingSlug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '')})}
                         placeholder="your-shop-name"
-                        className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl pl-36 pr-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200" 
+                        className="tt-input pl-36" 
                       />
                     </div>
-                    <button
-                      type="button"
-                      disabled={!formData.bookingSlug}
-                      onClick={() => {
-                        const link = `https://trimtimepos.com/book/${formData.bookingSlug}`;
-                        navigator.clipboard.writeText(link);
-                        alert(t.bookingLinkCopied);
-                      }}
-                      className="px-5 py-3 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-2xl font-bold text-xs hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors border border-slate-200 dark:border-slate-700"
-                    >
-                      {t.copyBookingLink}
-                    </button>
+                      <button
+                        type="button"
+                        disabled={!formData.bookingSlug}
+                        onClick={() => {
+                          const link = `${window.location.origin}/book/${formData.bookingSlug}`;
+                          navigator.clipboard.writeText(link);
+                          alert(t.bookingLinkCopied);
+                        }}
+                        className="px-5 py-3 bg-[var(--tt-surface-2)] text-[var(--tt-text-main)] rounded-2xl font-bold text-xs hover:bg-[var(--tt-surface)] transition-colors border border-[var(--tt-border)] active:scale-95"
+                      >
+                        {t.copyBookingLink}
+                      </button>
                   </div>
-                  <p className="text-[10px] text-slate-500 ml-2 mt-2">Only letters, numbers, and hyphens allowed.</p>
+                  <p className="text-[10px] text-[var(--tt-text-muted)] ml-2 mt-2">Only letters, numbers, and hyphens allowed.</p>
                 </div>
               </motion.div>
             )}
@@ -639,35 +666,35 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.22 }}
-          className="bg-white dark:bg-slate-900 p-6 md:p-8 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm space-y-6"
+          className="tt-card p-6 md:p-8 space-y-6"
         >
           <div className="flex items-center gap-4 mb-2">
-            <div className="w-10 h-10 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl flex items-center justify-center text-emerald-500">
+            <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-500">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A10.003 10.003 0 0012 3a9.99 9.99 0 00-4.556 1.088m.054 13.926a10.003 10.003 0 01-2.46-3.572m11.756 3.572a10.003 10.003 0 01-5.32 2.315 m0 0A10.003 10.003 0 0112 21a9.99 9.99 0 01-4.556-1.088m4.556 1.088V11"/></svg>
             </div>
             <div>
-              <h3 className="text-lg md:text-xl font-bold text-slate-800 dark:text-white">{t.staffLoginLink}</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{t.staffLoginDesc}</p>
+              <h3 className="text-lg md:text-xl font-bold text-[var(--tt-text-main)]">{t.staffLoginLink}</h3>
+              <p className="text-xs text-[var(--tt-text-muted)] mt-1">{t.staffLoginDesc}</p>
             </div>
           </div>
 
-          <div className="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-3xl border border-slate-100 dark:border-slate-700/50 space-y-4">
+          <div className="bg-[var(--tt-surface-2)] p-6 rounded-3xl border border-[var(--tt-border)] space-y-4">
             <div className="flex flex-col md:flex-row gap-4">
               <div className="flex-1 relative group">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-[10px] font-black uppercase tracking-tighter opacity-50 group-hover:opacity-100 transition-opacity">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--tt-text-muted)] text-[10px] font-black uppercase tracking-tighter opacity-50 group-hover:opacity-100 transition-opacity">
                   Staff URL
                 </div>
-                <div className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl pl-20 pr-5 py-4 text-sm font-mono text-emerald-600 dark:text-emerald-400 break-all overflow-hidden whitespace-nowrap">
-                  https://trimtimepos.com/staff-login/{formData.bookingSlug}
+                <div className="w-full bg-[var(--tt-surface)] border border-[var(--tt-border)] rounded-2xl pl-20 pr-5 py-4 text-sm font-mono text-emerald-500 break-all overflow-hidden whitespace-nowrap">
+                  {window.location.origin}/staff-login/{formData.bookingSlug}
                 </div>
               </div>
               <button 
                 type="button"
                 onClick={() => {
-                  navigator.clipboard.writeText(`https://trimtimepos.com/staff-login/${formData.bookingSlug}`);
+                  navigator.clipboard.writeText(`${window.location.origin}/staff-login/${formData.bookingSlug}`);
                   alert(t.staffLinkCopied);
                 }}
-                className="px-8 py-4 bg-slate-950 dark:bg-emerald-500 text-white dark:text-slate-950 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-800 dark:hover:bg-emerald-600 transition-all flex items-center justify-center gap-2 shadow-lg"
+                className="px-8 py-4 bg-emerald-500 text-slate-950 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-emerald-600 transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20"
               >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg>
                   {t.copyStaffLink}
@@ -683,22 +710,22 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25 }}
-          className="bg-rose-50/50 dark:bg-rose-900/10 p-6 md:p-8 rounded-[2rem] border border-rose-100 dark:border-rose-900/30 shadow-sm space-y-6"
+          className="bg-[var(--tt-rose)]/5 p-6 md:p-8 rounded-[2rem] border border-[var(--tt-rose)]/20 shadow-sm space-y-6"
         >
             <div className="flex items-center gap-4 mb-2">
-              <div className="w-10 h-10 bg-rose-100 dark:bg-rose-900/40 rounded-xl flex items-center justify-center text-rose-500">
+              <div className="w-10 h-10 bg-[var(--tt-rose)]/10 rounded-xl flex items-center justify-center text-[var(--tt-rose)]">
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
               </div>
               <div>
-                  <h3 className="text-lg md:text-xl font-bold text-rose-600 dark:text-rose-400">{t.dangerZone}</h3>
-                  <p className="text-xs text-rose-400 dark:text-rose-500/70 mt-1">{t.resetSalesDesc}</p>
+                  <h3 className="text-lg md:text-xl font-bold text-[var(--tt-rose)]">{t.dangerZone}</h3>
+                  <p className="text-xs text-[var(--tt-rose)]/70 mt-1">{t.resetSalesDesc}</p>
               </div>
             </div>
             <div className="flex justify-end">
               <button 
                   type="button"
                   onClick={handleResetSales}
-                  className="bg-rose-500 text-white px-6 py-3 rounded-xl font-bold text-sm hover:bg-rose-600 transition-colors shadow-lg shadow-rose-500/20"
+                  className="bg-[var(--tt-rose)] text-white px-6 py-3 rounded-xl font-bold text-sm hover:opacity-90 transition-all shadow-lg shadow-[var(--tt-rose)]/20 active:scale-95"
               >
                   {t.resetSales}
               </button>
@@ -712,21 +739,21 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
                   setFormData(settings);
                   setIsCustomCurrency(!CURRENCY_OPTIONS.some(opt => opt.symbol === settings.currency));
                 }}
-                className="px-8 py-4 font-black text-slate-400 dark:text-slate-600 hover:text-slate-600 dark:hover:text-slate-400 transition-colors uppercase text-xs tracking-widest"
+                className="px-8 py-4 font-black text-[var(--tt-text-muted)] hover:text-[var(--tt-text-main)] transition-colors uppercase text-xs tracking-widest"
             >
                 {t.resetChanges}
             </button>
             <button 
                 type="submit" 
-                className="bg-slate-950 dark:bg-amber-500 text-white dark:text-slate-950 px-10 py-4 rounded-2xl font-black text-base hover:bg-slate-800 dark:hover:bg-amber-600 transition-all shadow-xl active:scale-95"
+                className="tt-button-primary px-10 py-4 text-base shadow-xl"
             >
                 {t.saveSettings}
             </button>
         </div>
       </form>
       ) : (
-        <div className="bg-slate-100 dark:bg-slate-800/50 p-6 rounded-2xl text-center border border-slate-200 dark:border-slate-800 mb-6">
-          <p className="text-slate-500 font-medium text-sm">{t.globalSettingsAdminOnly}</p>
+        <div className="bg-[var(--tt-surface-2)] p-6 rounded-2xl text-center border border-[var(--tt-border)] mb-6">
+          <p className="text-[var(--tt-text-muted)] font-medium text-sm">{t.globalSettingsAdminOnly}</p>
         </div>
       )}
 
@@ -735,32 +762,32 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.25 }}
-        className="bg-white dark:bg-slate-900 p-6 md:p-8 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm space-y-6"
+        className="tt-card p-6 md:p-8 space-y-6"
       >
          <div className="flex items-center gap-4 mb-2">
-              <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center text-slate-500">
+              <div className="w-10 h-10 bg-[var(--tt-surface-2)] rounded-xl flex items-center justify-center text-[var(--tt-text-muted)]">
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"/></svg>
               </div>
               <div>
-                  <h3 className="text-lg md:text-xl font-bold text-slate-800 dark:text-white">{t.databaseDiagnostics}</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{t.verifyCloudConnection}</p>
+                  <h3 className="text-lg md:text-xl font-bold text-[var(--tt-text-main)]">{t.databaseDiagnostics}</h3>
+                  <p className="text-xs text-[var(--tt-text-muted)] mt-1">{t.verifyCloudConnection}</p>
               </div>
          </div>
          
          <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-700">
+            <div className="flex items-center justify-between p-4 bg-[var(--tt-surface-2)] rounded-2xl border border-[var(--tt-border)]">
                <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{t.status}</p>
+                  <p className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest mb-1">{t.status}</p>
                   <div className="flex items-center gap-2">
-                     <div className={`w-2 h-2 rounded-full ${dbStatus === 'connected' ? 'bg-emerald-500' : 'bg-rose-500'}`}></div>
-                     <p className={`font-bold text-sm ${dbStatus === 'connected' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                     <div className={`w-2 h-2 rounded-full ${dbStatus === 'connected' ? 'bg-[var(--tt-emerald)]' : 'bg-[var(--tt-rose)]'}`}></div>
+                     <p className={`font-bold text-sm ${dbStatus === 'connected' ? 'text-[var(--tt-emerald)]' : 'text-[var(--tt-rose)]'}`}>
                         {dbStatus === 'connected' ? 'Connected' : 'Disconnected / Error'}
                      </p>
                   </div>
                </div>
                <div className="flex items-center gap-3">
                   {testResult && (
-                    <span className={`text-[10px] font-bold ${dbStatus === 'connected' ? 'text-emerald-500' : 'text-rose-500'}`}>
+                    <span className={`text-[10px] font-bold ${dbStatus === 'connected' ? 'text-[var(--tt-emerald)]' : 'text-[var(--tt-rose)]'}`}>
                         {testResult}
                     </span>
                   )}
@@ -768,7 +795,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
                     type="button"
                     disabled={isTesting}
                     onClick={handleTestConnection}
-                    className="px-4 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 disabled:opacity-50"
+                    className="px-4 py-2 bg-[var(--tt-surface)] border border-[var(--tt-border)] rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 disabled:opacity-50 text-[var(--tt-text-main)] hover:bg-[var(--tt-surface-2)] transition-colors active:scale-95"
                   >
                     {isTesting ? (
                         <svg className="animate-spin h-3 w-3 text-slate-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

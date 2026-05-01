@@ -134,7 +134,7 @@ const Customers: React.FC<CustomersProps> = ({ customers, sales, onUpdateCustome
           placeholder={t.searchClients}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl py-3.5 pl-12 pr-6 outline-none focus:ring-4 focus:ring-amber-500/10 shadow-sm text-sm dark:text-slate-200 transition-all"
+          className="tt-input py-3.5 pl-12 pr-6"
         />
       </div>
 
@@ -148,7 +148,7 @@ const Customers: React.FC<CustomersProps> = ({ customers, sales, onUpdateCustome
                 layout
                 key={customer.id} 
                 onClick={() => setSelectedCustomer(customer)}
-                className={`bg-white dark:bg-slate-900 p-4 md:p-5 rounded-2xl md:rounded-[2rem] border transition-all cursor-pointer flex justify-between items-center ${selectedCustomer?.id === customer.id ? 'border-amber-400 ring-4 ring-amber-100/50 dark:ring-amber-900/20 shadow-md' : 'border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 shadow-sm'}`}
+                className={`tt-card p-4 md:p-5 transition-all cursor-pointer flex justify-between items-center ${selectedCustomer?.id === customer.id ? 'border-[var(--tt-amber)] ring-4 ring-[var(--tt-amber-glow)] shadow-md' : 'hover:border-[var(--tt-border)] shadow-sm'}`}
               >
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400 text-sm font-black uppercase shadow-inner">
@@ -183,7 +183,7 @@ const Customers: React.FC<CustomersProps> = ({ customers, sales, onUpdateCustome
               </div>
 
               {/* Profile Card */}
-              <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm p-6 md:p-8 relative">
+              <div className="tt-card p-6 md:p-8 relative">
                 <div className="absolute top-6 right-6 flex gap-2 no-print">
                     <button 
                         onClick={() => handleOpenEdit(selectedCustomer)} 
@@ -209,11 +209,11 @@ const Customers: React.FC<CustomersProps> = ({ customers, sales, onUpdateCustome
                     <h3 className="text-xl md:text-2xl font-black text-slate-800 dark:text-white truncate w-full px-2 md:px-0">{selectedCustomer.name}</h3>
                     <p className="text-slate-400 dark:text-slate-500 text-xs md:text-sm mb-4 truncate w-full px-2 md:px-0">{selectedCustomer.email || 'No email'}</p>
                     <div className="flex flex-wrap justify-center md:justify-start gap-2">
-                      <span className="px-2.5 py-1 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 rounded-full text-[9px] font-black uppercase tracking-wider">{t.member}</span>
+                      <span className="tt-badge bg-emerald-500/10 text-emerald-500">{t.member}</span>
                       {getCustomerStats(selectedCustomer.id).visitCount > 5 && (
-                        <span className="px-2.5 py-1 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-500 rounded-full text-[9px] font-black uppercase tracking-wider">{t.vip}</span>
+                        <span className="tt-badge bg-amber-500/10 text-amber-500">{t.vip}</span>
                       )}
-                      <span className="px-2.5 py-1 bg-slate-50 dark:bg-slate-800 text-slate-500 rounded-full text-[9px] font-black uppercase tracking-wider">{t.last}: {getCustomerStats(selectedCustomer.id).lastVisit}</span>
+                      <span className="tt-badge bg-[var(--tt-surface-2)] text-[var(--tt-text-muted)]">{t.last}: {getCustomerStats(selectedCustomer.id).lastVisit}</span>
                     </div>
                   </div>
 
@@ -240,7 +240,7 @@ const Customers: React.FC<CustomersProps> = ({ customers, sales, onUpdateCustome
               </div>
 
               {/* Transaction History */}
-              <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
+              <div className="tt-card shadow-sm overflow-hidden">
                 <div className="px-6 py-5 border-b border-slate-50 dark:border-slate-800 flex justify-between items-center bg-slate-50/30 dark:bg-slate-800/30">
                   <h4 className="font-bold text-slate-800 dark:text-white">{t.history}</h4>
                   <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">{customerTransactions.length} {t.totalSales}</span>
@@ -288,7 +288,7 @@ const Customers: React.FC<CustomersProps> = ({ customers, sales, onUpdateCustome
               </div>
             </>
           ) : (
-            <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 border-dashed h-64 md:h-[60vh] flex flex-col items-center justify-center text-slate-300 dark:text-slate-700 p-8 text-center">
+            <div className="tt-card border-dashed h-64 md:h-[60vh] flex flex-col items-center justify-center text-[var(--tt-text-muted)] p-8 text-center">
               <svg className="w-16 h-16 md:w-20 md:h-20 mb-6 opacity-[0.05]" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
               <h3 className="text-lg md:text-xl font-bold text-slate-400 dark:text-slate-600">{t.directory}</h3>
               <p className="text-xs max-w-xs mt-2 font-medium">{t.pickClient}</p>
@@ -305,7 +305,7 @@ const Customers: React.FC<CustomersProps> = ({ customers, sales, onUpdateCustome
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
-              className="bg-white dark:bg-slate-900 rounded-t-[2.5rem] sm:rounded-[2.5rem] w-full max-w-md p-8 md:p-10 shadow-2xl overflow-y-auto max-h-[90vh]"
+              className="tt-card w-full max-w-md p-8 md:p-10 shadow-2xl overflow-y-auto max-h-[90vh]"
             >
               <div className="flex justify-between items-center mb-8">
                 <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
@@ -378,7 +378,7 @@ const Customers: React.FC<CustomersProps> = ({ customers, sales, onUpdateCustome
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white dark:bg-slate-900 rounded-[2rem] p-8 max-w-md w-full shadow-2xl border border-slate-100 dark:border-slate-800"
+              className="tt-card p-8 max-w-md w-full shadow-2xl"
             >
               <div className="w-16 h-16 bg-rose-100 dark:bg-rose-900/30 text-rose-600 rounded-full flex items-center justify-center mb-6 mx-auto">
                 <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
