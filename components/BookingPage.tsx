@@ -31,10 +31,12 @@ const BookingPage: React.FC = () => {
     if (slug) {
       fetchPublicTenantBySlug(slug).then(t => {
         if (!t) {
-          setError("Business not found or online booking is disabled.");
+          setError("Business not found, online booking is disabled, or database permissions are restricting access.");
         } else {
           setTenant(t);
         }
+      }).catch(err => {
+         setError("Failed to connect to the database: " + err.message);
       });
     }
   }, [slug, fetchPublicTenantBySlug]);

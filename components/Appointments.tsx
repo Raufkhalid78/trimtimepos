@@ -14,6 +14,7 @@ interface AppointmentsProps {
   onUpdateAppointments: (appointments: Appointment[]) => void;
   onUpdateStatus?: (id: string, status: AppointmentStatus) => void;
   settings: ShopSettings;
+  staffAvailability: any[];
   onRefresh?: () => Promise<void>;
   /** Called when the user wants to charge for a completed appointment.
    *  The parent should open POS with the appointment's services + staff pre-filled. */
@@ -24,7 +25,7 @@ const HOURS = Array.from({ length: 11 }, (_, i) => i + 9); // 9 AM to 7 PM
 
 const Appointments: React.FC<AppointmentsProps> = ({ 
   appointments, staffList, services, customers, language, 
-  onUpdateAppointments, onUpdateStatus, settings, onRefresh, onConvertToSale
+  onUpdateAppointments, onUpdateStatus, settings, staffAvailability, onRefresh, onConvertToSale
 }) => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [isAdding, setIsAdding] = useState(false);
@@ -57,6 +58,42 @@ const Appointments: React.FC<AppointmentsProps> = ({
     if (!formData.startTime || !formData.endTime || !formData.staffId || formData.serviceIds?.length === 0) {
       alert("Please fill in all required fields.");
       return;
+    }
+
+    // Overlap Detection
+    const start = new Date(formData.startTime);
+    const end = new Date(formData.endTime);
+    const hasOverlap = appointments.some(app => {
+      if (editingAppointment && app.id === editingAppointment.id) return false;
+      if (app.staffId !== formData.staffId) return false;
+      if (app.status === 'cancelled') return false;
+      
+      const appStart = new Date(app.startTime);
+      const appEnd = new Date(app.endTime);
+      return (start < appEnd && end > appStart);
+    });
+
+    if (hasOverlap) {
+      const confirmOverlap = window.confirm("Warning: This staff member already has an appointment at this time. Do you want to proceed anyway?");
+      if (!confirmOverlap) return;
+    }
+
+    // Availability Check
+    const dayOfWeek = start.getDay();
+    const avail = staffAvailability.find(a => a.staffId === formData.staffId && a.dayOfWeek === dayOfWeek);
+    if (avail) {
+      const [startH, startM] = avail.startTime.split(':').map(Number);
+      const [endH, endM] = avail.endTime.split(':').map(Number);
+      
+      const availStart = new Date(start);
+      availStart.setHours(startH, startM, 0, 0);
+      const availEnd = new Date(start);
+      availEnd.setHours(endH, endM, 0, 0);
+
+      if (start < availStart || end > availEnd) {
+        const confirmAvail = window.confirm("Warning: This time is outside the staff member's working hours. Do you want to proceed?");
+        if (!confirmAvail) return;
+      }
     }
 
     if (editingAppointment) {

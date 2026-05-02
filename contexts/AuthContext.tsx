@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { supabase } from '../supabaseClient';
-import { getCurrentTenant, getCurrentSubscription, getOwnerStaff } from '../services/authService';
+import { getCurrentTenant, getCurrentSubscription, getOwnerStaff, cancelSubscription as _cancelSubscription, deleteStore as _deleteStore } from '../services/authService';
 import { Tenant, Subscription, Staff, Language, SaaSView } from '../types';
 import { logger } from '../services/logger';
 
@@ -26,6 +26,8 @@ interface AuthContextType {
   refreshAuth: () => Promise<void>;
   loginStaff: (user: Staff, remember: boolean | number) => void;
   signOut: () => Promise<void>;
+  cancelSubscription: () => Promise<boolean>;
+  deleteStore: () => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -81,10 +83,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setSaasView('app');
         } else {
           // Tenant not found for this authenticated user.
-          // Only reset to landing if we're not in the middle of signup/login.
-          if (!suppressAuthCheckRef.current) {
-            setSaasView('landing');
-          }
+          // This happens when they sign in with Google for the first time
+          // or if their tenant was deleted.
+          // Send them to the onboarding flow to create their business.
+          setSaasView('onboarding');
         }
       } else {
         // Check if we have a staff session but no Supabase auth (employee mode)
@@ -213,11 +215,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => window.removeEventListener('restart-onboarding', handleRestartOnboarding);
   }, []);
 
+  const cancelSubscription = async () => {
+    if (!currentTenant) return false;
+    const success = await _cancelSubscription(currentTenant.id);
+    if (success) {
+      await refreshSubscription();
+    }
+    return success;
+  };
+
+  const deleteStore = async () => {
+    if (!currentTenant) return false;
+    const success = await _deleteStore(currentTenant.id);
+    if (success) {
+      await signOut(); // This resets all state and pushes to landing
+    }
+    return success;
+  };
+
   return (
     <AuthContext.Provider value={{
       authUser, currentTenant, subscription, currentUser, authLoading, saasView, sessionLanguage, isDarkMode, isTourCompleted,
       setSaasView: handleSetSaasView, setSessionLanguage, setIsDarkMode, setCurrentUser, completeTour,
-      refreshSubscription, refreshAuth, loginStaff, signOut
+      refreshSubscription, refreshAuth, loginStaff, signOut, cancelSubscription, deleteStore
     }}>
       {children}
     </AuthContext.Provider>

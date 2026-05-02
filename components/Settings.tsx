@@ -14,9 +14,13 @@ interface SettingsProps {
   dbErrorMessage?: string | null;
   onRefreshStatus?: (isSilent?: boolean) => Promise<void>;
   onTestNotification?: () => void;
+  currentTenant?: any;
+  subscription?: any;
+  onCancelSubscription?: () => void;
+  onDeleteStore?: () => void;
 }
 
-const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, currentUser, onPurgeSales, onLogout, dbStatus, dbErrorMessage, onRefreshStatus, onTestNotification }) => {
+const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, currentUser, onPurgeSales, onLogout, dbStatus, dbErrorMessage, onRefreshStatus, onTestNotification, currentTenant, subscription, onCancelSubscription, onDeleteStore }) => {
   const [formData, setFormData] = useState<ShopSettings>(settings);
   const [isCustomCurrency, setIsCustomCurrency] = useState(!CURRENCY_OPTIONS.some(opt => opt.symbol === settings.currency));
   const [newPromo, setNewPromo] = useState<DiscountCode>({ code: '', type: 'percentage', value: 0, description: '' });
@@ -24,6 +28,9 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
   const [testResult, setTestResult] = useState<string | null>(null);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showCancelSubConfirm, setShowCancelSubConfirm] = useState(false);
+  const [deleteInput, setDeleteInput] = useState('');
   const [notifPermission, setNotifPermission] = useState<NotificationPermission>(
     'Notification' in window ? Notification.permission : 'denied'
   );
@@ -87,6 +94,18 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
   const confirmResetSales = () => {
     if (onPurgeSales) onPurgeSales();
     setShowResetConfirm(false);
+  };
+
+  const confirmCancelSubscription = () => {
+    if (onCancelSubscription) onCancelSubscription();
+    setShowCancelSubConfirm(false);
+  };
+
+  const confirmDeleteStore = () => {
+    if (deleteInput === 'DELETE') {
+      if (onDeleteStore) onDeleteStore();
+      setShowDeleteConfirm(false);
+    }
   };
 
   const addPromoCode = () => {
@@ -525,21 +544,33 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
                  />
                  <p className="text-[9px] text-[var(--tt-text-muted)] mt-1 ml-1">{t.pointsPerCurrencyHelp || `e.g., 1 = earn 1 point per ${formData.currency}1 spent`}</p>
                </div>
-               <div>
-                 <label className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest block mb-2 ml-1">{t.minPointsRedeem || 'Minimum Points to Redeem'}</label>
-                 <input 
-                   type="number" 
-                   min="1"
-                   value={formData.minPointsToRedeem}
-                   onChange={e => setFormData({...formData, minPointsToRedeem: parseInt(e.target.value) || 100})}
-                   className="tt-input" 
-                 />
-                 <p className="text-[9px] text-[var(--tt-text-muted)] mt-1 ml-1">{t.minPointsRedeemHelp || 'Customers need at least this many points before they can redeem'}</p>
-               </div>
+                <div>
+                  <label className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest block mb-2 ml-1">{t.minPointsRedeem || 'Minimum Points to Redeem'}</label>
+                  <input 
+                    type="number" 
+                    min="1"
+                    value={formData.minPointsToRedeem}
+                    onChange={e => setFormData({...formData, minPointsToRedeem: parseInt(e.target.value) || 100})}
+                    className="tt-input" 
+                  />
+                  <p className="text-[9px] text-[var(--tt-text-muted)] mt-1 ml-1">{t.minPointsRedeemHelp || 'Customers need at least this many points before they can redeem'}</p>
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest block mb-2 ml-1">{t.pointValue || 'Point Value (Redemption)'}</label>
+                  <input 
+                    type="number" 
+                    min="0.01"
+                    step="0.01"
+                    value={formData.pointRedemptionValue}
+                    onChange={e => setFormData({...formData, pointRedemptionValue: parseFloat(e.target.value) || 1})}
+                    className="tt-input" 
+                  />
+                  <p className="text-[9px] text-[var(--tt-text-muted)] mt-1 ml-1">{t.pointValueHelp || `e.g., 1 point = ${formData.currency}${formData.pointRedemptionValue} discount`}</p>
+                </div>
              </div>
              <div className="bg-[var(--tt-amber-glow)] p-4 rounded-2xl border border-[var(--tt-amber)]/20">
                  <p className="text-xs text-[var(--tt-amber)] font-medium leading-relaxed">
-                    <strong>ℹ️ {t.howItWorks || 'How it works'}:</strong> {t.loyaltyExplanation || `Customers earn ${formData.pointsPerCurrency} point(s) per ${formData.currency}1 spent. Once they accumulate ${formData.minPointsToRedeem}+ points, they can redeem them at checkout. 1 point = ${formData.currency}1 discount.`}
+                    <strong>ℹ️ {t.howItWorks || 'How it works'}:</strong> {t.loyaltyExplanation || `Customers earn ${formData.pointsPerCurrency} point(s) per ${formData.currency}1 spent. Once they accumulate ${formData.minPointsToRedeem}+ points, they can redeem them at checkout. Each point provides a ${formData.currency}${formData.pointRedemptionValue} discount.`}
                  </p>
              </div>
            </div>
@@ -637,15 +668,16 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
                         type="text" 
                         value={formData.bookingSlug}
                         onChange={e => setFormData({...formData, bookingSlug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '')})}
-                        placeholder="your-shop-name"
+                        placeholder={currentTenant?.slug || "your-shop-name"}
                         className="tt-input pl-36" 
                       />
                     </div>
                       <button
                         type="button"
-                        disabled={!formData.bookingSlug}
                         onClick={() => {
-                          const link = `${window.location.origin}/book/${formData.bookingSlug}`;
+                          const slugToUse = formData.bookingSlug || currentTenant?.slug;
+                          if (!slugToUse) return;
+                          const link = `${window.location.origin}/book/${slugToUse}`;
                           navigator.clipboard.writeText(link);
                           alert(t.bookingLinkCopied);
                         }}
@@ -685,13 +717,14 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
                   Staff URL
                 </div>
                 <div className="w-full bg-[var(--tt-surface)] border border-[var(--tt-border)] rounded-2xl pl-20 pr-5 py-4 text-sm font-mono text-emerald-500 break-all overflow-hidden whitespace-nowrap">
-                  {window.location.origin}/staff-login/{formData.bookingSlug}
+                  {window.location.origin}/staff-login/{formData.bookingSlug || currentTenant?.slug || 'shop-id'}
                 </div>
               </div>
               <button 
                 type="button"
                 onClick={() => {
-                  navigator.clipboard.writeText(`${window.location.origin}/staff-login/${formData.bookingSlug}`);
+                  const slugToUse = formData.bookingSlug || currentTenant?.slug || 'shop-id';
+                  navigator.clipboard.writeText(`${window.location.origin}/staff-login/${slugToUse}`);
                   alert(t.staffLinkCopied);
                 }}
                 className="px-8 py-4 bg-emerald-500 text-slate-950 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-emerald-600 transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20"
@@ -721,13 +754,20 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
                   <p className="text-xs text-[var(--tt-rose)]/70 mt-1">{t.resetSalesDesc}</p>
               </div>
             </div>
-            <div className="flex justify-end">
+            <div className="flex flex-col sm:flex-row justify-end gap-3">
               <button 
                   type="button"
                   onClick={handleResetSales}
-                  className="bg-[var(--tt-rose)] text-white px-6 py-3 rounded-xl font-bold text-sm hover:opacity-90 transition-all shadow-lg shadow-[var(--tt-rose)]/20 active:scale-95"
+                  className="bg-[var(--tt-rose)]/10 text-[var(--tt-rose)] px-6 py-3 rounded-xl font-bold text-sm hover:bg-[var(--tt-rose)]/20 transition-all active:scale-95 border border-[var(--tt-rose)]/30"
               >
                   {t.resetSales}
+              </button>
+              <button 
+                  type="button"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="bg-[var(--tt-rose)] text-white px-6 py-3 rounded-xl font-bold text-sm hover:opacity-90 transition-all shadow-lg shadow-[var(--tt-rose)]/20 active:scale-95"
+              >
+                  Delete Store
               </button>
             </div>
         </motion.div>
@@ -837,7 +877,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
       </motion.div>
 
       {/* Account Section - Visible to All */}
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white dark:bg-slate-900 p-6 md:p-8 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white dark:bg-slate-900 p-6 md:p-8 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6 mb-6">
           <div className="flex items-center gap-4">
               <div className="w-14 h-14 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center font-black text-slate-500 uppercase text-xl shadow-inner">
                   {(currentUser?.name || 'U').charAt(0)}
@@ -854,6 +894,58 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
               {t.logout}
           </button>
       </motion.div>
+
+      {/* Subscription Management - Visible to Admin Only */}
+      {currentUser?.role === 'admin' && subscription && (
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white dark:bg-slate-900 p-6 md:p-8 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm mb-6">
+          <div className="flex items-center gap-4 mb-6">
+            <div className="w-10 h-10 bg-[var(--tt-blue)]/10 rounded-xl flex items-center justify-center text-[var(--tt-blue)]">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+            </div>
+            <div>
+              <h3 className="text-lg md:text-xl font-bold text-[var(--tt-text-main)]">Subscription & Billing</h3>
+              <p className="text-xs text-[var(--tt-text-muted)] mt-1">Manage your store's active plan</p>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <div className="p-4 bg-[var(--tt-surface)] rounded-2xl border border-[var(--tt-border)]">
+              <p className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest mb-1">Current Plan</p>
+              <p className="text-lg font-bold text-[var(--tt-text-main)] capitalize">{subscription.plan}</p>
+            </div>
+            <div className="p-4 bg-[var(--tt-surface)] rounded-2xl border border-[var(--tt-border)]">
+              <p className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest mb-1">Status</p>
+              <p className={`text-lg font-bold capitalize ${subscription.status === 'active' ? 'text-[var(--tt-emerald)]' : subscription.status === 'cancelled' ? 'text-[var(--tt-rose)]' : 'text-[var(--tt-amber)]'}`}>
+                {subscription.status}
+              </p>
+            </div>
+            <div className="p-4 bg-[var(--tt-surface)] rounded-2xl border border-[var(--tt-border)]">
+              <p className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest mb-1">Period Ends</p>
+              <p className="text-lg font-bold text-[var(--tt-text-main)]">
+                {new Date(subscription.currentPeriodEnd).toLocaleDateString()}
+              </p>
+            </div>
+          </div>
+
+          {subscription.status !== 'cancelled' && (
+            <div className="flex justify-end pt-4 border-t border-[var(--tt-border)]">
+              <button 
+                type="button"
+                onClick={() => setShowCancelSubConfirm(true)}
+                className="px-6 py-3 bg-[var(--tt-surface)] text-[var(--tt-text-main)] border border-[var(--tt-border)] rounded-xl font-bold text-sm hover:bg-[var(--tt-rose)]/10 hover:text-[var(--tt-rose)] hover:border-[var(--tt-rose)]/30 transition-all"
+              >
+                Cancel Subscription
+              </button>
+            </div>
+          )}
+          {subscription.status === 'cancelled' && (
+             <div className="p-4 bg-[var(--tt-rose)]/10 border border-[var(--tt-rose)]/30 rounded-2xl text-center">
+                <p className="text-sm font-bold text-[var(--tt-rose)]">Your subscription is cancelled.</p>
+                <p className="text-xs text-[var(--tt-text-muted)] mt-1">You will lose access to premium features when the current period ends.</p>
+             </div>
+          )}
+      </motion.div>
+      )}
 
       {/* Modals */}
       <AnimatePresence>
@@ -894,6 +986,79 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
                   className="flex-1 py-4 rounded-xl font-bold text-white bg-rose-500 hover:bg-rose-600 transition-colors shadow-lg shadow-rose-500/20"
                 >
                   Confirm Reset
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {showCancelSubConfirm && (
+          <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white dark:bg-slate-900 rounded-[2rem] p-8 max-w-md w-full shadow-2xl border border-slate-100 dark:border-slate-800"
+            >
+              <div className="w-16 h-16 bg-amber-100 dark:bg-amber-900/30 text-amber-600 rounded-full flex items-center justify-center mb-6 mx-auto">
+                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              </div>
+              <h3 className="text-2xl font-black text-slate-900 dark:text-white text-center mb-2">Cancel Subscription?</h3>
+              <p className="text-slate-500 dark:text-slate-400 text-center mb-8">Your subscription will be cancelled immediately, but you will retain access until the end of your current billing period. Are you sure?</p>
+              <div className="flex gap-4">
+                <button 
+                  onClick={() => setShowCancelSubConfirm(false)}
+                  className="flex-1 py-4 rounded-xl font-bold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                >
+                  Keep Plan
+                </button>
+                <button 
+                  onClick={confirmCancelSubscription}
+                  className="flex-1 py-4 rounded-xl font-bold text-white bg-rose-500 hover:bg-rose-600 transition-colors shadow-lg shadow-rose-500/20"
+                >
+                  Yes, Cancel
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white dark:bg-slate-900 rounded-[2rem] p-8 max-w-md w-full shadow-2xl border border-slate-100 dark:border-slate-800"
+            >
+              <div className="w-16 h-16 bg-rose-100 dark:bg-rose-900/30 text-rose-600 rounded-full flex items-center justify-center mb-6 mx-auto">
+                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+              </div>
+              <h3 className="text-2xl font-black text-rose-500 text-center mb-2">Delete Store Completely?</h3>
+              <p className="text-slate-500 dark:text-slate-400 text-center mb-6 text-sm">
+                This action is <strong>irreversible</strong>. It will permanently wipe all your business data including sales, customers, staff, and settings. 
+                Type <strong>DELETE</strong> below to confirm.
+              </p>
+              <input 
+                 type="text"
+                 value={deleteInput}
+                 onChange={(e) => setDeleteInput(e.target.value)}
+                 placeholder="Type DELETE"
+                 className="tt-input mb-8 text-center uppercase"
+              />
+              <div className="flex gap-4">
+                <button 
+                  onClick={() => { setShowDeleteConfirm(false); setDeleteInput(''); }}
+                  className="flex-1 py-4 rounded-xl font-bold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={confirmDeleteStore}
+                  disabled={deleteInput !== 'DELETE'}
+                  className="flex-1 py-4 rounded-xl font-bold text-white bg-rose-500 hover:bg-rose-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg shadow-rose-500/20"
+                >
+                  Delete Forever
                 </button>
               </div>
             </motion.div>

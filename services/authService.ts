@@ -181,10 +181,171 @@ export async function registerNewBusiness(data: SignUpData): Promise<{ success: 
 }
 
 /**
+ * Complete business registration for users already authenticated (e.g. via Google)
+ */
+export async function completeBusinessRegistration(data: Omit<SignUpData, 'password'> & { email: string; ownerName: string }): Promise<{ success: boolean; tenantId?: string; slug?: string; error?: string }> {
+  try {
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) throw new Error('User not authenticated.');
+
+    const userId = user.id;
+
+    // Generate a URL-safe slug from business name
+    const slug = data.businessName
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      + '-' + Math.random().toString(36).substring(2, 6);
+
+    // 2. Create Tenant
+    const { data: tenant, error: tenantError } = await supabase
+      .from('tenants')
+      .insert({
+        owner_id: userId,
+        business_name: data.businessName,
+        business_type: data.businessType,
+        slug: slug,
+        is_active: true,
+      })
+      .select()
+      .single();
+
+    if (tenantError) throw new Error(`Tenant creation failed: ${tenantError.message}`);
+
+    const tenantId = tenant.id;
+
+    // 3. Create Subscription (starts with 30-day free trial)
+    const trialEnd = new Date();
+    trialEnd.setDate(trialEnd.getDate() + 30);
+
+    const { error: subError } = await supabase
+      .from('subscriptions')
+      .insert({
+        tenant_id: tenantId,
+        plan: data.plan,
+        status: 'trial',
+        trial_start: new Date().toISOString(),
+        trial_end: trialEnd.toISOString(),
+        current_period_start: new Date().toISOString(),
+        current_period_end: trialEnd.toISOString(),
+        price: PLAN_PRICES[data.plan],
+      });
+
+    if (subError) throw new Error(`Subscription creation failed: ${subError.message}`);
+
+    // Generate a secure random password for the owner's staff account
+    // (Since they login via Google, they don't need this staff password, but the DB requires it)
+    const randomPassword = Math.random().toString(36).slice(-10) + Math.random().toString(36).slice(-10);
+    const ownerPassword = await hashPassword(randomPassword);
+    
+    // 4. Create Admin Staff (the owner)
+    const { error: staffError } = await supabase
+      .from('staff')
+      .insert({
+        id: 'st_owner_' + userId.substring(0, 8),
+        tenant_id: tenantId,
+        name: data.ownerName || user.user_metadata?.full_name || 'Owner',
+        role: 'admin',
+        commission: 0,
+        username: data.email.split('@')[0] + '_' + Math.random().toString(36).substring(2, 6),
+        password: ownerPassword,
+        email: data.email,
+      });
+
+    if (staffError) logger.error('Staff seed error:', staffError);
+
+    // 5. Seed additional staff from wizard
+    if (data.staffMembers.length > 0) {
+      const staffRows = await Promise.all(
+        data.staffMembers.map(async (s) => ({
+          id: 'st_' + Math.random().toString(36).substr(2, 9),
+          tenant_id: tenantId,
+          name: s.name,
+          role: s.role,
+          commission: s.commission,
+          username: s.username,
+          password: await hashPassword(s.password),
+          email: null,
+        }))
+      );
+
+      const { error: extraStaffError } = await supabase.from('staff').insert(staffRows);
+      if (extraStaffError) logger.error('Extra staff seed error:', extraStaffError);
+    }
+
+    // 6. Seed selected services
+    if (data.selectedServices.length > 0) {
+      const serviceRows = data.selectedServices.map(s => ({
+        id: s.id,
+        tenant_id: tenantId,
+        name: s.name,
+        price: s.price,
+        duration: s.duration,
+        category: s.category,
+      }));
+
+      const { error: svcError } = await supabase.from('services').insert(serviceRows);
+      if (svcError) logger.error('Services seed error:', svcError);
+    }
+
+    // 7. Seed Settings
+    const { error: settError } = await supabase
+      .from('settings')
+      .insert({
+        id: 1,
+        tenant_id: tenantId,
+        data: {
+          shopName: data.businessName,
+          currency: '$',
+          language: 'en',
+          countryCode: '+1',
+          taxRate: 0,
+          taxType: 'excluded',
+          whatsappEnabled: false,
+          whatsappNumber: '',
+          receiptFooter: 'Thank you for choosing us!',
+          billingCycleDay: 1,
+          deductExpensesFromCommission: false,
+          loyaltyEnabled: false,
+          pointsPerCurrency: 1,
+          minPointsToRedeem: 100,
+          promoCodes: [],
+          bookingEnabled: false,
+          bookingSlug: slug,
+        }
+      });
+
+    if (settError) logger.error('Settings seed error:', settError);
+
+    return { success: true, tenantId, slug };
+
+  } catch (err: any) {
+    logger.error('Onboarding Error:', err);
+    return { success: false, error: err.message || 'Onboarding failed. Please try again.' };
+  }
+}
+
+/**
  * Sign in an existing business owner
  */
 export async function loginWithEmail(email: string, password: string): Promise<{ success: boolean; error?: string }> {
   const { error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) return { success: false, error: error.message };
+  return { success: true };
+}
+
+/**
+ * Sign in with Google
+ */
+export async function loginWithGoogle(): Promise<{ success: boolean; error?: string }> {
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: window.location.origin,
+    }
+  });
   if (error) return { success: false, error: error.message };
   return { success: true };
 }
@@ -312,4 +473,31 @@ export async function getOwnerStaff(tenantId: string): Promise<Staff | null> {
     // password intentionally omitted — never send hash to client
     email: data.email,
   };
+}
+
+/**
+ * Cancel the current subscription
+ */
+export async function cancelSubscription(tenantId: string): Promise<boolean> {
+  const { error } = await supabase
+    .from('subscriptions')
+    .update({ 
+      status: 'cancelled'
+    })
+    .eq('tenant_id', tenantId);
+
+  return !error;
+}
+
+/**
+ * Delete the entire store and all associated data
+ * relies on ON DELETE CASCADE in the database to wipe child tables
+ */
+export async function deleteStore(tenantId: string): Promise<boolean> {
+  const { error } = await supabase
+    .from('tenants')
+    .delete()
+    .eq('id', tenantId);
+
+  return !error;
 }

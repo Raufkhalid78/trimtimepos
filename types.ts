@@ -34,7 +34,7 @@ export const PLAN_PRICES = {
   yearly: 200,
 } as const;
 
-export type SaaSView = 'landing' | 'signup' | 'login' | 'app';
+export type SaaSView = 'landing' | 'signup' | 'login' | 'app' | 'onboarding';
 
 // ==========================================
 // App View Enum
@@ -77,6 +77,7 @@ export interface ShopSettings {
   deductExpensesFromCommission: boolean;
   loyaltyEnabled: boolean;
   pointsPerCurrency: number; // e.g. 1 point per $1
+  pointRedemptionValue: number; // e.g. 0.01 means 1 point = $0.01
   minPointsToRedeem: number;
   // Online Booking
   bookingEnabled: boolean;

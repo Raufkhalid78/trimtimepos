@@ -5,9 +5,9 @@ import { useToast } from './ToastContext';
 import { notificationService } from '../services/notificationService';
 import { format, subDays } from 'date-fns';
 import { logger } from '../services/logger';
-import { 
-  Service, Product, Staff, Expense, Customer, Sale, 
-  AdvancePayment, Supplier, StockLog, ShopSettings, 
+import {
+  Service, Product, Staff, Expense, Customer, Sale,
+  AdvancePayment, Supplier, StockLog, ShopSettings,
   Appointment, StaffAvailability, AppointmentStatus
 } from '../types';
 import { DEFAULT_SETTINGS } from '../constants';
@@ -27,10 +27,10 @@ interface DataContextType {
   staffAvailability: StaffAvailability[];
   settings: ShopSettings;
   loading: boolean;
-  
+
   fetchData: (isSilent?: boolean) => Promise<void>;
   fetchPublicTenantBySlug: (slug: string) => Promise<any>;
-  
+
   // CRUD Handlers
   updateServices: (updated: Service[]) => Promise<void>;
   updateProducts: (updated: Product[]) => Promise<void>;
@@ -57,7 +57,7 @@ const DataContext = createContext<DataContextType | undefined>(undefined);
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { currentTenant, currentUser } = useAuth();
   const { showToast } = useToast();
-  
+
   const [loading, setLoading] = useState(false);
   const [services, setServices] = useState<Service[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -80,7 +80,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const tid = currentTenant.id;
     // BUG-06: Load only last 90 days of sales by default to prevent unbounded queries
     const salesCutoff = subDays(new Date(), 90).toISOString();
-    
+
     try {
       const [sv, pr, st, ex, cu, sa, se, ap, sup, sl, appts, avail] = await Promise.all([
         supabase.from('services').select('*').eq('tenant_id', tid),
@@ -99,14 +99,14 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (sv.data) setServices(sv.data.map((s: any) => ({ ...s, nameUr: s.name_ur })));
       if (pr.data) {
-        const fetchedProducts = pr.data.map((p: any) => ({ 
-          ...p, 
+        const fetchedProducts = pr.data.map((p: any) => ({
+          ...p,
           lowStockThreshold: p.low_stock_threshold,
           nameUr: p.name_ur,
-          supplierId: p.supplier_id 
+          supplierId: p.supplier_id
         }));
         setProducts(fetchedProducts);
-        
+
         // Low stock notification
         const lowStockItems = fetchedProducts.filter((p: any) => p.stock <= (p.lowStockThreshold || 5));
         if (lowStockItems.length > 0) {
@@ -119,7 +119,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (st.data) setStaff(st.data.map((s: any) => ({ ...s, commission: typeof s.commission === 'string' ? parseFloat(s.commission) : (s.commission || 0) })));
       if (ex.data) setExpenses(ex.data.map((e: any) => ({ ...e, receiptImage: e.receipt_image })));
       if (cu.data) setCustomers(cu.data.map((c: any) => ({ ...c, createdAt: c.created_at })));
-      
+
       if (sa.data) {
         setSales(sa.data.map((s: any) => ({
           ...s,
@@ -136,7 +136,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (ap.data) setAdvancePayments(ap.data.map((a: any) => ({ ...a, staffId: a.staff_id })));
       if (sup.data) setSuppliers(sup.data.map((s: any) => ({ ...s, contactName: s.contact_name })));
       if (sl.data) setStockLogs(sl.data.map((l: any) => ({ ...l, productId: l.product_id, userId: l.user_id })));
-      
+
       if (appts.data) {
         setAppointments(appts.data.map((a: any) => ({
           ...a,
@@ -176,7 +176,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // 1. Fetch Tenant by Slug
       const cleanSlug = slug.trim().toLowerCase();
       logger.log('Fetching tenant by slug:', cleanSlug);
-      
+
       const { data: tenantData, error: tenantError } = await supabase
         .from('tenants')
         .select('*')
@@ -185,7 +185,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .single();
 
       if (tenantError || !tenantData) {
-        logger.error('Tenant fetch error or not found:', tenantError);
+        logger.error('Tenant fetch error or not found. This is typically caused by Row Level Security (RLS) blocking public access. Details:', tenantError || 'No tenant found with that slug.');
         setLoading(false);
         return false;
       }
@@ -202,11 +202,11 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (sv.data) setServices(sv.data.map((s: any) => ({ ...s, nameUr: s.name_ur })));
       if (st.data) setStaff(st.data.map((s: any) => ({ ...s, commission: typeof s.commission === 'string' ? parseFloat(s.commission) : (s.commission || 0) })));
-      
+
       if (se.data?.data) {
         const fetchedSettings = { ...DEFAULT_SETTINGS, ...se.data.data };
         setSettings(fetchedSettings);
-        
+
         // If booking is disabled for this shop, stop here
         if (!fetchedSettings.bookingEnabled) {
           setLoading(false);
@@ -345,9 +345,22 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .from('settings')
         .upsert({ tenant_id: tenantId, data: updated }, { onConflict: 'tenant_id' });
       if (error) throw error;
-    } catch (e) {
+
+      // Sync the slug to the tenants table so public routing works
+      if (updated.bookingSlug && updated.bookingSlug !== currentTenant?.slug) {
+        const { error: slugError } = await supabase
+          .from('tenants')
+          .update({ slug: updated.bookingSlug })
+          .eq('id', tenantId);
+
+        if (slugError) {
+          logger.error('Failed to sync slug to tenants table:', slugError);
+          throw new Error('Slug might be already taken or invalid.');
+        }
+      }
+    } catch (e: any) {
       setSettings(snapshot);
-      showToast("Failed to save settings", "error");
+      showToast(e.message || "Failed to save settings", "error");
     }
   };
 
@@ -376,17 +389,17 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       if (toDelete.length) await supabase.from('appointments').delete().in('id', toDelete);
       if (updated.length) {
-        const rows = updated.map(a => ({ 
-          id: a.id, 
-          tenant_id: tenantId, 
-          staff_id: a.staffId, 
-          customer_id: a.customerId || null, 
-          service_ids: JSON.stringify(a.serviceIds), 
-          start_time: a.startTime, 
-          end_time: a.endTime, 
-          status: a.status, 
-          notes: a.notes || null, 
-          customer_name: a.customerName || null, 
+        const rows = updated.map(a => ({
+          id: a.id,
+          tenant_id: tenantId,
+          staff_id: a.staffId,
+          customer_id: a.customerId || null,
+          service_ids: JSON.stringify(a.serviceIds),
+          start_time: a.startTime,
+          end_time: a.endTime,
+          status: a.status,
+          notes: a.notes || null,
+          customer_name: a.customerName || null,
           customer_phone: a.customerPhone || null,
           customer_email: a.customerEmail || null
         }));
@@ -624,8 +637,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   return (
     <DataContext.Provider value={{
-      services, products, staff, expenses, customers, sales, 
-      advancePayments, suppliers, stockLogs, appointments, staffAvailability, settings, 
+      services, products, staff, expenses, customers, sales,
+      advancePayments, suppliers, stockLogs, appointments, staffAvailability, settings,
       loading, fetchData, fetchPublicTenantBySlug,
       updateServices, updateProducts, updateStaff, updateCustomers, updateSettings, updateSuppliers, updateAppointments, updateAppointmentStatus, updateStaffAvailability,
       addStockLog, completeSale, deleteSales, addExpense, deleteExpense, addAdvance, deleteAdvance, publicCreateAppointment,

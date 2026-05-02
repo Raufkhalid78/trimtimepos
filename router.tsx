@@ -97,11 +97,15 @@ function StaffWithData() {
 
 function SettingsWithData() {
   const { settings, updateSettings, fetchData, deleteSales, sales, testNotification } = useData();
-  const { currentUser, signOut } = useAuth();
+  const { currentUser, signOut, currentTenant, subscription, cancelSubscription, deleteStore } = useAuth();
   return <Settings 
     settings={settings} 
     onUpdateSettings={updateSettings} 
     currentUser={currentUser} 
+    currentTenant={currentTenant}
+    subscription={subscription}
+    onCancelSubscription={cancelSubscription}
+    onDeleteStore={deleteStore}
     onLogout={signOut} 
     onPurgeSales={() => deleteSales(sales.map(s => s.id))} 
     onRefreshStatus={fetchData} 
@@ -111,7 +115,7 @@ function SettingsWithData() {
 }
 
 function AppointmentsWithData() {
-  const { appointments, staff, services, customers, updateAppointments, updateAppointmentStatus, settings, fetchData } = useData();
+  const { appointments, staff, services, customers, updateAppointments, updateAppointmentStatus, settings, staffAvailability, fetchData } = useData();
   const { sessionLanguage } = useAuth();
   return <Appointments 
     appointments={appointments} 
@@ -122,6 +126,7 @@ function AppointmentsWithData() {
     onUpdateStatus={updateAppointmentStatus}
     language={sessionLanguage} 
     settings={settings} 
+    staffAvailability={staffAvailability}
     onRefresh={fetchData} 
   />;
 }

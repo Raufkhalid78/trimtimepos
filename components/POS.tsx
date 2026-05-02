@@ -295,8 +295,9 @@ const POS: React.FC<POSProps> = ({ services, products, staff, customers, sales, 
     if (settings.loyaltyEnabled) {
         earnedPoints = Math.floor(discountedAmount * settings.pointsPerCurrency);
         if (redeemPoints && activeCustomer && activeCustomer.loyaltyPoints >= settings.minPointsToRedeem) {
-            // Assuming 1 point = 1 currency unit for simplicity, or we could add a conversion rate to settings
-            loyaltyDiscount = Math.min(discountedAmount, activeCustomer.loyaltyPoints);
+            // Apply conversion rate: 1 point = X currency units
+            const potentialDiscount = activeCustomer.loyaltyPoints * (settings.pointRedemptionValue || 1);
+            loyaltyDiscount = Math.min(discountedAmount, potentialDiscount);
         }
     }
 
@@ -509,7 +510,7 @@ const POS: React.FC<POSProps> = ({ services, products, staff, customers, sales, 
           splitDetails: paymentMethod === 'split' ? splitDetails : undefined,
           taxType: settings.taxType,
           costOfGoods,
-          redeemedPoints: redeemPoints ? totals.loyaltyDiscount : 0,
+          redeemedPoints: redeemPoints ? Math.ceil(totals.loyaltyDiscount / (settings.pointRedemptionValue || 1)) : 0,
           earnedPoints: totals.earnedPoints,
           staffName: staffMember?.name || 'Unknown',
           customerName: customerMember?.name || (selectedCustomer ? 'Unknown' : undefined)

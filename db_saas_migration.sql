@@ -282,9 +282,9 @@ $$;
 -- BUG-02 FIX: Removed 'OR auth.role() = anon' from ALL WITH CHECK clauses.
 -- Previously, any unauthenticated request could write to any table.
 
--- 4a. TENANTS
+-- 4a. TENANTS (anon can read basic info for public booking/staff login)
 ALTER TABLE tenants ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "tenants_select" ON tenants FOR SELECT USING (owner_id = auth.uid());
+CREATE POLICY "tenants_select" ON tenants FOR SELECT USING (true);
 CREATE POLICY "tenants_insert" ON tenants FOR INSERT WITH CHECK (owner_id = auth.uid());
 CREATE POLICY "tenants_update" ON tenants FOR UPDATE USING (owner_id = auth.uid()) WITH CHECK (owner_id = auth.uid());
 CREATE POLICY "tenants_delete" ON tenants FOR DELETE USING (owner_id = auth.uid());

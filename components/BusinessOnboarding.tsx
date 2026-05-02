@@ -1,12 +1,12 @@
-
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BusinessType, PLAN_PRICES } from '../types';
-import { registerNewBusiness, loginWithGoogle, SignUpData } from '../services/authService';
+import { completeBusinessRegistration, SignUpData } from '../services/authService';
+import { useAuth } from '../contexts/AuthContext';
 
-interface SignUpProps {
-  onBack: () => void;
+interface BusinessOnboardingProps {
   onSuccess: () => void | Promise<void>;
+  onLogout: () => void | Promise<void>;
 }
 
 // ==========================================
@@ -42,28 +42,23 @@ function getServicesForType(type: BusinessType) {
   return [...BARBER_SERVICES, ...SALON_SERVICES];
 }
 
-const SignUp: React.FC<SignUpProps> = ({ onBack, onSuccess }) => {
+const BusinessOnboarding: React.FC<BusinessOnboardingProps> = ({ onSuccess, onLogout }) => {
+  const { authUser } = useAuth();
   const [step, setStep] = useState(1);
-  const totalSteps = 5;
+  const totalSteps = 4; // Skipped email/password step!
 
   // Card 1: Business
   const [businessName, setBusinessName] = useState('');
   const [businessType, setBusinessType] = useState<BusinessType>('barbershop');
 
-  // Card 2: Account
-  const [ownerName, setOwnerName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-
-  // Card 3: Plan
+  // Card 2: Plan (Original Step 3)
   const [plan, setPlan] = useState<'monthly' | 'yearly'>('monthly');
 
-  // Card 4: Services
+  // Card 3: Services (Original Step 4)
   const [selectedServiceIds, setSelectedServiceIds] = useState<Set<string>>(new Set());
   const [servicesInitialized, setServicesInitialized] = useState(false);
 
-  // Card 5: Staff
+  // Card 4: Staff (Original Step 5)
   const [staffList, setStaffList] = useState<Array<{ name: string; role: 'admin' | 'employee'; commission: number; username: string; password: string }>>([]);
   const [newStaffName, setNewStaffName] = useState('');
   const [newStaffUsername, setNewStaffUsername] = useState('');
@@ -73,14 +68,12 @@ const SignUp: React.FC<SignUpProps> = ({ onBack, onSuccess }) => {
   // State
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [showPassword1, setShowPassword1] = useState(false);
-  const [showPassword2, setShowPassword2] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [generatedSlug, setGeneratedSlug] = useState('');
   const [copied, setCopied] = useState(false);
 
-  // Initialize services when reaching step 4
-  if (step === 4 && !servicesInitialized) {
+  // Initialize services when reaching step 3
+  if (step === 3 && !servicesInitialized) {
     const allServices = getServicesForType(businessType);
     setSelectedServiceIds(new Set(allServices.map(s => s.id)));
     setServicesInitialized(true);
@@ -94,30 +87,30 @@ const SignUp: React.FC<SignUpProps> = ({ onBack, onSuccess }) => {
         if (businessName.trim().length < 2) { setError('Business name must be at least 2 characters.'); return false; }
         return true;
       case 2:
-        if (!ownerName.trim()) { setError('Your name is required.'); return false; }
-        if (!email.trim() || !email.includes('@')) { setError('Valid email is required.'); return false; }
-        if (password.length < 6) { setError('Password must be at least 6 characters.'); return false; }
-        if (password !== confirmPassword) { setError('Passwords do not match.'); return false; }
-        return true;
-      case 3:
         return true; // Plan always has a default
+      case 3:
+        if (selectedServiceIds.size === 0) { setError('Please select at least one service to start with.'); return false; }
+        return true;
       case 4:
-        return true; // Services are optional
-      case 5:
         return true; // Staff is optional
       default:
-        return true;
+        return false;
     }
   };
 
   const handleNext = () => {
-    if (!validateStep()) return;
-    if (step < totalSteps) setStep(step + 1);
+    if (validateStep()) {
+      setStep(s => Math.min(s + 1, totalSteps));
+    }
   };
 
   const handleBack = () => {
-    if (step > 1) setStep(step - 1);
-    else onBack();
+    if (step > 1) {
+      setStep(s => Math.max(s - 1, 1));
+      setError('');
+    } else {
+      onLogout();
+    }
   };
 
   const toggleService = (id: string) => {
@@ -149,104 +142,96 @@ const SignUp: React.FC<SignUpProps> = ({ onBack, onSuccess }) => {
   };
 
   const handleSubmit = async () => {
-    if (!validateStep()) return;
+    if (!validateStep() || !authUser) return;
     setLoading(true);
     setError('');
 
     const allServices = getServicesForType(businessType);
     const selectedServices = allServices.filter(s => selectedServiceIds.has(s.id));
 
-    const data: SignUpData = {
+    const email = authUser.email || '';
+    const ownerName = authUser.user_metadata?.full_name || email.split('@')[0] || 'Owner';
+
+    const data = {
       businessName: businessName.trim(),
       businessType,
-      email: email.trim().toLowerCase(),
-      password,
-      ownerName: ownerName.trim(),
       plan,
       selectedServices,
       staffMembers: staffList,
+      email,
+      ownerName
     };
 
-    const result = await registerNewBusiness(data);
+    const result = await completeBusinessRegistration(data);
 
     if (result.success) {
       setGeneratedSlug(result.slug || '');
       setShowSuccess(true);
     } else {
-      let errorMsg = result.error || 'Registration failed.';
+      let errorMsg = result.error || 'Setup failed.';
       if (errorMsg.includes('Failed to fetch') || errorMsg.includes('NetworkError')) {
-        errorMsg = "Network Error: Could not reach Supabase. Check your Vercel Environment Variables and make sure you have REDEPLOYED the app.";
+        errorMsg = "Network Error: Could not reach Supabase. Please try again.";
       }
       setError(errorMsg);
       setLoading(false);
     }
   };
 
-  const cardVariants = {
-    enter: { x: 80, opacity: 0 },
-    center: { x: 0, opacity: 1 },
-    exit: { x: -80, opacity: 0 },
-  };
-
-  const businessTypes: { value: BusinessType; label: string; icon: string; desc: string }[] = [
-    { value: 'barbershop', label: 'Barbershop', icon: '💈', desc: 'Haircuts, fades, beard trims, shaves' },
-    { value: 'beauty_salon', label: 'Beauty Salon', icon: '💅', desc: 'Hair, nails, skincare, makeup, waxing' },
-    { value: 'both', label: 'Both', icon: '✨', desc: 'Full-service barber & beauty salon' },
-  ];
-
   return (
-    <main className="min-h-screen bg-slate-950 flex items-center justify-center p-4 md:p-6 relative overflow-hidden">
+    <main className="min-h-screen bg-[#080c14] relative overflow-x-hidden flex items-center justify-center py-12 px-4 sm:px-6 z-50">
+      {/* Background gradients */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-[20%] -right-[10%] w-[50%] h-[50%] bg-amber-500/10 blur-[120px] rounded-full mix-blend-screen" />
+        <div className="absolute top-[40%] -left-[10%] w-[40%] h-[40%] bg-emerald-500/10 blur-[120px] rounded-full mix-blend-screen" />
+        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.02]" />
+      </div>
 
-      {/* Background glows */}
-      <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-amber-500/8 blur-[120px] rounded-full pointer-events-none"></div>
-      <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-indigo-500/8 blur-[120px] rounded-full pointer-events-none"></div>
-
-      <div className="max-w-lg w-full relative z-10">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-br from-amber-400 to-amber-600 rounded-2xl flex items-center justify-center text-slate-950 font-black text-3xl mx-auto mb-4 shadow-2xl shadow-amber-500/30">T</div>
-          <h1 className="text-2xl font-black text-white">Create Your Account</h1>
-          <p className="text-slate-500 text-sm mt-1">Step {step} of {totalSteps}</p>
-        </div>
-
-        {/* Progress Bar */}
-        <div className="flex gap-2 mb-8">
-          {Array.from({ length: totalSteps }).map((_, i) => (
-            <div key={i} className="flex-1 h-1.5 rounded-full overflow-hidden bg-slate-800">
-              <motion.div
-                className="h-full bg-gradient-to-r from-amber-400 to-amber-600 rounded-full"
-                initial={{ width: '0%' }}
-                animate={{ width: i < step ? '100%' : '0%' }}
-                transition={{ duration: 0.3 }}
-              />
+      <div className="w-full max-w-xl relative z-10">
+        {/* Header */}
+        {!showSuccess && (
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl flex items-center justify-center font-brand text-3xl text-slate-950 mx-auto mb-4 shadow-xl shadow-amber-500/20">
+              T
             </div>
-          ))}
-        </div>
+            <h1 className="text-3xl font-black text-white font-brand tracking-tight">Complete Setup</h1>
+            <p className="text-slate-500 text-sm mt-2">Step {step} of {totalSteps}</p>
 
-        {/* Card Container */}
-        <div className="bg-slate-900/40 backdrop-blur-3xl border border-white/5 rounded-[2.5rem] p-8 md:p-10 shadow-2xl min-h-[400px] flex flex-col">
+            {/* Progress Bar */}
+            <div className="flex gap-2 mt-6 max-w-xs mx-auto">
+              {[...Array(totalSteps)].map((_, i) => (
+                <div key={i} className="h-1.5 flex-1 rounded-full bg-slate-800/50 overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: i + 1 <= step ? '100%' : '0%' }}
+                    className="h-full bg-amber-500"
+                    transition={{ duration: 0.3 }}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="bg-white/[0.03] backdrop-blur-2xl border border-white/5 p-6 sm:p-10 rounded-[2.5rem] shadow-2xl relative overflow-hidden">
           <AnimatePresence mode="wait">
             <motion.div
-              key={step}
-              variants={cardVariants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              transition={{ duration: 0.25 }}
-              className="flex-1"
+              key={showSuccess ? 'success' : step}
+              initial={{ x: 20, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: -20, opacity: 0 }}
+              transition={{ duration: 0.3 }}
             >
-              {/* ========== SUCCESS VIEW ========== */}
               {showSuccess ? (
-                <div className="space-y-8 py-4 text-center">
-                  <div className="w-20 h-20 bg-emerald-500/10 text-emerald-500 rounded-full flex items-center justify-center text-4xl mx-auto shadow-2xl shadow-emerald-500/20">
-                    ✅
+                <div className="text-center space-y-6">
+                  <div className="w-20 h-20 bg-emerald-500/10 text-emerald-400 rounded-2xl flex items-center justify-center mx-auto shadow-inner border border-emerald-500/20">
+                    <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
                   </div>
                   <div>
-                    <h2 className="text-2xl font-black text-white mb-2">Welcome to TrimTime!</h2>
-                    <p className="text-slate-400 text-sm">Your business account has been successfully created.</p>
+                    <h2 className="text-3xl font-black text-white mb-2">Setup Complete!</h2>
+                    <p className="text-slate-400 text-sm">Your business account is ready.</p>
                   </div>
 
-                  <div className="bg-slate-800/40 border border-slate-700/50 rounded-[2rem] p-6 space-y-4">
+                  <div className="bg-slate-900/50 border border-slate-700/50 rounded-2xl p-5 text-left mb-6">
                     <div>
                       <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-3">Employee Login Link</p>
                       <p className="text-xs text-slate-400 mb-4 px-2 italic">Share this link with your team so they can login for their shifts. Bookmark it on your staff tablet or phone.</p>
@@ -277,7 +262,6 @@ const SignUp: React.FC<SignUpProps> = ({ onBack, onSuccess }) => {
                       try {
                         await onSuccess();
                       } finally {
-                        // Allow a small delay to let checkAuth update the view before stopping the spinner
                         setTimeout(() => setLoading(false), 500);
                       }
                     }}
@@ -303,19 +287,24 @@ const SignUp: React.FC<SignUpProps> = ({ onBack, onSuccess }) => {
                           type="text"
                           value={businessName}
                           onChange={e => setBusinessName(e.target.value)}
-                          placeholder="e.g. Elite Cuts & Styles"
+                          placeholder="e.g. The Sharp Fade"
                           className="w-full bg-slate-800/30 border border-slate-700/50 text-white rounded-2xl px-5 py-4 focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all placeholder:text-slate-600 font-medium"
+                          autoFocus
                         />
                       </div>
 
-                      <div className="space-y-2">
+                      <div className="space-y-3">
                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block ml-1">Business Type</label>
                         <div className="space-y-3">
-                          {businessTypes.map(bt => (
+                          {[
+                            { value: 'barbershop', label: 'Barbershop', icon: '💈', desc: 'Fades, beards, classic cuts' },
+                            { value: 'beauty_salon', label: 'Beauty Salon', icon: '✨', desc: 'Color, styling, nails, aesthetics' },
+                            { value: 'both', label: 'Both / Unisex', icon: '✂️', desc: 'Full service hair and beauty' },
+                          ].map(bt => (
                             <button
                               key={bt.value}
                               type="button"
-                              onClick={() => { setBusinessType(bt.value); setServicesInitialized(false); }}
+                              onClick={() => { setBusinessType(bt.value as BusinessType); setServicesInitialized(false); }}
                               className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 transition-all text-left ${businessType === bt.value
                                 ? 'border-amber-500 bg-amber-500/5'
                                 : 'border-slate-700/50 bg-slate-800/20 hover:border-slate-600'
@@ -336,105 +325,8 @@ const SignUp: React.FC<SignUpProps> = ({ onBack, onSuccess }) => {
                     </div>
                   )}
 
-                  {/* ========== CARD 2: Account Setup ========== */}
+                  {/* ========== CARD 2: Choose Plan ========== */}
                   {step === 2 && (
-                    <div className="space-y-6">
-                      <div>
-                        <h2 className="text-xl font-black text-white mb-1">Account Setup</h2>
-                        <p className="text-slate-500 text-sm">Create your login credentials.</p>
-                      </div>
-
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block ml-1">Your Full Name</label>
-                        <input
-                          type="text"
-                          value={ownerName}
-                          onChange={e => setOwnerName(e.target.value)}
-                          placeholder="John Smith"
-                          className="w-full bg-slate-800/30 border border-slate-700/50 text-white rounded-2xl px-5 py-4 focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all placeholder:text-slate-600 font-medium"
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block ml-1">Email Address</label>
-                        <input
-                          type="email"
-                          value={email}
-                          onChange={e => setEmail(e.target.value)}
-                          placeholder="you@example.com"
-                          className="w-full bg-slate-800/30 border border-slate-700/50 text-white rounded-2xl px-5 py-4 focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all placeholder:text-slate-600 font-medium"
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block ml-1">Password</label>
-                        <div className="relative">
-                          <input
-                            type={showPassword1 ? 'text' : 'password'}
-                            value={password}
-                            onChange={e => setPassword(e.target.value)}
-                            placeholder="At least 6 characters"
-                            className="w-full bg-slate-800/30 border border-slate-700/50 text-white rounded-2xl px-5 py-4 pr-12 focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all placeholder:text-slate-600 font-medium"
-                          />
-                          <button type="button" onClick={() => setShowPassword1(!showPassword1)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors">
-                            {showPassword1 ? '🙈' : '👁️'}
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block ml-1">Confirm Password</label>
-                        <div className="relative">
-                          <input
-                            type={showPassword2 ? 'text' : 'password'}
-                            value={confirmPassword}
-                            onChange={e => setConfirmPassword(e.target.value)}
-                            placeholder="Re-enter your password"
-                            className="w-full bg-slate-800/30 border border-slate-700/50 text-white rounded-2xl px-5 py-4 pr-12 focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all placeholder:text-slate-600 font-medium"
-                          />
-                          <button type="button" onClick={() => setShowPassword2(!showPassword2)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors">
-                            {showPassword2 ? '🙈' : '👁️'}
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="relative py-4">
-                        <div className="absolute inset-0 flex items-center">
-                          <div className="w-full border-t border-slate-700"></div>
-                        </div>
-                        <div className="relative flex justify-center">
-                          <span className="bg-[#080c14] px-4 text-xs font-bold uppercase tracking-widest text-slate-500">Or skip email signup</span>
-                        </div>
-                      </div>
-
-                      <motion.button 
-                        whileHover={{ scale: 1.01 }} 
-                        whileTap={{ scale: 0.98 }} 
-                        type="button" 
-                        onClick={async () => {
-                          setLoading(true);
-                          const result = await loginWithGoogle();
-                          if (!result.success) {
-                            setError(result.error || 'Google signup failed.');
-                            setLoading(false);
-                          }
-                        }}
-                        disabled={loading}
-                        className="w-full bg-white text-slate-900 font-black text-sm py-4 rounded-xl flex items-center justify-center gap-3 disabled:opacity-60 hover:bg-slate-50 transition-colors"
-                      >
-                        <svg className="w-5 h-5" viewBox="0 0 24 24">
-                          <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-                          <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                          <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-                          <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-                        </svg>
-                        Continue with Google
-                      </motion.button>
-                    </div>
-                  )}
-
-                  {/* ========== CARD 3: Choose Plan ========== */}
-                  {step === 3 && (
                     <div className="space-y-6">
                       <div>
                         <h2 className="text-xl font-black text-white mb-1">Choose Your Plan</h2>
@@ -442,7 +334,6 @@ const SignUp: React.FC<SignUpProps> = ({ onBack, onSuccess }) => {
                       </div>
 
                       <div className="space-y-4">
-                        {/* Monthly Card */}
                         <button
                           type="button"
                           onClick={() => setPlan('monthly')}
@@ -463,7 +354,6 @@ const SignUp: React.FC<SignUpProps> = ({ onBack, onSuccess }) => {
                           </div>
                         </button>
 
-                        {/* Yearly Card */}
                         <button
                           type="button"
                           onClick={() => setPlan('yearly')}
@@ -488,30 +378,21 @@ const SignUp: React.FC<SignUpProps> = ({ onBack, onSuccess }) => {
                         </button>
                       </div>
 
-                      <div className="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-2xl">
-                        <p className="text-emerald-400 text-sm font-bold text-center">
-                          🎉 Your first month is completely free!
-                        </p>
-                        <p className="text-emerald-500/60 text-xs text-center mt-1">
-                          You won't be charged until your trial ends.
-                        </p>
+                      <div className="bg-slate-800/20 border border-slate-700/30 rounded-xl p-4 mt-6">
+                        <p className="text-xs text-slate-400 font-medium">Includes: Unlimited staff, unlimited bookings, point of sale, inventory tracking, analytics, and Priority Support.</p>
                       </div>
                     </div>
                   )}
 
-                  {/* ========== CARD 4: Customize Services ========== */}
-                  {step === 4 && (
-                    <div className="space-y-6">
+                  {/* ========== CARD 3: Starting Services ========== */}
+                  {step === 3 && (
+                    <div className="space-y-6 h-full flex flex-col">
                       <div>
-                        <h2 className="text-xl font-black text-white mb-1">Your Services</h2>
-                        <p className="text-slate-500 text-sm">
-                          We've pre-selected services for{' '}
-                          {businessType === 'barbershop' ? 'barbershops' : businessType === 'beauty_salon' ? 'beauty salons' : 'barber & beauty'}.
-                          Toggle any you don't need — you can always edit later.
-                        </p>
+                        <h2 className="text-xl font-black text-white mb-1">Starting Services</h2>
+                        <p className="text-slate-500 text-sm">We've selected popular services for a {businessType.replace('_', ' ')}. You can edit prices and add more later.</p>
                       </div>
 
-                      <div className="max-h-[320px] overflow-y-auto space-y-2 scrollbar-hide pr-1">
+                      <div className="flex-1 overflow-y-auto max-h-[300px] pr-2 space-y-2 scrollbar-hide">
                         {getServicesForType(businessType).map(svc => {
                           const isSelected = selectedServiceIds.has(svc.id);
                           return (
@@ -525,38 +406,30 @@ const SignUp: React.FC<SignUpProps> = ({ onBack, onSuccess }) => {
                                 }`}
                             >
                               <div className="flex items-center gap-3">
-                                <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${isSelected ? 'border-amber-500 bg-amber-500' : 'border-slate-600'
-                                  }`}>
-                                  {isSelected && (
-                                    <svg className="w-3 h-3 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
-                                  )}
+                                <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${isSelected ? 'bg-amber-500 border-amber-500 text-slate-950' : 'border-slate-600 text-transparent'}`}>
+                                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
                                 </div>
                                 <div>
-                                  <p className="text-sm font-bold text-white">{svc.name}</p>
-                                  <p className="text-[10px] text-slate-500 uppercase tracking-wider">{svc.category} • {svc.duration}min</p>
+                                  <p className={`text-sm font-bold ${isSelected ? 'text-white' : 'text-slate-400'}`}>{svc.name}</p>
+                                  <p className="text-[10px] text-slate-500">{svc.duration} mins</p>
                                 </div>
                               </div>
-                              <span className="text-sm font-black text-slate-400">${svc.price}</span>
+                              <p className={`font-mono text-sm ${isSelected ? 'text-emerald-400' : 'text-slate-500'}`}>${svc.price}</p>
                             </button>
                           );
                         })}
                       </div>
-
-                      <p className="text-xs text-slate-600 text-center">
-                        {selectedServiceIds.size} service{selectedServiceIds.size !== 1 ? 's' : ''} selected
-                      </p>
                     </div>
                   )}
 
-                  {/* ========== CARD 5: Staff Setup ========== */}
-                  {step === 5 && (
+                  {/* ========== CARD 4: Staff Setup ========== */}
+                  {step === 4 && (
                     <div className="space-y-6">
                       <div>
                         <h2 className="text-xl font-black text-white mb-1">Add Your Team</h2>
                         <p className="text-slate-500 text-sm">Add staff members who will use the POS. You can skip this and add them later.</p>
                       </div>
 
-                      {/* Already added staff */}
                       {staffList.length > 0 && (
                         <div className="space-y-2">
                           {staffList.map((s, i) => (
@@ -578,7 +451,6 @@ const SignUp: React.FC<SignUpProps> = ({ onBack, onSuccess }) => {
                         </div>
                       )}
 
-                      {/* Add new staff form */}
                       <div className="bg-slate-800/20 border border-slate-700/30 rounded-2xl p-4 space-y-3">
                         <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Add Team Member</p>
                         <input
@@ -633,7 +505,6 @@ const SignUp: React.FC<SignUpProps> = ({ onBack, onSuccess }) => {
             </motion.div>
           </AnimatePresence>
 
-          {/* Error */}
           <AnimatePresence>
             {error && (
               <motion.div
@@ -646,10 +517,8 @@ const SignUp: React.FC<SignUpProps> = ({ onBack, onSuccess }) => {
               </motion.div>
             )}
           </AnimatePresence>
-
         </div>
 
-        {/* Existing logic hides nav buttons when showSuccess is true */}
         {!showSuccess && (
           <div className="flex gap-3 mt-8">
             <button
@@ -657,7 +526,7 @@ const SignUp: React.FC<SignUpProps> = ({ onBack, onSuccess }) => {
               onClick={handleBack}
               className="flex-1 py-4 bg-slate-800/50 border border-slate-700/50 text-slate-400 rounded-2xl font-bold hover:bg-slate-800 transition-colors"
             >
-              {step === 1 ? '← Back' : '← Previous'}
+              {step === 1 ? 'Cancel Setup' : '← Previous'}
             </button>
 
             {step < totalSteps ? (
@@ -687,20 +556,9 @@ const SignUp: React.FC<SignUpProps> = ({ onBack, onSuccess }) => {
             )}
           </div>
         )}
-
-        {/* Already have account */}
-        {!showSuccess && (
-          <p className="text-center text-slate-500 text-sm mt-6">
-            Already have an account?{' '}
-            <button type="button" onClick={onBack} className="text-amber-500 font-bold hover:underline underline-offset-4 bg-transparent border-none p-0 outline-none cursor-pointer">
-              Log In
-            </button>
-          </p>
-        )}
       </div>
     </main>
-
   );
 };
 
-export default SignUp;
+export default BusinessOnboarding;
