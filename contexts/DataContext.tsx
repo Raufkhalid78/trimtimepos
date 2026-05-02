@@ -195,7 +195,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // 2. Fetch all public data for this tenant
       const [sv, st, se, avail] = await Promise.all([
         supabase.from('services').select('*').eq('tenant_id', publicTenantId),
-        supabase.from('staff').select('*').eq('tenant_id', publicTenantId),
+        supabase.from('staff').select('id, name, role, commission, username, email, tenant_id').eq('tenant_id', publicTenantId),
         supabase.from('settings').select('*').eq('tenant_id', publicTenantId).single(),
         supabase.from('staff_availability').select('*').eq('tenant_id', publicTenantId)
       ]);

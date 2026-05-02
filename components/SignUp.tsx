@@ -153,6 +153,19 @@ const SignUp: React.FC<SignUpProps> = ({ onBack, onSuccess }) => {
     setLoading(true);
     setError('');
 
+    // Auto-add any pending staff member if all required fields are filled
+    // This handles the case where a user fills in staff info but forgets to click "Add"
+    let finalStaffList = staffList;
+    if (newStaffName.trim() && newStaffUsername.trim() && newStaffPassword.trim()) {
+      finalStaffList = [...staffList, {
+        name: newStaffName.trim(),
+        role: 'employee' as const,
+        commission: newStaffCommission,
+        username: newStaffUsername.trim(),
+        password: newStaffPassword.trim(),
+      }];
+    }
+
     const allServices = getServicesForType(businessType);
     const selectedServices = allServices.filter(s => selectedServiceIds.has(s.id));
 
@@ -164,7 +177,7 @@ const SignUp: React.FC<SignUpProps> = ({ onBack, onSuccess }) => {
       ownerName: ownerName.trim(),
       plan,
       selectedServices,
-      staffMembers: staffList,
+      staffMembers: finalStaffList,
     };
 
     const result = await registerNewBusiness(data);

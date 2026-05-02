@@ -1,9 +1,6 @@
-import { GoogleGenAI } from "@google/genai";
 import { Sale, Expense, BusinessType } from "../types";
 import { format, startOfMonth, subMonths } from "date-fns";
-
-const apiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY || (import.meta as any).env?.API_KEY || '';
-const ai = new GoogleGenAI({ apiKey });
+import { supabase } from "../supabaseClient";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -76,8 +73,6 @@ export async function getFinancialInsights(
   expenses: Expense[],
   businessType?: BusinessType
 ): Promise<string> {
-  const model = 'gemini-2.0-flash';
-
   const activeSales = sales.filter(s => !s.isRefunded);
   const totalRevenue = activeSales.reduce((acc, s) => acc + s.total, 0);
   const totalExpenses = expenses.reduce((acc, e) => acc + e.amount, 0);
@@ -86,8 +81,8 @@ export async function getFinancialInsights(
 
   const businessLabel =
     businessType === 'barbershop' ? 'Barber Shop'
-    : businessType === 'beauty_salon' ? 'Beauty Salon'
-    : 'Barber Shop & Beauty Salon';
+      : businessType === 'beauty_salon' ? 'Beauty Salon'
+        : 'Barber Shop & Beauty Salon';
 
   const prompt = `
 You are a business consultant specializing in grooming and beauty salons. Analyze the following data for a ${businessLabel} and give actionable, specific advice.
@@ -121,10 +116,19 @@ Keep the total response under 350 words. Use markdown formatting with bold heade
   `.trim();
 
   try {
-    const response = await ai.models.generateContent({ model, contents: prompt });
-    return response.text || "No insights could be generated.";
+    const { data, error } = await supabase.functions.invoke('gemini-insights', {
+      body: { prompt }
+    });
+
+    if (error) {
+      console.error("Supabase Edge Function Error:", error);
+      throw error;
+    }
+
+    return data.text || "No insights could be generated.";
   } catch (error) {
     console.error("Gemini Insight Error:", error);
-    return "Unable to generate insights at this time. Please check your data or try again later.";
+    return "Unable to generate insights at this time. Please check your network or try again later.";
   }
 }
+

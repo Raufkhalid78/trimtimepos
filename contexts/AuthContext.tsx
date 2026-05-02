@@ -83,10 +83,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setSaasView('app');
         } else {
           // Tenant not found for this authenticated user.
-          // This happens when they sign in with Google for the first time
-          // or if their tenant was deleted.
-          // Send them to the onboarding flow to create their business.
-          setSaasView('onboarding');
+          // If suppress flag is set, we're mid-email-signup — don't redirect yet.
+          // This prevents the double-onboarding bug where onAuthStateChange fires
+          // before registerNewBusiness has finished creating the tenant.
+          if (!suppressAuthCheckRef.current) {
+            // Not in a signup flow — must be a Google user or orphaned account.
+            // Route to business onboarding.
+            setSaasView('onboarding');
+          }
         }
       } else {
         // Check if we have a staff session but no Supabase auth (employee mode)

@@ -94,6 +94,8 @@ export async function registerNewBusiness(data: SignUpData): Promise<{ success: 
     const ownerPassword = await hashPassword(data.password);
     
     // 4. Create Admin Staff (the owner)
+    // Append a random suffix to avoid username collisions between tenants with the same email prefix
+    const ownerUsername = data.email.split('@')[0] + '_' + Math.random().toString(36).substring(2, 6);
     const { error: staffError } = await supabase
       .from('staff')
       .insert({
@@ -102,7 +104,7 @@ export async function registerNewBusiness(data: SignUpData): Promise<{ success: 
         name: data.ownerName,
         role: 'admin',
         commission: 0,
-        username: data.email.split('@')[0],
+        username: ownerUsername,
         password: ownerPassword,
         email: data.email,
       });
@@ -144,10 +146,10 @@ export async function registerNewBusiness(data: SignUpData): Promise<{ success: 
     }
 
     // 7. Seed default settings
+    // Do NOT pass id: 1 here — let the DB auto-assign a serial PK per tenant
     const { error: settError } = await supabase
       .from('settings')
       .insert({
-        id: 1,
         tenant_id: tenantId,
         data: {
           shopName: data.businessName,
@@ -291,10 +293,10 @@ export async function completeBusinessRegistration(data: Omit<SignUpData, 'passw
     }
 
     // 7. Seed Settings
+    // Do NOT pass id: 1 — let the DB auto-assign a serial PK per tenant
     const { error: settError } = await supabase
       .from('settings')
       .insert({
-        id: 1,
         tenant_id: tenantId,
         data: {
           shopName: data.businessName,

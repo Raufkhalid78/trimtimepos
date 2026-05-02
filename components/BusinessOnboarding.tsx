@@ -146,6 +146,18 @@ const BusinessOnboarding: React.FC<BusinessOnboardingProps> = ({ onSuccess, onLo
     setLoading(true);
     setError('');
 
+    // Auto-add any pending staff member if all required fields are filled
+    let finalStaffList = staffList;
+    if (newStaffName.trim() && newStaffUsername.trim() && newStaffPassword.trim()) {
+      finalStaffList = [...staffList, {
+        name: newStaffName.trim(),
+        role: 'employee' as const,
+        commission: newStaffCommission,
+        username: newStaffUsername.trim(),
+        password: newStaffPassword.trim(),
+      }];
+    }
+
     const allServices = getServicesForType(businessType);
     const selectedServices = allServices.filter(s => selectedServiceIds.has(s.id));
 
@@ -157,7 +169,7 @@ const BusinessOnboarding: React.FC<BusinessOnboardingProps> = ({ onSuccess, onLo
       businessType,
       plan,
       selectedServices,
-      staffMembers: staffList,
+      staffMembers: finalStaffList,
       email,
       ownerName
     };
@@ -299,7 +311,7 @@ const BusinessOnboarding: React.FC<BusinessOnboardingProps> = ({ onSuccess, onLo
                           {[
                             { value: 'barbershop', label: 'Barbershop', icon: '💈', desc: 'Fades, beards, classic cuts' },
                             { value: 'beauty_salon', label: 'Beauty Salon', icon: '✨', desc: 'Color, styling, nails, aesthetics' },
-                            { value: 'both', label: 'Both / Unisex', icon: '✂️', desc: 'Full service hair and beauty' },
+                            { value: 'both', label: 'Both', icon: '✂️', desc: 'Full service hair and beauty' },
                           ].map(bt => (
                             <button
                               key={bt.value}
