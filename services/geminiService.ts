@@ -116,7 +116,7 @@ Keep the total response under 350 words. Use markdown formatting with bold heade
   `.trim();
 
   try {
-    const { data, error } = await supabase.functions.invoke('gemini-insights', {
+    const { data, error } = await supabase.functions.invoke('hyper-responder', {
       body: { prompt }
     });
 
