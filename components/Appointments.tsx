@@ -502,7 +502,7 @@ const Appointments: React.FC<AppointmentsProps> = ({
                          <div className="flex-1">
                            <span className="text-sm font-bold dark:text-white">{service.name}</span>
                          </div>
-                         <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">${service.price}</span>
+                         <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">{settings.currency}{service.price}</span>
                        </label>
                      ))}
                    </div>

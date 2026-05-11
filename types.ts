@@ -129,6 +129,7 @@ export interface Staff {
   name: string;
   role: UserRole;
   commission: number; // percentage
+  baseSalary?: number; // fixed monthly/period salary
   username: string;
   password?: string;
   email?: string;
@@ -214,6 +215,7 @@ export interface Sale {
   costOfGoods: number;
   redeemedPoints?: number;
   earnedPoints?: number;
+  tip?: number;
   // Stored snapshots of names at time of sale
   staffName?: string;
   customerName?: string;

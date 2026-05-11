@@ -657,36 +657,48 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
                 exit={{ opacity: 0, height: 0 }}
                 className="space-y-4 pt-2"
               >
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest block ml-1">{t.bookingSlug}</label>
-                  <div className="flex gap-2">
-                    <div className="flex-1 relative">
-                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--tt-text-muted)] text-sm font-bold pointer-events-none">
-                        {window.location.hostname === 'localhost' ? 'localhost:3000' : window.location.hostname}/book/
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest block ml-1">{t.bookingSlug}</label>
+                    <div className="flex gap-2">
+                      <div className="flex-1 flex items-center bg-slate-50 dark:bg-slate-800 rounded-2xl border-0 ring-1 ring-inset ring-slate-200 dark:ring-slate-700 focus-within:ring-2 focus-within:ring-inset focus-within:ring-[var(--tt-blue)] overflow-hidden transition-all">
+                        <div className="pl-5 pr-1 text-[var(--tt-text-muted)] text-sm font-bold select-none whitespace-nowrap">
+                          {window.location.hostname === 'localhost' ? 'localhost:3000' : window.location.hostname}/book/
+                        </div>
+                        <input 
+                          type="text" 
+                          value={formData.bookingSlug}
+                          onChange={e => setFormData({...formData, bookingSlug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '')})}
+                          placeholder={currentTenant?.slug || "your-shop-name"}
+                          className="flex-1 bg-transparent border-none outline-none py-3.5 pr-5 text-sm font-bold text-[var(--tt-text-main)] focus:ring-0 w-full min-w-[100px]" 
+                        />
                       </div>
-                      <input 
-                        type="text" 
-                        value={formData.bookingSlug}
-                        onChange={e => setFormData({...formData, bookingSlug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '')})}
-                        placeholder={currentTenant?.slug || "your-shop-name"}
-                        className="tt-input pl-36" 
-                      />
                     </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const slugToUse = formData.bookingSlug || currentTenant?.slug;
-                          if (!slugToUse) return;
-                          const link = `${window.location.origin}/book/${slugToUse}`;
-                          navigator.clipboard.writeText(link);
-                          alert(t.bookingLinkCopied);
-                        }}
-                        className="px-5 py-3 bg-[var(--tt-surface-2)] text-[var(--tt-text-main)] rounded-2xl font-bold text-xs hover:bg-[var(--tt-surface)] transition-colors border border-[var(--tt-border)] active:scale-95"
-                      >
-                        {t.copyBookingLink}
-                      </button>
+                    <p className="text-[10px] text-[var(--tt-text-muted)] ml-2 mt-2">Only letters, numbers, and hyphens allowed.</p>
                   </div>
-                  <p className="text-[10px] text-[var(--tt-text-muted)] ml-2 mt-2">Only letters, numbers, and hyphens allowed.</p>
+
+                  <div className="flex gap-2">
+                    <div className="flex-1 relative group">
+                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--tt-text-muted)] text-[10px] font-black uppercase tracking-tighter opacity-50 group-hover:opacity-100 transition-opacity">
+                        Booking URL
+                      </div>
+                      <div className="w-full bg-[var(--tt-surface)] border border-[var(--tt-border)] rounded-2xl pl-24 pr-5 py-4 text-sm font-mono text-[var(--tt-blue)] break-all overflow-hidden whitespace-nowrap">
+                        {window.location.origin}/book/{formData.bookingSlug || currentTenant?.slug || 'shop-id'}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const slugToUse = formData.bookingSlug || currentTenant?.slug || 'shop-id';
+                        navigator.clipboard.writeText(`${window.location.origin}/book/${slugToUse}`);
+                        alert(t.bookingLinkCopied);
+                      }}
+                      className="px-8 py-4 bg-[var(--tt-blue)] text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:opacity-90 transition-all flex items-center justify-center gap-2 shadow-lg shadow-[var(--tt-blue)]/20"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg>
+                      {t.copyBookingLink}
+                    </button>
+                  </div>
                 </div>
               </motion.div>
             )}

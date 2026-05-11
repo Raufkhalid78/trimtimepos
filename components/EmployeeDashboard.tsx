@@ -18,7 +18,8 @@ const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ sales, appointmen
 
   const todayStats = useMemo(() => {
     const today = new Date();
-    const mySales = sales.filter(s => s.staffId === currentUser.id && isSameDay(parseISO(s.timestamp), today));
+    // Exclude refunded sales from employee revenue/commission
+    const mySales = sales.filter(s => s.staffId === currentUser.id && !s.isRefunded && isSameDay(parseISO(s.timestamp), today));
     const revenue = mySales.reduce((acc, s) => acc + s.total, 0);
     const commission = revenue * (currentUser.commission / 100);
     const myAppointments = appointments.filter(a => a.staffId === currentUser.id && isSameDay(parseISO(a.startTime), today));

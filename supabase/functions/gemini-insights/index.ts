@@ -1,13 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { GoogleGenAI } from "npm:@google/genai"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-application-name',
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -23,29 +21,53 @@ serve(async (req) => {
     }
 
     const apiKey = Deno.env.get('GEMINI_API_KEY')
-    
-    if (!apiKey) {
-      console.error("GEMINI_API_KEY secret is missing!")
-      return new Response(
-        JSON.stringify({ error: 'Server configuration error' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+    if (!apiKey) throw new Error("GEMINI_API_KEY missing")
+
+    // The ultimate auto-healing loop: try all possible models until one works for this specific API key
+    const modelsToTry = [
+      "gemini-2.5-flash",
+      "gemini-2.0-flash",
+      "gemini-1.5-flash",
+      "gemini-1.5-pro",
+      "gemini-1.5-flash-8b",
+      "gemini-pro"
+    ];
+
+    let lastError = "All models failed";
+
+    for (const model of modelsToTry) {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }]
+          })
+        }
       )
+
+      const data = await res.json()
+
+      if (res.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
+        // Success! Return the text immediately.
+        return new Response(
+          JSON.stringify({ text: data.candidates[0].content.parts[0].text }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      } else {
+        // Log the error but keep trying the next model
+        console.warn(`Model ${model} failed:`, data.error?.message);
+        lastError = data.error?.message || "Unknown error";
+      }
     }
 
-    const ai = new GoogleGenAI({ apiKey })
-    const response = await ai.models.generateContent({ 
-        model: 'gemini-2.0-flash', 
-        contents: prompt 
-    })
+    // If it reaches here, absolutely NO models worked
+    throw new Error(`Google API completely rejected the key. Last error: ${lastError}`);
 
-    return new Response(
-      JSON.stringify({ text: response.text }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
   } catch (error) {
-    console.error("Edge Function Error:", error)
     return new Response(
-      JSON.stringify({ error: error.message || 'Internal server error' }),
+      JSON.stringify({ error: error.message }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     )
   }

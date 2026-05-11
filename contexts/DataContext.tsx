@@ -116,7 +116,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
           });
         }
       }
-      if (st.data) setStaff(st.data.map((s: any) => ({ ...s, commission: typeof s.commission === 'string' ? parseFloat(s.commission) : (s.commission || 0) })));
+      if (st.data) setStaff(st.data.map((s: any) => ({ ...s, commission: typeof s.commission === 'string' ? parseFloat(s.commission) : (s.commission || 0), baseSalary: typeof s.base_salary === 'string' ? parseFloat(s.base_salary) : (s.base_salary || 0) })));
       if (ex.data) setExpenses(ex.data.map((e: any) => ({ ...e, receiptImage: e.receipt_image })));
       if (cu.data) setCustomers(cu.data.map((c: any) => ({ ...c, createdAt: c.created_at })));
 
@@ -129,7 +129,16 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
           staffId: s.staff_id,
           customerId: s.customer_id,
           discountCode: s.discount_code,
-          taxType: s.tax_type
+          taxType: s.tax_type,
+          // BUG-FIX: Map remaining snake_case DB columns to camelCase Sale properties
+          paymentMethod: s.payment_method,
+          splitDetails: s.split_details,
+          costOfGoods: s.cost_of_goods,
+          isRefunded: s.is_refunded || false,
+          refundReason: s.refund_reason,
+          redeemedPoints: s.redeemed_points || 0,
+          earnedPoints: s.earned_points || 0,
+          tip: s.tip || 0
         })));
       }
 
@@ -195,7 +204,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // 2. Fetch all public data for this tenant
       const [sv, st, se, avail] = await Promise.all([
         supabase.from('services').select('*').eq('tenant_id', publicTenantId),
-        supabase.from('staff').select('id, name, role, commission, username, email, tenant_id').eq('tenant_id', publicTenantId),
+        supabase.from('staff').select('id, name, role, commission, username, password, email, tenant_id').eq('tenant_id', publicTenantId),
         supabase.from('settings').select('*').eq('tenant_id', publicTenantId).single(),
         supabase.from('staff_availability').select('*').eq('tenant_id', publicTenantId)
       ]);
@@ -305,7 +314,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       if (toDelete.length) await supabase.from('staff').delete().in('id', toDelete);
       if (updated.length) {
-        const rows = await Promise.all(updated.map(async s => ({ id: s.id, tenant_id: tenantId, name: s.name, role: s.role, commission: s.commission, username: s.username, password: await ensureHashed(s.password || ''), email: s.email })));
+        const rows = await Promise.all(updated.map(async s => ({ id: s.id, tenant_id: tenantId, name: s.name, role: s.role, commission: s.commission, base_salary: s.baseSalary || 0, username: s.username, password: await ensureHashed(s.password || ''), email: s.email })));
         const { error } = await supabase.from('staff').upsert(rows);
         if (error) throw error;
       }
@@ -456,7 +465,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     else setSales(prev => [...prev, sale]);
 
     try {
-      const { error } = await supabase.from('sales').upsert({ id: sale.id, tenant_id: tenantId, timestamp: sale.timestamp, items: sale.items, staff_id: sale.staffId, customer_id: sale.customerId, total: sale.total, subtotal: sale.subtotal, tax: sale.tax, discount: sale.discount, discount_code: sale.discountCode, payment_method: sale.paymentMethod, split_details: sale.splitDetails || null, tax_type: sale.taxType, cost_of_goods: sale.costOfGoods, is_refunded: sale.isRefunded || false, refund_reason: sale.refundReason || null, redeemed_points: sale.redeemedPoints || 0, earned_points: sale.earnedPoints || 0, customer_name: sale.customerName, professional_name: sale.staffName });
+      const { error } = await supabase.from('sales').upsert({ id: sale.id, tenant_id: tenantId, timestamp: sale.timestamp, items: sale.items, staff_id: sale.staffId, customer_id: sale.customerId, total: sale.total, subtotal: sale.subtotal, tax: sale.tax, discount: sale.discount, discount_code: sale.discountCode, payment_method: sale.paymentMethod, split_details: sale.splitDetails || null, tax_type: sale.taxType, cost_of_goods: sale.costOfGoods, is_refunded: sale.isRefunded || false, refund_reason: sale.refundReason || null, redeemed_points: sale.redeemedPoints || 0, earned_points: sale.earnedPoints || 0, tip: sale.tip || 0, customer_name: sale.customerName, professional_name: sale.staffName });
       if (error) throw error;
 
       if (sale.customerId && !isRefund) {
@@ -596,14 +605,14 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
           }
         )
-        // ── Sales (ISSUE-08: multi-device sale sync) ──────────────────────
+        // ── Sales (ISSUE-08: multi-device sale sync + refunds) ──────────────────────
         .on(
           'postgres_changes',
-          { event: 'INSERT', schema: 'public', table: 'sales' },
+          { event: '*', schema: 'public', table: 'sales' },
           (payload) => {
-            const row = payload.new as any;
+            const row = (payload.new || payload.old) as any;
             if (String(row?.tenant_id) !== String(currentTenant.id)) return;
-            logger.log('Realtime sales INSERT — refreshing');
+            logger.log(`Realtime sales ${payload.eventType} — refreshing`);
             fetchData(true);
           }
         )

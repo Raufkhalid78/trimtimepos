@@ -468,7 +468,17 @@ const Inventory: React.FC<InventoryProps> = ({
                     
                     <div>
                         <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.nameUr}</label>
-                        <input name="nameUr" type="text" defaultValue={isEditing.nameUr || ''} className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200 font-urdu text-right" placeholder="اردو میں نام" />
+                        <input
+                          name="nameUr"
+                          type="text"
+                          defaultValue={isEditing.nameUr || ''}
+                          className={`w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200 ${
+                            settings.language === 'ur' ? 'font-urdu text-right' :
+                            settings.language === 'ar' ? 'text-right' : ''
+                          }`}
+                          placeholder={(t as any).nameUrPlaceholder || 'Local language name'}
+                          dir={settings.language === 'ur' || settings.language === 'ar' ? 'rtl' : 'ltr'}
+                        />
                     </div>
                     
                     {activeTab === 'products' && (

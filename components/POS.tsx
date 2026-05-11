@@ -26,6 +26,7 @@ const POS: React.FC<POSProps> = ({ services, products, staff, customers, sales, 
   const [selectedCustomer, setSelectedCustomer] = useState<string>('');
   const [discountCode, setDiscountCode] = useState<string>('');
   const [customDiscount, setCustomDiscount] = useState<{ type: 'percentage' | 'fixed', value: number }>({ type: 'percentage', value: 0 });
+  const [tipAmount, setTipAmount] = useState<number>(0);
   const [paymentMode, setPaymentMode] = useState<'normal' | 'split'>('normal');
   const [splitDetails, setSplitDetails] = useState({ cash: 0, card: 0 });
   const [redeemPoints, setRedeemPoints] = useState(false);
@@ -501,7 +502,7 @@ const POS: React.FC<POSProps> = ({ services, products, staff, customers, sales, 
           items: [...cart],
           staffId: selectedStaff,
           customerId: selectedCustomer || undefined,
-          total: totals.total,
+          total: totals.total + tipAmount,
           subtotal: totals.subtotal,
           tax: totals.tax,
           discount: totals.discount,
@@ -512,6 +513,7 @@ const POS: React.FC<POSProps> = ({ services, products, staff, customers, sales, 
           costOfGoods,
           redeemedPoints: redeemPoints ? Math.ceil(totals.loyaltyDiscount / (settings.pointRedemptionValue || 1)) : 0,
           earnedPoints: totals.earnedPoints,
+          tip: tipAmount,
           staffName: staffMember?.name || 'Unknown',
           customerName: customerMember?.name || (selectedCustomer ? 'Unknown' : undefined)
         };
@@ -528,6 +530,7 @@ const POS: React.FC<POSProps> = ({ services, products, staff, customers, sales, 
             setSelectedCustomer('');
             setDiscountCode('');
             setCustomDiscount({ type: 'percentage', value: 0 });
+            setTipAmount(0);
             setRedeemPoints(false);
             setPaymentMode('normal');
             setSplitDetails({ cash: 0, card: 0 });
@@ -977,10 +980,22 @@ const POS: React.FC<POSProps> = ({ services, products, staff, customers, sales, 
                         <span>-{settings.currency}{totals.loyaltyDiscount.toFixed(2)}</span>
                     </div>
                   )}
+                  <div className="flex justify-between items-center text-slate-500 py-1">
+                      <span>{t.tipAmount}</span>
+                      <div className="relative w-24">
+                          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-xs">{settings.currency}</span>
+                          <input 
+                              type="number" 
+                              value={tipAmount || ''} 
+                              onChange={e => setTipAmount(parseFloat(e.target.value) || 0)} 
+                              className="w-full bg-slate-100 dark:bg-slate-800 border-none rounded-lg pl-6 pr-2 py-1 text-right text-xs font-bold dark:text-white focus:ring-1 focus:ring-amber-500"
+                          />
+                      </div>
+                  </div>
                   <div className="flex justify-between text-xl md:text-2xl font-black text-slate-900 dark:text-white pt-2 border-t border-slate-100 dark:border-slate-800">
                       <span>{t.total}</span>
-                      <motion.span key={totals.total} className="text-amber-500">
-                          {settings.currency}{totals.total.toFixed(2)}
+                      <motion.span key={totals.total + tipAmount} className="text-amber-500">
+                          {settings.currency}{(totals.total + tipAmount).toFixed(2)}
                       </motion.span>
                   </div>
                 </div>

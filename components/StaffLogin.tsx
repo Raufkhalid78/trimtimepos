@@ -4,16 +4,14 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../contexts/AuthContext';
-import { useData } from '../contexts/DataContext';
 import { verifyPassword } from '../services/passwordService';
-import { Staff, Language } from '../types';
+import { Staff } from '../types';
 import { TRANSLATIONS } from '../constants';
 
 const StaffLogin: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { loginStaff } = useAuth();
-  const { fetchPublicTenantBySlug, staff: tenantStaff, settings } = useData();
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -22,40 +20,78 @@ const StaffLogin: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [shake, setShake] = useState(false);
   const [tenant, setTenant] = useState<any>(null);
+  const [staffList, setStaffList] = useState<Staff[]>([]);
+  const [pageLoading, setPageLoading] = useState(true);
 
   const t = TRANSLATIONS['en'];
 
   useEffect(() => {
-    const loadTenant = async () => {
-      if (slug) {
-        const tenantData = await fetchPublicTenantBySlug(slug);
-        if (tenantData) {
-          setTenant(tenantData);
-        } else {
-          setError('Shop not found or inactive.');
-        }
+    const loadTenantAndStaff = async () => {
+      if (!slug) { setPageLoading(false); return; }
+
+      const cleanSlug = slug.trim().toLowerCase();
+
+      // 1. Fetch the tenant by slug
+      const { data: tenantData, error: tenantError } = await supabase
+        .from('tenants')
+        .select('*')
+        .eq('slug', cleanSlug)
+        .eq('is_active', true)
+        .single();
+
+      if (tenantError || !tenantData) {
+        setError('Shop not found or inactive.');
+        setPageLoading(false);
+        return;
       }
+
+      setTenant(tenantData);
+
+      // 2. Directly fetch staff for this tenant (bypass shared context to avoid race conditions)
+      const { data: staffData, error: staffError } = await supabase
+        .from('staff')
+        .select('id, name, role, commission, username, password, email, base_salary, tenant_id')
+        .eq('tenant_id', tenantData.id);
+
+      if (!staffError && staffData) {
+        setStaffList(staffData.map((s: any) => ({
+          ...s,
+          commission: typeof s.commission === 'string' ? parseFloat(s.commission) : (s.commission || 0),
+          baseSalary: s.base_salary || 0,
+        })));
+      }
+
+      setPageLoading(false);
     };
-    loadTenant();
-  }, [slug, fetchPublicTenantBySlug]);
+
+    loadTenantAndStaff();
+  }, [slug]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!tenantStaff.length) {
-      setError('Staff records not found.');
+    if (!staffList.length) {
+      setError('Staff records not found. Please contact your manager.');
       return;
     }
 
     setLoading(true);
     setError('');
 
-    const potentialUsers = tenantStaff.filter(s => s.username === username);
+    const potentialUsers = staffList.filter(
+      s => s.username?.toLowerCase().trim() === username.toLowerCase().trim()
+    );
+
     let matchedUser: Staff | null = null;
 
     for (const user of potentialUsers) {
-      if (await verifyPassword(password, user.password || '')) {
-        matchedUser = user;
-        break;
+      const storedPass = user.password || '';
+      // Check bcrypt hash first
+      if (storedPass.startsWith('$2a$') || storedPass.startsWith('$2b$')) {
+        const ok = await verifyPassword(password, storedPass);
+        if (ok) { matchedUser = user; break; }
+      } else {
+        // Plaintext fallback for legacy / un-hashed passwords
+        if (password === storedPass) { matchedUser = user; break; }
       }
     }
 
@@ -73,12 +109,22 @@ const StaffLogin: React.FC = () => {
 
   const shopInitial = (tenant?.business_name || 'T').charAt(0).toUpperCase();
 
-  if (!tenant && !error) {
+  if (pageLoading) {
     return (
       <div className="min-h-screen bg-[#080c14] flex items-center justify-center">
         <div className="text-center space-y-4">
           <div className="w-16 h-16 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin mx-auto" />
           <p className="text-slate-500 text-sm font-bold uppercase tracking-widest">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error && !tenant) {
+    return (
+      <div className="min-h-screen bg-[#080c14] flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <p className="text-rose-400 text-lg font-bold">{error}</p>
         </div>
       </div>
     );
@@ -139,13 +185,13 @@ const StaffLogin: React.FC = () => {
             transition={{ delay: 0.4, duration: 0.6 }}
             className="bg-white/4 border border-white/8 rounded-2xl p-5 space-y-3"
           >
-            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Session Details</p>
+            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t.sessionDetails}</p>
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 bg-emerald-500/10 rounded-lg flex items-center justify-center">
                 <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
               </div>
               <div>
-                <p className="text-white text-xs font-bold">Auto-expires after 12 hours</p>
+                <p className="text-white text-xs font-bold">{t.autoExpires12h}</p>
                 <p className="text-slate-500 text-[10px]">You'll be automatically logged out for security</p>
               </div>
             </div>
@@ -181,7 +227,7 @@ const StaffLogin: React.FC = () => {
           </div>
 
           <div className="hidden lg:block mb-10">
-            <h2 className="text-3xl font-black text-white">Staff Sign In</h2>
+            <h2 className="text-3xl font-black text-white">{t.staffSignInTitle}</h2>
             <p className="text-slate-500 mt-1 text-sm">Enter your shift credentials below.</p>
           </div>
 
@@ -201,6 +247,7 @@ const StaffLogin: React.FC = () => {
                     onChange={e => { setUsername(e.target.value); setError(''); }}
                     placeholder="your.username"
                     required
+                    autoComplete="username"
                     className="w-full bg-white/5 border border-white/10 text-white rounded-xl px-4 py-3.5 pl-11 focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500 outline-none transition-all placeholder:text-slate-600 font-medium text-sm"
                   />
                 </div>
@@ -216,6 +263,7 @@ const StaffLogin: React.FC = () => {
                     onChange={e => { setPassword(e.target.value); setError(''); }}
                     placeholder="••••••••"
                     required
+                    autoComplete="current-password"
                     className="w-full bg-white/5 border border-white/10 text-white rounded-xl px-4 py-3.5 pl-11 pr-12 focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500 outline-none transition-all placeholder:text-slate-600 font-medium text-sm"
                   />
                   <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors" aria-label="Toggle password">

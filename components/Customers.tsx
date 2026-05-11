@@ -45,7 +45,8 @@ const Customers: React.FC<CustomersProps> = ({ customers, sales, onUpdateCustome
   );
 
   const getCustomerStats = (id: string) => {
-    const custSales = sales.filter(s => s.customerId === id);
+    // Exclude refunded sales from customer lifetime stats
+    const custSales = sales.filter(s => s.customerId === id && !s.isRefunded);
     const totalSpent = custSales.reduce((acc, s) => acc + s.total, 0);
     const lastVisit = custSales.length > 0 
       ? new Date(custSales.sort((a,b) => b.timestamp.localeCompare(a.timestamp))[0].timestamp).toLocaleDateString()
@@ -91,7 +92,7 @@ const Customers: React.FC<CustomersProps> = ({ customers, sales, onUpdateCustome
         const cleanPhone = finalPhone.replace(/\D/g, '');
         // If it starts with 0, remove it (common in some regions)
         const phoneWithoutLeadingZero = cleanPhone.startsWith('0') ? cleanPhone.substring(1) : cleanPhone;
-        finalPhone = `+${settings.countryCode}${phoneWithoutLeadingZero}`;
+        finalPhone = `${settings.countryCode}${phoneWithoutLeadingZero}`;
      }
      
      if (isEditing && selectedCustomer) {

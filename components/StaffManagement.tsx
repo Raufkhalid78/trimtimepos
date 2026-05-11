@@ -25,7 +25,8 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ staffList, onUpdateSt
     username: '',
     password: '',
     role: 'employee' as UserRole,
-    commission: 30
+    commission: 30,
+    baseSalary: 0
   });
 
   const t = TRANSLATIONS[language];
@@ -52,7 +53,7 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ staffList, onUpdateSt
     setIsAdding(false);
     setEditingStaff(null);
     setShowPassword(false);
-    setFormData({ name: '', username: '', password: '', role: 'employee', commission: 30 });
+    setFormData({ name: '', username: '', password: '', role: 'employee', commission: 30, baseSalary: 0 });
   };
 
   const deleteStaff = (id: string) => {
@@ -123,7 +124,8 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ staffList, onUpdateSt
                      username: staff.username, 
                      password: staff.password || '', 
                      role: staff.role, 
-                     commission: staff.commission 
+                     commission: staff.commission,
+                     baseSalary: staff.baseSalary || 0
                    });
                    setIsAdding(true);
                  }}
@@ -199,7 +201,8 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ staffList, onUpdateSt
                           username: staff.username, 
                           password: staff.password || '', 
                           role: staff.role, 
-                          commission: staff.commission 
+                          commission: staff.commission,
+                          baseSalary: staff.baseSalary || 0
                         });
                         setIsAdding(true);
                       }}
@@ -280,7 +283,7 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ staffList, onUpdateSt
                     </button>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   <div>
                     <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.role}</label>
                     <select 
@@ -300,6 +303,16 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ staffList, onUpdateSt
                       value={formData.commission} 
                       onChange={e => setFormData({...formData, commission: parseInt(e.target.value) || 0})} 
                       required 
+                      className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200" 
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.baseSalary}</label>
+                    <input 
+                      name="baseSalary" 
+                      type="number" 
+                      value={formData.baseSalary} 
+                      onChange={e => setFormData({...formData, baseSalary: parseFloat(e.target.value) || 0})} 
                       className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200" 
                     />
                   </div>

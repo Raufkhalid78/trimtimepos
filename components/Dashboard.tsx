@@ -90,19 +90,24 @@ const Dashboard: React.FC<DashboardProps> = ({ sales, expenses, products, staff,
   }, [expenses, dateRange, customRange]);
 
   const stats = useMemo(() => {
-    const revenue = filteredSales.reduce((acc, s) => acc + s.total, 0);
+    // Separate active sales from refunded ones for accurate accounting
+    const activeSales = filteredSales.filter(s => !s.isRefunded);
+    const refundedSales = filteredSales.filter(s => s.isRefunded);
+
+    const revenue = activeSales.reduce((acc, s) => acc + s.total, 0);
+    const totalRefunds = refundedSales.reduce((acc, s) => acc + s.total, 0);
     const expensesTotal = filteredExpenses.reduce((acc, e) => acc + e.amount, 0);
-    const payroll = filteredSales.reduce((acc, sale) => {
+    const payroll = activeSales.reduce((acc, sale) => {
       const staffMember = staff.find(s => s.id === sale.staffId);
       const commissionRate = staffMember?.commission || 0;
       return acc + (sale.total * (commissionRate / 100));
     }, 0);
 
     const inventoryValue = products.reduce((acc, p) => acc + (p.price * p.stock), 0);
-    const avgTicket = filteredSales.length > 0 ? revenue / filteredSales.length : 0;
+    const avgTicket = activeSales.length > 0 ? revenue / activeSales.length : 0;
     const remainingBalance = revenue - expensesTotal - payroll;
 
-    return { revenue, expenses: expensesTotal, payroll, inventoryValue, avgTicket, remainingBalance };
+    return { revenue, totalRefunds, expenses: expensesTotal, payroll, inventoryValue, avgTicket, remainingBalance };
   }, [filteredSales, filteredExpenses, products, staff]);
 
   const chartData = useMemo(() => {
@@ -123,7 +128,9 @@ const Dashboard: React.FC<DashboardProps> = ({ sales, expenses, products, staff,
     return Array.from({ length: days }).map((_, i) => {
       const date = addDays(startDate, i);
       const dayStr = format(date, 'MMM dd');
+      // Exclude refunded sales from the revenue chart
       const daySales = sales.filter(s => {
+        if (s.isRefunded) return false;
         const sDate = parseISO(s.timestamp);
         return isValid(sDate) && format(sDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd');
       });
@@ -133,7 +140,8 @@ const Dashboard: React.FC<DashboardProps> = ({ sales, expenses, products, staff,
 
   const staffLeaderboard = useMemo(() => {
     const staffMap: Record<string, number> = {};
-    filteredSales.forEach(sale => {
+    // Only count active (non-refunded) sales for the leaderboard
+    filteredSales.filter(s => !s.isRefunded).forEach(sale => {
       const name = sale.staffName || 'Unknown';
       staffMap[name] = (staffMap[name] || 0) + sale.total;
     });
@@ -216,12 +224,13 @@ const Dashboard: React.FC<DashboardProps> = ({ sales, expenses, products, staff,
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-5" id="tour-kpi-cards">
         {[
           { label: t.revenue, value: stats.revenue, color: 'var(--tt-amber)', icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
-          { label: t.expenses, value: stats.expenses, color: 'var(--tt-rose)', icon: 'M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z' },
+          { label: t.refunds || 'Refunds', value: stats.totalRefunds, color: 'var(--tt-rose)', isNegative: true, icon: 'M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6' },
+          { label: t.expenses, value: stats.expenses, color: '#f97316', icon: 'M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z' },
           { label: t.payroll, value: stats.payroll, color: 'var(--tt-violet)', icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z' },
           { label: t.remainingBalance, value: stats.remainingBalance, color: 'var(--tt-emerald)', icon: 'M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3' },
           { label: t.inventoryValue, value: stats.inventoryValue, color: 'var(--tt-blue)', icon: 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4' },
           { label: t.avgTicket, value: stats.avgTicket, color: 'var(--tt-amber)', icon: 'M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z' },
-        ].map((stat, i) => (
+        ].map((stat: any, i) => (
           <motion.div key={i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
             className="tt-card p-5 group hover:scale-[1.02] active:scale-95 cursor-default relative overflow-hidden"
           >
@@ -231,8 +240,8 @@ const Dashboard: React.FC<DashboardProps> = ({ sales, expenses, products, staff,
             </div>
             <div>
               <p className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest">{stat.label}</p>
-              <p className="text-2xl font-black text-[var(--tt-text-main)] mt-1 tracking-tighter">
-                <CountUp value={stat.value} prefix={currency} />
+              <p className={`text-2xl font-black mt-1 tracking-tighter ${stat.isNegative && stat.value > 0 ? 'text-[var(--tt-rose)]' : 'text-[var(--tt-text-main)]'}`}>
+                {stat.isNegative && stat.value > 0 ? '-' : ''}<CountUp value={stat.value} prefix={currency} />
               </p>
             </div>
           </motion.div>

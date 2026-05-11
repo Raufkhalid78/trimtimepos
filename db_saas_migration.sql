@@ -78,6 +78,7 @@ CREATE TABLE staff (
   name text NOT NULL,
   role text NOT NULL CHECK (role IN ('admin', 'employee')),
   commission numeric DEFAULT 0,
+  base_salary numeric DEFAULT 0,
   username text NOT NULL,
   password text NOT NULL,
   email text,
@@ -153,6 +154,7 @@ CREATE TABLE sales (
   refund_reason text,
   redeemed_points numeric DEFAULT 0,
   earned_points numeric DEFAULT 0,
+  tip numeric DEFAULT 0,
   customer_name text,
   professional_name text,
   PRIMARY KEY (id, tenant_id)

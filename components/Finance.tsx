@@ -4,7 +4,7 @@ import { TRANSLATIONS } from '../constants';
 import { getFinancialInsights } from '../services/geminiService';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
-import { parseISO, isValid, isSameMonth, isSameYear, format, getDaysInMonth } from 'date-fns';
+import { parseISO, isValid, isSameMonth, isSameYear, format, getDaysInMonth, startOfDay, endOfDay, isWithinInterval } from 'date-fns';
 
 const PerformanceBarChart = lazy(() => import('./Charts').then(m => ({ default: m.PerformanceBarChart })));
 
@@ -48,6 +48,11 @@ const Finance: React.FC<FinanceProps> = ({ sales, expenses, staffList, customers
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
+  const [payrollStart, setPayrollStart] = useState<string>(format(new Date(), 'yyyy-MM-01'));
+  const [payrollEnd, setPayrollEnd] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
+  const [confirmingPayStaffId, setConfirmingPayStaffId] = useState<string | null>(null);
+  const [paidStaffIds, setPaidStaffIds] = useState<Set<string>>(new Set());
+
   const filteredSales = useMemo(() => {
     const targetMonthStr = `${selectedYear}-${(selectedMonth + 1).toString().padStart(2, '0')}`;
     return sales.filter(sale => {
@@ -75,6 +80,28 @@ const Finance: React.FC<FinanceProps> = ({ sales, expenses, staffList, customers
     });
   }, [advancePayments, selectedMonth, selectedYear]);
 
+  const payrollSales = useMemo(() => {
+    if (!payrollStart || !payrollEnd) return [];
+    const start = startOfDay(parseISO(payrollStart));
+    const end = endOfDay(parseISO(payrollEnd));
+    return sales.filter(sale => {
+      const d = parseISO(sale.timestamp);
+      if (!isValid(d)) return false;
+      return isWithinInterval(d, { start, end });
+    });
+  }, [sales, payrollStart, payrollEnd]);
+
+  const payrollAdvances = useMemo(() => {
+    if (!payrollStart || !payrollEnd) return [];
+    const start = startOfDay(parseISO(payrollStart));
+    const end = endOfDay(parseISO(payrollEnd));
+    return advancePayments.filter(adv => {
+      const d = parseISO(adv.date);
+      if (!isValid(d)) return false;
+      return isWithinInterval(d, { start, end });
+    });
+  }, [advancePayments, payrollStart, payrollEnd]);
+
 
 
   // Chart Logic
@@ -83,7 +110,8 @@ const Finance: React.FC<FinanceProps> = ({ sales, expenses, staffList, customers
     return Array.from({ length: days }, (_, i) => {
       const day = i + 1;
       const dayStr = `${selectedYear}-${(selectedMonth + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-      const daySales = filteredSales.filter(s => format(parseISO(s.timestamp), 'yyyy-MM-dd') === dayStr);
+      // Exclude refunded sales from chart
+      const daySales = filteredSales.filter(s => !s.isRefunded && format(parseISO(s.timestamp), 'yyyy-MM-dd') === dayStr);
       return {
         name: day.toString(),
         revenue: daySales.reduce((acc, s) => acc + s.total, 0)
@@ -128,13 +156,14 @@ const Finance: React.FC<FinanceProps> = ({ sales, expenses, staffList, customers
     });
   }, [filteredSales, staffList, customers]);
 
-  const totalRevenue = filteredSales.reduce((a, b) => a + b.total, 0);
+  const totalRevenue = filteredSales.filter(s => !s.isRefunded).reduce((a, b) => a + b.total, 0);
+  const totalRefunds = filteredSales.filter(s => s.isRefunded).reduce((a, b) => a + b.total, 0);
   const totalExpenses = filteredExpenses.reduce((a, b) => a + b.amount, 0);
-  const totalTax = filteredSales.reduce((a, b) => a + (b.tax || 0), 0);
-  const totalCostOfGoods = filteredSales.reduce((a, b) => a + (b.costOfGoods || 0), 0);
+  const totalTax = filteredSales.filter(s => !s.isRefunded).reduce((a, b) => a + (b.tax || 0), 0);
+  const totalCostOfGoods = filteredSales.filter(s => !s.isRefunded).reduce((a, b) => a + (b.costOfGoods || 0), 0);
 
   const grossProfit = totalRevenue - totalCostOfGoods;
-  const netProfit = totalRevenue - totalExpenses;
+  const netProfit = totalRevenue - totalRefunds - totalExpenses;
 
   const handleExportPL = () => {
     const csvContent = [
@@ -424,6 +453,12 @@ const Finance: React.FC<FinanceProps> = ({ sales, expenses, staffList, customers
                     <span className="text-sm font-bold text-[var(--tt-text-muted)]">{t.revenue}</span>
                     <span className="font-black text-[var(--tt-text-main)] text-lg">{currency}{totalRevenue.toFixed(2)}</span>
                   </div>
+                  {totalRefunds > 0 && (
+                    <div className="flex justify-between items-center p-4 bg-rose-500/5 rounded-2xl border border-rose-500/20">
+                      <span className="text-sm font-bold text-rose-500">{t.refunds || 'Refunds'}</span>
+                      <span className="font-black text-rose-500">-{currency}{totalRefunds.toFixed(2)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between items-center p-4 bg-[var(--tt-surface-2)] rounded-2xl border border-[var(--tt-border)]">
                     <span className="text-sm font-bold text-[var(--tt-text-muted)]">{t.costOfGoods}</span>
                     <span className="font-black text-rose-500">-{currency}{totalCostOfGoods.toFixed(2)}</span>
@@ -439,7 +474,7 @@ const Finance: React.FC<FinanceProps> = ({ sales, expenses, staffList, customers
                   <div className="p-6 bg-white text-slate-950 rounded-[2rem] shadow-2xl shadow-white/5 mt-8 border border-white/20">
                     <div className="flex justify-between items-center">
                        <span className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">{t.netProfit}</span>
-                       <span className="text-3xl font-black tracking-tighter">{currency}{netProfit.toFixed(0)}</span>
+                       <span className={`text-3xl font-black tracking-tighter ${netProfit < 0 ? 'text-rose-500' : ''}`}>{netProfit < 0 ? '-' : ''}{currency}{Math.abs(netProfit).toFixed(0)}</span>
                     </div>
                   </div>
                 </div>
@@ -479,7 +514,7 @@ const Finance: React.FC<FinanceProps> = ({ sales, expenses, staffList, customers
                 <h3 className="font-bold mb-4 text-[var(--tt-text-main)]">{t.commissionReport}</h3>
                 <div className="space-y-3">
                   {staffList.filter(s => s.role === 'employee').map(s => {
-                    const sRev = filteredSales.filter(x => String(x.staffId) === String(s.id)).reduce((a, b) => a + b.total, 0);
+                    const sRev = filteredSales.filter(x => String(x.staffId) === String(s.id) && !x.isRefunded).reduce((a, b) => a + b.total, 0);
                     const commissionEarned = (sRev * (s.commission || 0)) / 100;
                     return (
                       <div key={s.id} className="flex justify-between items-center p-4 bg-[var(--tt-surface-2)] border border-[var(--tt-border)] rounded-2xl">
@@ -535,11 +570,20 @@ const Finance: React.FC<FinanceProps> = ({ sales, expenses, staffList, customers
                   </thead>
                   <tbody className="divide-y border-[var(--tt-border)]">
                     {enrichedSales.slice().reverse().map(sale => (
-                      <tr key={sale.id} className="hover:bg-[var(--tt-surface-2)]/50 transition-colors">
+                      <tr key={sale.id} className={`hover:bg-[var(--tt-surface-2)]/50 transition-colors ${sale.isRefunded ? 'opacity-60' : ''}`}>
                         <td className="p-4"><input type="checkbox" checked={selectedTransactions.has(sale.id)} onChange={() => toggleSelection(sale.id)} className="w-5 h-5 rounded text-[var(--tt-amber)] bg-[var(--tt-surface-2)] border-[var(--tt-border)]" /></td>
                         <td className="p-4 text-xs font-bold text-[var(--tt-text-main)]">{new Date(sale.timestamp).toLocaleDateString(language)}</td>
                         <td className="p-4"><p className="text-sm font-bold text-[var(--tt-text-main)]">{sale.staffName}</p><p className="text-xs text-[var(--tt-text-muted)]">{sale.customerName}</p></td>
-                        <td className="p-4 font-black text-[var(--tt-text-main)]">{currency}{sale.total.toFixed(2)}</td>
+                        <td className="p-4">
+                          <div className="flex items-center gap-2">
+                            <span className={`font-black ${sale.isRefunded ? 'text-rose-400 line-through' : 'text-[var(--tt-text-main)]'}`}>{currency}{sale.total.toFixed(2)}</span>
+                            {sale.isRefunded && (
+                              <span className="text-[9px] font-black bg-rose-500/10 text-rose-500 px-2 py-0.5 rounded-full uppercase tracking-wider border border-rose-500/20">
+                                {t.refunds || 'Refunded'}
+                              </span>
+                            )}
+                          </div>
+                        </td>
                         <td className="p-4"><button onClick={() => setViewingSale(sale)} className="text-[var(--tt-amber)] font-bold text-xs">{t.view}</button></td>
                       </tr>
                     ))}
@@ -643,22 +687,56 @@ const Finance: React.FC<FinanceProps> = ({ sales, expenses, staffList, customers
               </div>
 
               <div className="md:col-span-2 tt-card p-6">
-                <h3 className="font-bold mb-6 flex items-center gap-2 text-[var(--tt-text-main)]">🧾 {t.payoutSummary}</h3>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                  <h3 className="font-bold flex items-center gap-2 text-[var(--tt-text-main)]">🧾 {t.payoutSummary}</h3>
+                  <div className="flex gap-2 items-center bg-[var(--tt-surface-2)] p-1 rounded-xl border border-[var(--tt-border)]">
+                    <input type="date" value={payrollStart} onChange={e => setPayrollStart(e.target.value)} className="bg-transparent border-none text-xs font-bold text-[var(--tt-text-main)] px-2 outline-none cursor-pointer" />
+                    <span className="text-[var(--tt-text-muted)] font-black">-</span>
+                    <input type="date" value={payrollEnd} onChange={e => setPayrollEnd(e.target.value)} className="bg-transparent border-none text-xs font-bold text-[var(--tt-text-main)] px-2 outline-none cursor-pointer" />
+                  </div>
+                </div>
                 <div className="space-y-4">
                   {staffList.filter(s => s.role === 'employee').map(s => {
-                    const sSales = filteredSales.filter(x => String(x.staffId) === String(s.id));
+                    const sSales = payrollSales.filter(x => String(x.staffId) === String(s.id) && !x.isRefunded);
                     const sRev = sSales.reduce((a, b) => a + b.total, 0);
+                    const tipTotal = sSales.reduce((a, b) => a + (b.tip || 0), 0);
+                    const baseSalary = s.baseSalary || 0;
 
                     // Calculation logic
                     let baseRevenue = sRev;
                     if (settings.deductExpensesFromCommission) {
-                      const expenseShare = totalRevenue > 0 ? (sRev / totalRevenue) * totalExpenses : 0;
+                      const pRev = payrollSales.filter(x => !x.isRefunded).reduce((a, b) => a + b.total, 0);
+                      const expenseShare = pRev > 0 ? (sRev / pRev) * totalExpenses : 0;
                       baseRevenue = Math.max(0, sRev - expenseShare);
                     }
 
                     const commissionEarned = (baseRevenue * (s.commission || 0)) / 100;
-                    const totalAdvances = filteredAdvances.filter(a => a.staffId === s.id).reduce((a, b) => a + b.amount, 0);
-                    const finalPayout = Math.max(0, commissionEarned - totalAdvances);
+                    const totalAdvances = payrollAdvances.filter(a => a.staffId === s.id).reduce((a, b) => a + b.amount, 0);
+                    const finalPayout = Math.max(0, baseSalary + tipTotal + commissionEarned - totalAdvances);
+
+                    const isConfirming = confirmingPayStaffId === s.id;
+                    const isPaid = paidStaffIds.has(s.id);
+
+                    const handleMarkPaid = () => {
+                      const expense = {
+                        id: 'e' + Date.now().toString(36),
+                        date: format(new Date(), 'yyyy-MM-dd'),
+                        category: 'Payroll',
+                        amount: finalPayout,
+                        description: `Payroll for ${s.name} (${payrollStart} to ${payrollEnd})`
+                      };
+                      const advance = {
+                        id: 'a' + Date.now().toString(36),
+                        staffId: s.id,
+                        amount: finalPayout,
+                        date: format(new Date(), 'yyyy-MM-dd'),
+                        description: `Payroll settlement (${payrollStart} to ${payrollEnd})`
+                      };
+                      onAddExpense(expense as any);
+                      onAddAdvance(advance);
+                      setConfirmingPayStaffId(null);
+                      setPaidStaffIds(prev => new Set(prev).add(s.id));
+                    };
 
                     return (
                       <div key={s.id} className="p-6 bg-[var(--tt-surface-2)] rounded-3xl border border-[var(--tt-border)] shadow-sm">
@@ -673,7 +751,12 @@ const Finance: React.FC<FinanceProps> = ({ sales, expenses, staffList, customers
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-4 border-t border-[var(--tt-border)]">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-[var(--tt-border)]">
+                          <div>
+                            <p className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase mb-1">{t.salaryAndTips}</p>
+                            <p className="font-bold text-[var(--tt-text-main)]">{currency}{(baseSalary + tipTotal).toFixed(2)}</p>
+                            <p className="text-[9px] text-[var(--tt-text-muted)] mt-1">{t.baseSalaryLabel} {currency}{baseSalary.toFixed(2)} | {t.tipsLabel} {currency}{tipTotal.toFixed(2)}</p>
+                          </div>
                           <div>
                             <p className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase mb-1">{t.netCommission}</p>
                             <p className="font-bold text-[var(--tt-emerald)]">{currency}{commissionEarned.toFixed(2)}</p>
@@ -685,9 +768,38 @@ const Finance: React.FC<FinanceProps> = ({ sales, expenses, staffList, customers
                             <p className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase mb-1">{t.totalAdvances}</p>
                             <p className="font-bold text-[var(--tt-amber)]">-{currency}{totalAdvances.toFixed(2)}</p>
                           </div>
-                          <div className="col-span-2 md:col-span-1 bg-[var(--tt-amber)] text-slate-950 p-3 rounded-2xl text-center shadow-lg shadow-[var(--tt-amber-glow)]">
-                            <p className="text-[10px] font-black uppercase mb-1">{t.finalPayout}</p>
-                            <p className="text-lg font-black">{currency}{finalPayout.toFixed(2)}</p>
+                          <div className="col-span-2 md:col-span-1 flex flex-col gap-2">
+                            <div className="bg-[var(--tt-amber)] text-slate-950 p-3 rounded-2xl text-center shadow-lg shadow-[var(--tt-amber-glow)]">
+                              <p className="text-[10px] font-black uppercase mb-1">{t.finalPayout}</p>
+                              <p className="text-lg font-black">{currency}{finalPayout.toFixed(2)}</p>
+                            </div>
+                            {isPaid ? (
+                              <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 rounded-2xl py-2 px-3 text-center text-[11px] font-black uppercase tracking-widest">
+                                ✓ Paid
+                              </div>
+                            ) : isConfirming ? (
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={handleMarkPaid}
+                                  className="flex-1 bg-emerald-500 text-white rounded-2xl py-2 text-[11px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-colors"
+                                >
+                                  ✓ Confirm
+                                </button>
+                                <button
+                                  onClick={() => setConfirmingPayStaffId(null)}
+                                  className="flex-1 bg-[var(--tt-surface)] border border-[var(--tt-border)] text-[var(--tt-text-muted)] rounded-2xl py-2 text-[11px] font-black uppercase tracking-widest hover:bg-[var(--tt-surface-2)] transition-colors"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => setConfirmingPayStaffId(s.id)}
+                                className="bg-slate-900 dark:bg-slate-700 text-white rounded-2xl py-2 px-3 text-[11px] font-black uppercase tracking-widest hover:bg-slate-800 dark:hover:bg-slate-600 transition-colors w-full"
+                              >
+                                Mark Paid
+                              </button>
+                            )}
                           </div>
                         </div>
                       </div>
