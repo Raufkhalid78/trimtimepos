@@ -18,6 +18,7 @@ const ResetPassword = lazy(() => import('@/components/ResetPassword'));
 const StaffLogin = lazy(() => import('@/components/StaffLogin'));
 const PrivacyPolicy = lazy(() => import('@/components/PrivacyPolicy'));
 const TermsOfService = lazy(() => import('@/components/TermsOfService'));
+const PaymentSuccess = lazy(() => import('@/components/PaymentSuccess'));
 
 const Loading = () => (
   <div className="h-full w-full flex items-center justify-center bg-slate-50 dark:bg-slate-950">
@@ -184,5 +185,9 @@ export const router = createBrowserRouter([
   {
     path: '/terms',
     element: <Suspense fallback={<Loading />}><TermsOfService /></Suspense>
+  },
+  {
+    path: '/payment-success',
+    element: <Suspense fallback={<Loading />}><PaymentSuccess /></Suspense>
   }
 ]);

@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Language, PLAN_PRICES } from '../types';
 import { TRANSLATIONS } from '../constants';
 import { demoActivateSubscription } from '../services/authService';
+import { polarService } from '../services/polarService';
 
 interface PricingPageProps {
   tenantId: string;
@@ -20,14 +21,20 @@ const PricingPage: React.FC<PricingPageProps> = ({ tenantId, userEmail, language
     setIsLoading(true);
     setError(null);
     try {
-      const success = await demoActivateSubscription(tenantId, plan);
-      if (success) {
-        // Since we don't have a global state update for subscription in DataContext yet, 
-        // the easiest way is a reload or just an alert.
-        alert(`Plan activated! Your account is now ${plan === 'yearly' ? 'Pro (Yearly)' : 'Active (Monthly)'}.`);
-        window.location.reload(); 
+      if (polarService.isConfigured()) {
+        // ✅ Production path: redirect to Polar.sh hosted checkout
+        polarService.redirectToCheckout(plan, tenantId, userEmail);
+        // Navigation will happen — no need to reset loading state
       } else {
-        throw new Error("Activation failed");
+        // 🚧 Demo / Dev fallback: activate subscription directly in Supabase
+        // Remove this block once Polar is fully wired up.
+        const success = await demoActivateSubscription(tenantId, plan);
+        if (success) {
+          alert(`[DEV MODE] Plan activated locally! Set VITE_POLAR_MONTHLY_CHECKOUT_URL and VITE_POLAR_YEARLY_CHECKOUT_URL in .env.local to enable real payments.`);
+          window.location.reload();
+        } else {
+          throw new Error('Demo activation failed.');
+        }
       }
     } catch (err: any) {
       setError(err.message || 'Activation failed');
@@ -59,6 +66,12 @@ const PricingPage: React.FC<PricingPageProps> = ({ tenantId, userEmail, language
             Upgrade your account to unlock all premium features and continue growing your business with TrimTime.
           </p>
         </div>
+
+        {!polarService.isConfigured() && (
+          <div className="mb-6 p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-amber-400 text-center text-sm">
+            ⚠️ <strong>Payment not yet connected.</strong> Add <code>VITE_POLAR_MONTHLY_CHECKOUT_URL</code> and <code>VITE_POLAR_YEARLY_CHECKOUT_URL</code> to your <code>.env.local</code> to enable real Polar.sh payments.
+          </div>
+        )}
 
         {error && (
           <div className="mb-8 p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-500 text-center font-bold">
