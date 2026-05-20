@@ -7,6 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { verifyPassword } from '../services/passwordService';
 import { Staff } from '../types';
 import { TRANSLATIONS } from '../constants';
+import { setPageMeta } from '../utils/seo';
 
 const StaffLogin: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -24,6 +25,8 @@ const StaffLogin: React.FC = () => {
   const [pageLoading, setPageLoading] = useState(true);
 
   const t = TRANSLATIONS['en'];
+
+  useEffect(() => { setPageMeta('Staff Login', 'Staff login portal for TrimTime POS.'); }, []);
 
   useEffect(() => {
     const loadTenantAndStaff = async () => {

@@ -1,8 +1,11 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import { setPageMeta } from '../utils/seo';
 
 const PrivacyPolicy: React.FC = () => {
+  useEffect(() => { setPageMeta('Privacy Policy', 'TrimTime privacy policy — how we collect, use, and protect your personal data.'); }, []);
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-300 py-20 px-6">
       <div className="max-w-4xl mx-auto">

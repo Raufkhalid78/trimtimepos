@@ -1,3 +1,14 @@
 User-agent: *
 Allow: /
+Disallow: /dashboard
+Disallow: /pos
+Disallow: /finance
+Disallow: /customers
+Disallow: /inventory
+Disallow: /staff
+Disallow: /settings
+Disallow: /appointments
+Disallow: /reset-password
+Disallow: /payment-success
+Disallow: /staff-login/
 Sitemap: https://trimtimepos.com/sitemap.xml

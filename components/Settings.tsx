@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { ShopSettings, Language, Staff, DiscountCode } from '../types';
 import { CURRENCY_OPTIONS, TRANSLATIONS, COUNTRY_CODES } from '../constants';
 import { motion, AnimatePresence } from 'framer-motion';
+import { setPageMeta } from '../utils/seo';
 
 interface SettingsProps {
   settings: ShopSettings;
@@ -36,6 +37,8 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
   );
   
   const t = TRANSLATIONS[settings.language];
+
+  useEffect(() => { setPageMeta('Settings', 'Configure your TrimTime shop settings, branding, and preferences.'); }, []);
 
   const handleTestConnection = async () => {
     setIsTesting(true);

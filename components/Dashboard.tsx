@@ -3,6 +3,7 @@ import { Sale, Expense, Product, Language, View, Staff, Appointment } from '../t
 import { TRANSLATIONS } from '../constants';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format, subDays, addDays, isWithinInterval, startOfDay, endOfDay, startOfMonth, endOfMonth, parseISO, getDaysInMonth, isValid, isSameDay } from 'date-fns';
+import { setPageMeta } from '../utils/seo';
 
 const RevenueChart = lazy(() => import('./Charts').then(m => ({ default: m.RevenueChart })));
 const ExpensePieChart = lazy(() => import('./Charts').then(m => ({ default: m.ExpensePieChart })));
@@ -46,6 +47,8 @@ const Dashboard: React.FC<DashboardProps> = ({ sales, expenses, products, staff,
   const t = TRANSLATIONS[language];
   const [dateRange, setDateRange] = useState<DateRange>('month');
   const [customRange, setCustomRange] = useState({ start: format(subDays(new Date(), 7), 'yyyy-MM-dd'), end: format(new Date(), 'yyyy-MM-dd') });
+
+  useEffect(() => { setPageMeta('Dashboard', 'Your TrimTime business dashboard \u2014 track revenue, appointments, and performance.'); }, []);
 
   const filteredSales = useMemo(() => {
     const now = new Date();

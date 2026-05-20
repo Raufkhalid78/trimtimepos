@@ -1,9 +1,10 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { supabase } from '../supabaseClient';
 import { TRANSLATIONS } from '../constants';
+import { setPageMeta } from '../utils/seo';
 
 const ResetPassword = () => {
     const [password, setPassword] = useState('');
@@ -12,6 +13,8 @@ const ResetPassword = () => {
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const navigate = useNavigate();
     const t = TRANSLATIONS['en'];
+
+    useEffect(() => { setPageMeta('Reset Password', 'Reset your TrimTime account password.'); }, []);
 
     const handleReset = async (e: React.FormEvent) => {
         e.preventDefault();

@@ -45,5 +45,44 @@ export const whatsAppService = {
   ): string => {
     const message = `Hi ${customerName}! 🧾 Here is your receipt from *${shopName}*.\n\n*Items:* ${items}\n*Total:* ${total}\n\nThank you for choosing us!`;
     return `https://wa.me/${phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
+  },
+
+  /**
+   * Shares a PDF file via Web Share API if available,
+   * otherwise falls back to wa.me text link.
+   * Returns true if shared successfully via Web Share API.
+   */
+  sharePDF: async (
+    pdfBlob: Blob,
+    filename: string,
+    phone: string,
+    messageText: string
+  ): Promise<boolean> => {
+    const file = new File([pdfBlob], filename, { type: 'application/pdf' });
+
+    // Try Web Share API with file support (works on modern mobile browsers)
+    if (typeof navigator !== 'undefined' && navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({
+          files: [file],
+          title: filename,
+          text: messageText
+        });
+        return true;
+      } catch (e) {
+        // User cancelled the share — not an error
+        if ((e as Error).name === 'AbortError') return false;
+        // Fall through to WhatsApp fallback
+      }
+    }
+
+    // Fallback: open WhatsApp with text-only message
+    const cleanPhone = phone.replace(/\D/g, '');
+    const fallbackMessage = messageText + '\n\n_📎 PDF receipt was downloaded to your device._';
+    window.open(
+      `https://wa.me/${cleanPhone}?text=${encodeURIComponent(fallbackMessage)}`,
+      '_blank'
+    );
+    return false;
   }
 };

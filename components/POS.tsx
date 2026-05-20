@@ -1,8 +1,8 @@
-
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Service, Product, Staff, Sale, SaleItem, Customer, ShopSettings, HeldSale } from '../types';
 import { TRANSLATIONS } from '../constants';
 import { jsPDF } from 'jspdf';
+import { setPageMeta } from '../utils/seo';
 import html2canvas from 'html2canvas';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
@@ -37,6 +37,8 @@ const POS: React.FC<POSProps> = ({ services, products, staff, customers, sales, 
   
   const [activeTab, setActiveTab] = useState<'services' | 'products'>('services');
   const [searchTerm, setSearchTerm] = useState('');
+
+  useEffect(() => { setPageMeta('POS Terminal', 'Point of sale terminal for managing barber shop and salon transactions.'); }, []);
   // Load held sales from local storage to persist across refreshes
   const [heldSales, setHeldSales] = useState<HeldSale[]>(() => {
     try {
@@ -350,16 +352,18 @@ const POS: React.FC<POSProps> = ({ services, products, staff, customers, sales, 
     }
   };
 
-  const handleShareReceipt = async (sale: Sale) => {
+  const handleShareReceipt = async (sale: Sale, method: 'generic' | 'whatsapp' = 'generic') => {
     const container = document.createElement('div');
-    container.style.position = 'absolute';
+    container.style.position = 'fixed';
     container.style.left = '-9999px';
-    container.style.top = '-9999px';
+    container.style.top = '0';
     container.style.width = '300px';
     container.style.backgroundColor = 'white';
     container.style.padding = '20px';
     container.style.fontFamily = 'sans-serif';
     container.style.color = 'black';
+    container.style.zIndex = '-9999';
+    container.style.pointerEvents = 'none';
     
     const dateStr = new Date(sale.timestamp).toLocaleDateString();
     const timeStr = new Date(sale.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
@@ -461,7 +465,46 @@ const POS: React.FC<POSProps> = ({ services, products, staff, customers, sales, 
       });
       
       pdf.addImage(imgData, 'PNG', 0, 0, 80, (canvas.height * 80) / canvas.width);
+      
+      // Try to share PDF file via Web Share API (mobile browsers only, and only for generic share)
+      const pdfBlob = pdf.output('blob');
+      const pdfFile = new File([pdfBlob], `Receipt-${sale.id.slice(0, 6)}.pdf`, { type: 'application/pdf' });
+      
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      
+      if (method === 'generic' && isMobile && typeof navigator !== 'undefined' && navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+        try {
+          await navigator.share({
+            title: `Receipt from ${settings.shopName}`,
+            text: `🧾 Receipt #${sale.id.slice(0, 6)} — Total: ${settings.currency}${sale.total.toFixed(2)}`,
+            files: [pdfFile]
+          });
+          return; // Shared successfully
+        } catch (shareErr) {
+          // User cancelled or share failed — fall through to download
+          if ((shareErr as Error).name !== 'AbortError') {
+            console.warn('Web Share failed, falling back to download:', shareErr);
+          } else {
+            return; // If user aborted, do nothing
+          }
+        }
+      }
+      
+      // Fallback: download PDF directly
       pdf.save(`Receipt-${sale.id.slice(0, 6)}.pdf`);
+      setShowSuccessAlert("Receipt downloaded to your device!");
+      setTimeout(() => setShowSuccessAlert(null), 3000);
+      
+      // If WhatsApp method, also open wa.me
+      if (method === 'whatsapp') {
+        const customer = customers.find(c => c.id === sale.customerId);
+        if (customer && customer.phone) {
+          const itemNames = sale.items.map(i => i.name).join(', ');
+          const text = `🧾 Receipt from *${settings.shopName}*\nItems: ${itemNames}\nTotal: ${settings.currency}${sale.total.toFixed(2)}\n\n_PDF receipt downloaded to your device_`;
+          window.open(`https://wa.me/${customer.phone.replace(/\D/g, '')}?text=${encodeURIComponent(text)}`, '_blank');
+        }
+      }
+
     } catch (error) {
       console.error("Error generating PDF:", error);
       setShowErrorAlert("Failed to generate receipt PDF.");
@@ -665,7 +708,7 @@ const POS: React.FC<POSProps> = ({ services, products, staff, customers, sales, 
                </div>
               <div className="flex flex-col gap-3">
                 {lastCustomer && lastCustomer.phone && (
-                  <button onClick={() => sendWhatsappReceipt(lastSale, lastCustomer)} className="w-full bg-emerald-500 text-white py-4 rounded-2xl font-black flex items-center justify-center gap-3 hover:bg-emerald-600 transition-all shadow-xl shadow-emerald-500/20 active:scale-95 text-sm md:text-base">
+                  <button onClick={() => handleShareReceipt(lastSale, 'whatsapp')} className="w-full bg-emerald-500 text-white py-4 rounded-2xl font-black flex items-center justify-center gap-3 hover:bg-emerald-600 transition-all shadow-xl shadow-emerald-500/20 active:scale-95 text-sm md:text-base">
                     <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.246 2.248 3.484 5.232 3.484 8.412-.003 6.557-5.338 11.892-11.893 11.892-1.997-.001-3.951-.5-5.688-1.448l-6.309 1.656zm6.224-3.52c1.54.914 3.453 1.403 5.385 1.404h.005c5.632 0 10.211-4.579 10.214-10.211 0-2.729-1.063-5.295-2.993-7.225s-4.496-2.992-7.225-2.993c-5.633 0-10.213 4.58-10.214 10.214 0 2.022.529 3.996 1.531 5.74l-.991 3.618 3.707-.972zm11.233-5.62c-.301-.151-1.782-.879-2.057-.979-.275-.1-.475-.151-.675.151s-.777.979-.952 1.179-.35.225-.65.076c-.301-.151-1.268-.467-2.417-1.492-.892-.795-1.494-1.777-1.669-2.078-.175-.301-.019-.463.131-.613.135-.134.301-.351.451-.526s.201-.3.301-.5.101-.201.05-.376-.025-.526s-.675-1.629-.925-2.229c-.244-.583-.491-.504-.675-.513-.175-.008-.376-.01-.576-.01s-.526.076-.801.376c-.275.301-1.051 1.028-1.051 2.508s1.076 2.908 1.226 3.109c.151.201 2.118 3.235 5.132 4.537.717.309 1.277.494 1.714.633.72.228 1.375.196 1.892.119.577-.085 1.782-.728 2.032-1.429s.25-.151.25-.376-.101-.351-.401-.502z"/></svg>
                     WhatsApp Receipt
                   </button>

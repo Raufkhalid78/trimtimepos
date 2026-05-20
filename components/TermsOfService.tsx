@@ -1,8 +1,11 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import { setPageMeta } from '../utils/seo';
 
 const TermsOfService: React.FC = () => {
+  useEffect(() => { setPageMeta('Terms of Service', 'TrimTime terms of service — rules and guidelines for using our platform.'); }, []);
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-300 py-20 px-6">
       <div className="max-w-4xl mx-auto">

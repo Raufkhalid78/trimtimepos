@@ -58,6 +58,7 @@ const App: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => localStorage.getItem('trimtime_sidebar_collapsed') === 'true');
   const [isPricingOpen, setIsPricingOpen] = useState(false);
+  const [isOffline, setIsOffline] = useState(typeof navigator !== 'undefined' ? !navigator.onLine : false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showLogoutScreen, setShowLogoutScreen] = useState(false);
   const [logoutUserName, setLogoutUserName] = useState('');
@@ -94,6 +95,18 @@ const App: React.FC = () => {
     localStorage.setItem('trimtime_sidebar_collapsed', isSidebarCollapsed.toString());
   }, [isSidebarCollapsed]);
 
+  // Offline detection
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
   const PageLoader = () => <div className="h-screen w-full flex items-center justify-center bg-[#080c14]"><div className="w-12 h-12 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" /></div>;
 
   if (showLogoutScreen) return <LogoutScreen userName={logoutUserName} shopName={settings?.shopName || 'TrimTime'} onDone={() => { setShowLogoutScreen(false); navigate('/'); }} />;
@@ -122,6 +135,21 @@ const App: React.FC = () => {
 
   return (
     <div className="flex h-screen bg-[var(--tt-bg)] overflow-hidden font-sans transition-colors duration-300">
+      {/* Offline Indicator */}
+      <AnimatePresence>
+        {isOffline && (
+          <motion.div
+            initial={{ y: -40, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -40, opacity: 0 }}
+            className="fixed top-0 left-0 right-0 z-[999] bg-rose-500 text-white text-center py-2 text-xs font-bold flex items-center justify-center gap-2 shadow-lg"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M18.364 5.636a9 9 0 010 12.728m-2.829-2.829a5 5 0 000-7.07m-2.828 2.828a1 1 0 010 1.414" /></svg>
+            You're offline — some features may be limited
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <Sidebar
         shopName={settings.shopName} userRole={currentUser.role}
         isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)}

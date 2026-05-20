@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useData } from '../contexts/DataContext';
 import { Service, Staff, AppointmentStatus } from '../types';
 import { format, addMinutes, startOfDay, isBefore, isAfter, parse, addDays, isSameDay } from 'date-fns';
+import { setPageMeta } from '../utils/seo';
 
 const BookingPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -12,6 +13,8 @@ const BookingPage: React.FC = () => {
     services, staff, staffAvailability, appointments, settings, loading,
     fetchPublicTenantBySlug, publicCreateAppointment 
   } = useData();
+
+  useEffect(() => { setPageMeta('Book Your Appointment', 'Book an appointment at your favorite barber shop or beauty salon online with TrimTime.'); }, []);
 
   const [step, setStep] = useState(1);
   const [selectedService, setSelectedService] = useState<Service | null>(null);

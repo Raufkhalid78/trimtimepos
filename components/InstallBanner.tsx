@@ -12,6 +12,9 @@ const InstallBanner: React.FC<InstallBannerProps> = ({ deferredPrompt, onClose }
   const [isIOS, setIsIOS] = useState(false);
 
   useEffect(() => {
+    // Don't show if previously dismissed
+    if (localStorage.getItem('tt_install_dismissed') === 'true') return;
+
     // Check if already installed
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches 
                          || (window.navigator as any).standalone 
@@ -19,8 +22,10 @@ const InstallBanner: React.FC<InstallBannerProps> = ({ deferredPrompt, onClose }
 
     if (isStandalone) return;
 
-    // Detect iOS
-    const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+    // Detect iOS / iPadOS (iPads report as MacIntel with touch points)
+    const ios = (/iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) &&
+      !(window as any).MSStream;
     setIsIOS(ios);
 
     // Show after 3 seconds
@@ -77,7 +82,7 @@ const InstallBanner: React.FC<InstallBannerProps> = ({ deferredPrompt, onClose }
                 </button>
               )}
               <button 
-                onClick={() => setIsVisible(false)}
+                onClick={() => { localStorage.setItem('tt_install_dismissed', 'true'); setIsVisible(false); }}
                 className="p-2 hover:bg-white/10 rounded-full transition-colors"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

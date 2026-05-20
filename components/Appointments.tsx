@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Appointment, Staff, Service, Customer, Language, AppointmentStatus, ShopSettings } from '../types';
 import { TRANSLATIONS } from '../constants';
 import { format } from 'date-fns';
 import { whatsAppService } from '../services/whatsAppService';
+import { setPageMeta } from '../utils/seo';
 
 interface AppointmentsProps {
   appointments: Appointment[];
@@ -40,6 +41,8 @@ const Appointments: React.FC<AppointmentsProps> = ({
   });
 
   const t = TRANSLATIONS[language];
+
+  useEffect(() => { setPageMeta('Appointments', 'Manage your salon appointments and booking calendar.'); }, []);
 
   // Utility to check if an appointment falls on the selected date
   const getAppointmentsForDate = () => {

@@ -54,6 +54,24 @@ const ADMIN_STEPS: TourStep[] = [
     position: 'right'
   },
   {
+    targetId: 'nav-customers',
+    title: 'Customer Directory',
+    content: 'Track your clients, their visit history, loyalty points, and preferences all in one place.',
+    position: 'right'
+  },
+  {
+    targetId: 'nav-inventory',
+    title: 'Products & Services',
+    content: 'Manage your service menu, retail products, stock levels, and supplier orders.',
+    position: 'right'
+  },
+  {
+    targetId: 'nav-finance',
+    title: 'Financial Reports',
+    content: 'Track revenue, expenses, staff commissions, and download CSV reports for accounting.',
+    position: 'right'
+  },
+  {
     targetId: 'nav-settings',
     title: 'Configure Your Shop',
     content: 'Set your currency, tax, loyalty program, staff login links, and more from Settings.',
@@ -84,6 +102,29 @@ const EMPLOYEE_STEPS: TourStep[] = [
   }
 ];
 
+/**
+ * Attempts to find a DOM element by ID with retry logic.
+ * Returns the element's bounding rect or null if not found after retries.
+ */
+const findElementWithRetry = (
+  id: string,
+  callback: (rect: DOMRect | null) => void,
+  retries = 3,
+  delay = 400
+) => {
+  const el = document.getElementById(id);
+  if (el) {
+    callback(el.getBoundingClientRect());
+    return;
+  }
+  if (retries > 0) {
+    setTimeout(() => findElementWithRetry(id, callback, retries - 1, delay + 200), delay);
+  } else {
+    // Element not found after all retries — show as center tooltip
+    callback(null);
+  }
+};
+
 const OnboardingTour: React.FC = () => {
   const { currentUser, isTourCompleted, completeTour } = useAuth();
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
@@ -101,6 +142,15 @@ const OnboardingTour: React.FC = () => {
     }
   }, [isTourCompleted]);
 
+  // Listen for restart-onboarding event
+  useEffect(() => {
+    const handleRestart = () => {
+      setCurrentStepIndex(0);
+    };
+    window.addEventListener('restart-onboarding', handleRestart);
+    return () => window.removeEventListener('restart-onboarding', handleRestart);
+  }, []);
+
   // Navigate to required route when step changes
   useEffect(() => {
     if (isTourCompleted || !currentStep) return;
@@ -109,17 +159,14 @@ const OnboardingTour: React.FC = () => {
     }
   }, [currentStepIndex, isTourCompleted]); // eslint-disable-line
 
-  // Update spotlight rect when route or step changes
+  // Update spotlight rect when route or step changes — with retry logic
   useEffect(() => {
-    if (isTourCompleted) return;
+    if (isTourCompleted || !currentStep) return;
 
     const updateRect = () => {
-      const el = document.getElementById(currentStep?.targetId);
-      if (el) {
-        setTargetRect(el.getBoundingClientRect());
-      } else {
-        setTargetRect(null);
-      }
+      findElementWithRetry(currentStep.targetId, (rect) => {
+        setTargetRect(rect);
+      });
     };
 
     // Delay to allow route transition to complete
@@ -151,23 +198,48 @@ const OnboardingTour: React.FC = () => {
   };
 
   const getTooltipStyles = (): React.CSSProperties => {
-    if (!targetRect || currentStep.position === 'center') {
-      return { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' };
+    const isMobile = window.innerWidth < 768;
+
+    if (isMobile) {
+      const mobileWidth = 'calc(100vw - 32px)';
+      if (!targetRect || currentStep.position === 'center') {
+        return { top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: mobileWidth };
+      }
+      // On mobile, avoid target by placing tooltip on opposite half of screen
+      const targetCenterY = targetRect.top + targetRect.height / 2;
+      const isInBottomHalf = targetCenterY > window.innerHeight / 2;
+      
+      if (isInBottomHalf) {
+        return { top: '24px', left: '50%', transform: 'translateX(-50%)', width: mobileWidth };
+      } else {
+        return { bottom: '24px', left: '50%', transform: 'translateX(-50%)', width: mobileWidth };
+      }
     }
 
-    const margin = 16;
+    // Desktop positioning
     const boxW = 320;
+    if (!targetRect || currentStep.position === 'center') {
+      return { top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: boxW };
+    }
+
+    const margin = 20;
+    const boxH = 240; // Approx height to prevent vertical cutoff
+    
+    // Bounds checking functions to keep tooltip fully on screen
+    const safeTop = (idealTop: number) => Math.max(16, Math.min(idealTop, window.innerHeight - boxH - 16));
+    const safeLeft = (idealLeft: number) => Math.max(16, Math.min(idealLeft, window.innerWidth - boxW - 16));
+
     switch (currentStep.position) {
       case 'bottom':
-        return { top: targetRect.bottom + margin, left: Math.max(12, Math.min(targetRect.left + targetRect.width / 2 - boxW / 2, window.innerWidth - boxW - 12)) };
+        return { top: safeTop(targetRect.bottom + margin), left: safeLeft(targetRect.left + targetRect.width / 2 - boxW / 2), width: boxW };
       case 'top':
-        return { bottom: window.innerHeight - targetRect.top + margin, left: Math.max(12, Math.min(targetRect.left + targetRect.width / 2 - boxW / 2, window.innerWidth - boxW - 12)) };
+        return { bottom: Math.max(16, window.innerHeight - targetRect.top + margin), left: safeLeft(targetRect.left + targetRect.width / 2 - boxW / 2), width: boxW };
       case 'left':
-        return { top: Math.max(12, targetRect.top + targetRect.height / 2 - 80), right: window.innerWidth - targetRect.left + margin };
+        return { top: safeTop(targetRect.top + targetRect.height / 2 - boxH / 2), right: Math.max(16, window.innerWidth - targetRect.left + margin), width: boxW };
       case 'right':
-        return { top: Math.max(12, targetRect.top + targetRect.height / 2 - 80), left: targetRect.right + margin };
+        return { top: safeTop(targetRect.top + targetRect.height / 2 - boxH / 2), left: safeLeft(targetRect.right + margin), width: boxW };
       default:
-        return { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' };
+        return { top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: boxW };
     }
   };
 
@@ -211,15 +283,20 @@ const OnboardingTour: React.FC = () => {
           exit={{ opacity: 0, scale: 0.92, y: 8 }}
           transition={{ type: 'spring', damping: 25, stiffness: 300 }}
           style={getTooltipStyles()}
-          className="fixed z-[1002] w-[320px] bg-[var(--tt-surface)] border border-[var(--tt-border)] p-6 rounded-3xl shadow-2xl pointer-events-auto shadow-black/40"
+          className="fixed z-[1002] bg-[var(--tt-surface)] border border-[var(--tt-border)] p-6 rounded-3xl shadow-2xl pointer-events-auto shadow-black/40"
         >
           {/* Step number + title */}
-          <div className="flex items-center gap-3 mb-4">
+          <div className="flex items-center gap-3 mb-1">
             <div className="w-8 h-8 bg-[var(--tt-amber)] rounded-xl flex items-center justify-center text-slate-950 font-black text-xs shrink-0">
               {currentStepIndex + 1}
             </div>
             <h4 className="text-base font-black text-[var(--tt-text-main)] tracking-tight leading-tight">{currentStep.title}</h4>
           </div>
+
+          {/* Step counter */}
+          <p className="text-[10px] font-bold text-[var(--tt-text-muted)] uppercase tracking-widest mb-3 ml-11">
+            Step {currentStepIndex + 1} of {steps.length}
+          </p>
 
           {/* Content */}
           <p className="text-sm text-[var(--tt-text-muted)] leading-relaxed mb-5">

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import Navbar from './landing/Navbar';
 import HeroSection from './landing/HeroSection';
 import StatsBar from './landing/StatsBar';
@@ -9,6 +9,7 @@ import PricingSection from './landing/PricingSection';
 import FaqSection from './landing/FaqSection';
 import CtaSection from './landing/CtaSection';
 import Footer from './landing/Footer';
+import { setPageMeta } from '../utils/seo';
 
 interface LandingPageProps {
   onGoToSignUp: () => void;
@@ -16,6 +17,8 @@ interface LandingPageProps {
 }
 
 const LandingPage: React.FC<LandingPageProps> = ({ onGoToSignUp, onGoToLogin }) => {
+  useEffect(() => { setPageMeta('Barber & Salon POS Software', 'TrimTime — The ultimate POS and management platform for barber shops and beauty salons. Manage sales, staff, inventory, and finances in one place.'); }, []);
+
   return (
     <>
       {/* Skip to main content (accessibility) */}
