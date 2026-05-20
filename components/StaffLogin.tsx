@@ -26,7 +26,12 @@ const StaffLogin: React.FC = () => {
 
   const t = TRANSLATIONS['en'];
 
-  useEffect(() => { setPageMeta('Staff Login', 'Staff login portal for TrimTime POS.'); }, []);
+  useEffect(() => { 
+    setPageMeta('Staff Login', 'Staff login portal for TrimTime POS.');
+    if (slug) {
+      localStorage.setItem('trimtime_pwa_start_url', `/staff-login/${slug}`);
+    }
+  }, [slug]);
 
   useEffect(() => {
     const loadTenantAndStaff = async () => {

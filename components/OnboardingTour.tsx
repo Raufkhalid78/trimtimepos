@@ -276,15 +276,15 @@ const OnboardingTour: React.FC = () => {
 
       {/* Tooltip Card */}
       <AnimatePresence mode="wait">
-        <motion.div
-          key={currentStepIndex}
-          initial={{ opacity: 0, scale: 0.92, y: 8 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.92, y: 8 }}
-          transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-          style={getTooltipStyles()}
-          className="fixed z-[1002] bg-[var(--tt-surface)] border border-[var(--tt-border)] p-6 rounded-3xl shadow-2xl pointer-events-auto shadow-black/40"
-        >
+        <div className="fixed z-[1002] pointer-events-none" style={getTooltipStyles()}>
+          <motion.div
+            key={currentStepIndex}
+            initial={{ opacity: 0, scale: 0.92, y: 8 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.92, y: 8 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            className="w-full bg-[var(--tt-surface)] border border-[var(--tt-border)] p-6 rounded-3xl shadow-2xl pointer-events-auto shadow-black/40"
+          >
           {/* Step number + title */}
           <div className="flex items-center gap-3 mb-1">
             <div className="w-8 h-8 bg-[var(--tt-amber)] rounded-xl flex items-center justify-center text-slate-950 font-black text-xs shrink-0">
@@ -350,7 +350,8 @@ const OnboardingTour: React.FC = () => {
               />
             ))}
           </div>
-        </motion.div>
+          </motion.div>
+        </div>
       </AnimatePresence>
     </div>,
     document.body

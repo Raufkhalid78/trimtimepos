@@ -107,6 +107,19 @@ const App: React.FC = () => {
     };
   }, []);
 
+  // PWA Standalone Redirect Logic
+  useEffect(() => {
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
+    if (isStandalone && location.pathname === '/' && saasView === 'landing' && !authLoading) {
+      const startUrl = localStorage.getItem('trimtime_pwa_start_url');
+      if (startUrl && startUrl.startsWith('/staff-login/')) {
+        navigate(startUrl, { replace: true });
+      } else {
+        setSaasView('login');
+      }
+    }
+  }, [saasView, location.pathname, navigate, setSaasView, authLoading]);
+
   const PageLoader = () => <div className="h-screen w-full flex items-center justify-center bg-[#080c14]"><div className="w-12 h-12 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" /></div>;
 
   if (showLogoutScreen) return <LogoutScreen userName={logoutUserName} shopName={settings?.shopName || 'TrimTime'} onDone={() => { setShowLogoutScreen(false); navigate('/'); }} />;
@@ -222,6 +235,10 @@ const OwnerLogin: React.FC<{ onBack: () => void; onSuccess: () => void | Promise
   const [loading, setLoading] = useState(false);
   const [shake, setShake] = useState(false);
   const { setSaasView } = useAuth();
+
+  useEffect(() => {
+    localStorage.setItem('trimtime_pwa_start_url', '/login');
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
