@@ -29,7 +29,21 @@ const StaffLogin: React.FC = () => {
   useEffect(() => { 
     setPageMeta('Staff Login', 'Staff login portal for TrimTime POS.');
     if (slug) {
-      localStorage.setItem('trimtime_pwa_start_url', `/staff-login/${slug}`);
+      const targetUrl = `/staff-login/${slug}`;
+      localStorage.setItem('trimtime_pwa_start_url', targetUrl);
+      
+      // Override manifest start_url dynamically for PWA installation (solves iOS isolated storage issues)
+      const manifestLink = document.querySelector('link[rel="manifest"]') as HTMLLinkElement;
+      if (manifestLink) {
+        fetch(manifestLink.href)
+          .then(res => res.json())
+          .then(manifest => {
+            manifest.start_url = targetUrl;
+            const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+            manifestLink.href = URL.createObjectURL(blob);
+          })
+          .catch(err => console.error("Could not dynamically update manifest start_url", err));
+      }
     }
   }, [slug]);
 
