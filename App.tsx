@@ -108,21 +108,36 @@ const App: React.FC = () => {
   }, []);
 
   // PWA Standalone Redirect Logic
+  // Runs whenever the user is unauthenticated in standalone (installed) mode.
+  // This handles both the first launch AND post-logout cases.
   useEffect(() => {
+    if (authLoading) return;
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
-    if (isStandalone && location.pathname === '/' && saasView === 'landing' && !authLoading) {
-      const startUrl = localStorage.getItem('trimtime_pwa_start_url');
-      if (startUrl && startUrl.startsWith('/staff-login/')) {
-        navigate(startUrl, { replace: true });
-      } else {
-        setSaasView('login');
-      }
+    if (!isStandalone) return;
+    if (saasView !== 'landing') return; // already logged in or in another flow
+
+    const savedUrl = localStorage.getItem('trimtime_pwa_start_url');
+    if (savedUrl && savedUrl.startsWith('/staff-login/')) {
+      // Employee PWA — send straight to their team's login screen
+      navigate(savedUrl, { replace: true });
+    } else {
+      // Owner PWA — send to owner login, skip the marketing landing page
+      setSaasView('login');
     }
-  }, [saasView, location.pathname, navigate, setSaasView, authLoading]);
+  }, [saasView, authLoading, navigate, setSaasView]);
 
   const PageLoader = () => <div className="h-screen w-full flex items-center justify-center bg-[#080c14]"><div className="w-12 h-12 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" /></div>;
 
-  if (showLogoutScreen) return <LogoutScreen userName={logoutUserName} shopName={settings?.shopName || 'TrimTime'} onDone={() => { setShowLogoutScreen(false); navigate('/'); }} />;
+  if (showLogoutScreen) return <LogoutScreen userName={logoutUserName} shopName={settings?.shopName || 'TrimTime'} onDone={() => {
+    setShowLogoutScreen(false);
+    const savedUrl = localStorage.getItem('trimtime_pwa_start_url');
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
+    if (isStandalone && savedUrl && savedUrl.startsWith('/staff-login/')) {
+      navigate(savedUrl, { replace: true });
+    } else {
+      navigate('/', { replace: true });
+    }
+  }} />;
 
   if (authLoading) return <PageLoader />;
 
