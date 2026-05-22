@@ -5,14 +5,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../contexts/AuthContext';
 import { verifyPassword } from '../services/passwordService';
-import { Staff } from '../types';
+import { Staff, Language } from '../types';
 import { TRANSLATIONS } from '../constants';
 import { setPageMeta } from '../utils/seo';
 
 const StaffLogin: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const { loginStaff } = useAuth();
+  const { loginStaff, sessionLanguage, setSessionLanguage } = useAuth();
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -24,7 +24,7 @@ const StaffLogin: React.FC = () => {
   const [staffList, setStaffList] = useState<Staff[]>([]);
   const [pageLoading, setPageLoading] = useState(true);
 
-  const t = TRANSLATIONS['en'];
+  const t = TRANSLATIONS[sessionLanguage] || TRANSLATIONS.en;
 
   useEffect(() => { 
     setPageMeta('Staff Login', 'Staff login portal for TrimTime POS.');
@@ -62,7 +62,7 @@ const StaffLogin: React.FC = () => {
         .single();
 
       if (tenantError || !tenantData) {
-        setError('Shop not found or inactive.');
+        setError(t.shopNotFound);
         setPageLoading(false);
         return;
       }
@@ -92,7 +92,7 @@ const StaffLogin: React.FC = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!staffList.length) {
-      setError('Staff records not found. Please contact your manager.');
+      setError(t.staffRecordsNotFound);
       return;
     }
 
@@ -136,7 +136,7 @@ const StaffLogin: React.FC = () => {
       <div className="min-h-screen bg-[#080c14] flex items-center justify-center">
         <div className="text-center space-y-4">
           <div className="w-16 h-16 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin mx-auto" />
-          <p className="text-slate-500 text-sm font-bold uppercase tracking-widest">Loading...</p>
+          <p className="text-slate-500 text-sm font-bold uppercase tracking-widest">{t.loading}</p>
         </div>
       </div>
     );
@@ -154,6 +154,20 @@ const StaffLogin: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#080c14] flex overflow-hidden relative">
+      {/* Language Selector Top Right */}
+      <div className="absolute top-4 right-4 z-50">
+        <select
+          value={sessionLanguage}
+          onChange={(e) => setSessionLanguage(e.target.value as Language)}
+          className="bg-slate-800/80 border border-slate-700 text-white text-sm rounded-xl px-3 py-2 outline-none cursor-pointer hover:bg-slate-700/80 transition-colors"
+        >
+          <option value="en">English</option>
+          <option value="ur">اردو (Urdu)</option>
+          <option value="ar">العربية (Arabic)</option>
+          <option value="hi">हिन्दी (Hindi)</option>
+        </select>
+      </div>
+
       {/* Ambient glows */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-32 -right-32 w-[500px] h-[500px] bg-violet-600/20 rounded-full blur-[120px]" />
@@ -175,7 +189,7 @@ const StaffLogin: React.FC = () => {
           </div>
           <div>
             <p className="text-white font-black text-sm leading-none">{tenant?.business_name || 'TrimTime'}</p>
-            <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Staff Portal</p>
+            <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">{t.staffPortal}</p>
           </div>
         </div>
 
@@ -188,16 +202,16 @@ const StaffLogin: React.FC = () => {
           >
             <div className="inline-flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 rounded-full px-4 py-2 mb-6">
               <svg className="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-              <span className="text-amber-400 text-xs font-black uppercase tracking-widest">12-Hour Shift Session</span>
+              <span className="text-amber-400 text-xs font-black uppercase tracking-widest">{t.twelveHourShiftSession}</span>
             </div>
             <h1 className="text-5xl font-black text-white tracking-tight leading-tight font-brand">
-              Start Your<br />
+              {t.startYourShift.replace('.', '')}
               <span className="bg-gradient-to-r from-violet-400 to-indigo-400 bg-clip-text text-transparent">
-                Shift.
+                .
               </span>
             </h1>
             <p className="text-slate-400 text-lg mt-4 leading-relaxed">
-              Log in to access the POS terminal, your appointments, and today's performance metrics.
+              {t.loginToAccess}
             </p>
           </motion.div>
 
@@ -214,14 +228,14 @@ const StaffLogin: React.FC = () => {
               </div>
               <div>
                 <p className="text-white text-xs font-bold">{t.autoExpires12h}</p>
-                <p className="text-slate-500 text-[10px]">You'll be automatically logged out for security</p>
+                <p className="text-slate-500 text-[10px]">{t.autoLogoutSecurity}</p>
               </div>
             </div>
           </motion.div>
         </div>
 
         <p className="text-slate-600 text-xs">
-          Credentials are encrypted with bcrypt. Contact your manager if locked out.
+          {t.credentialsEncrypted}
         </p>
       </motion.div>
 
@@ -244,13 +258,13 @@ const StaffLogin: React.FC = () => {
             <h1 className="text-3xl font-black text-white tracking-tight font-brand">{tenant?.business_name || 'TrimTime'}</h1>
             <div className="inline-flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 rounded-full px-3 py-1.5 mt-3">
               <svg className="w-3 h-3 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-              <span className="text-amber-400 text-[10px] font-black uppercase tracking-widest">Staff Shift Login</span>
+              <span className="text-amber-400 text-[10px] font-black uppercase tracking-widest">{t.staffShiftLogin}</span>
             </div>
           </div>
 
-          <div className="hidden lg:block mb-10">
+          <div className="hidden lg:block mb-10" style={{ textAlign: sessionLanguage === 'ur' ? 'right' : 'left' }}>
             <h2 className="text-3xl font-black text-white">{t.staffSignInTitle}</h2>
-            <p className="text-slate-500 mt-1 text-sm">Enter your shift credentials below.</p>
+            <p className="text-slate-500 mt-1 text-sm">{t.enterShiftCredentials}</p>
           </div>
 
           <motion.div
@@ -260,9 +274,9 @@ const StaffLogin: React.FC = () => {
           >
             <form onSubmit={handleLogin} className="space-y-5">
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Username</label>
+                <label className={`text-[10px] font-black text-slate-400 uppercase tracking-widest block ${sessionLanguage === 'ur' ? 'text-right' : ''}`}>{t.usernameLabel}</label>
                 <div className="relative">
-                  <svg className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                  <svg className={`w-4 h-4 absolute top-1/2 -translate-y-1/2 text-slate-500 ${sessionLanguage === 'ur' ? 'right-4' : 'left-4'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
                   <input
                     type="text"
                     value={username}
@@ -270,15 +284,15 @@ const StaffLogin: React.FC = () => {
                     placeholder="your.username"
                     required
                     autoComplete="username"
-                    className="w-full bg-white/5 border border-white/10 text-white rounded-xl px-4 py-3.5 pl-11 focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500 outline-none transition-all placeholder:text-slate-600 font-medium text-sm"
+                    className={`w-full bg-white/5 border border-white/10 text-white rounded-xl px-4 py-3.5 focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500 outline-none transition-all placeholder:text-slate-600 font-medium text-sm ${sessionLanguage === 'ur' ? 'pr-11 text-right' : 'pl-11'}`}
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Password</label>
+                <label className={`text-[10px] font-black text-slate-400 uppercase tracking-widest block ${sessionLanguage === 'ur' ? 'text-right' : ''}`}>{t.passwordLabel}</label>
                 <div className="relative">
-                  <svg className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                  <svg className={`w-4 h-4 absolute top-1/2 -translate-y-1/2 text-slate-500 ${sessionLanguage === 'ur' ? 'right-4' : 'left-4'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
                   <input
                     type={showPassword ? 'text' : 'password'}
                     value={password}
@@ -286,9 +300,10 @@ const StaffLogin: React.FC = () => {
                     placeholder="••••••••"
                     required
                     autoComplete="current-password"
-                    className="w-full bg-white/5 border border-white/10 text-white rounded-xl px-4 py-3.5 pl-11 pr-12 focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500 outline-none transition-all placeholder:text-slate-600 font-medium text-sm"
+                    className={`w-full bg-white/5 border border-white/10 text-white rounded-xl px-4 py-3.5 focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500 outline-none transition-all placeholder:text-slate-600 font-medium text-sm ${sessionLanguage === 'ur' ? 'pr-11 pl-12 text-right' : 'pl-11 pr-12'}`}
+                    dir="ltr"
                   />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors" aria-label="Toggle password">
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className={`absolute top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors ${sessionLanguage === 'ur' ? 'left-4' : 'right-4'}`} aria-label="Toggle password">
                     {showPassword ? (
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" /></svg>
                     ) : (
@@ -322,12 +337,12 @@ const StaffLogin: React.FC = () => {
                 {loading ? (
                   <>
                     <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>
-                    Verifying...
+                    {t.verifying}
                   </>
                 ) : (
                   <>
-                    Start Shift
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
+                    {t.startShiftButton}
+                    <svg className={`w-4 h-4 ${sessionLanguage === 'ur' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
                   </>
                 )}
               </motion.button>
@@ -335,7 +350,7 @@ const StaffLogin: React.FC = () => {
           </motion.div>
 
           <p className="text-center text-slate-600 text-xs mt-6">
-            Session expires automatically after 12 hours for security.
+            {t.sessionExpiresSecurity}
           </p>
         </div>
       </motion.div>

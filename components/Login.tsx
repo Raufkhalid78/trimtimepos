@@ -4,6 +4,7 @@ import { Staff, Language } from '../types';
 import { TRANSLATIONS } from '../constants';
 import { motion, AnimatePresence } from 'framer-motion';
 import { verifyPassword } from '../services/passwordService';
+import { useAuth } from '../contexts/AuthContext';
 
 interface LoginProps {
   onLogin: (user: Staff, rememberMe: boolean) => void;
@@ -23,8 +24,8 @@ const Login: React.FC<LoginProps> = ({ onLogin, staffList, shopName, onGoToSignU
   const [shake, setShake] = useState(false);
   const [showContactModal, setShowContactModal] = useState(false);
 
-  const language: Language = 'en';
-  const t = TRANSLATIONS[language];
+  const { sessionLanguage, setSessionLanguage } = useAuth();
+  const t = TRANSLATIONS[sessionLanguage] || TRANSLATIONS.en;
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,6 +58,19 @@ const Login: React.FC<LoginProps> = ({ onLogin, staffList, shopName, onGoToSignU
 
   return (
     <div className="min-h-screen bg-[#080c14] flex overflow-hidden relative">
+      {/* Language Selector Top Right */}
+      <div className="absolute top-4 right-4 z-50">
+        <select
+          value={sessionLanguage}
+          onChange={(e) => setSessionLanguage(e.target.value as Language)}
+          className="bg-slate-800/80 border border-slate-700 text-white text-sm rounded-xl px-3 py-2 outline-none cursor-pointer hover:bg-slate-700/80 transition-colors"
+        >
+          <option value="en">English</option>
+          <option value="ur">اردو (Urdu)</option>
+          <option value="ar">العربية (Arabic)</option>
+          <option value="hi">हिन्दी (Hindi)</option>
+        </select>
+      </div>
       {/* Ambient background glows */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-32 -left-32 w-[500px] h-[500px] bg-indigo-600/20 rounded-full blur-[120px]" />
@@ -88,16 +102,16 @@ const Login: React.FC<LoginProps> = ({ onLogin, staffList, shopName, onGoToSignU
           >
             <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-4 py-2 mb-6">
               <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-              <span className="text-emerald-400 text-xs font-black uppercase tracking-widest">Staff Portal</span>
+              <span className="text-emerald-400 text-xs font-black uppercase tracking-widest">{t.staffPortal}</span>
             </div>
             <h1 className="text-5xl font-black text-white tracking-tight leading-tight font-brand">
-              Welcome<br />
+              {t.welcomeBackStaff.split(' ')[0]}<br />
               <span className="bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent">
-                Back.
+                {t.welcomeBackStaff.split(' ').slice(1).join(' ')}
               </span>
             </h1>
             <p className="text-slate-400 text-lg mt-4 leading-relaxed">
-              Sign in to start your shift and access the POS, appointments, and your personal dashboard.
+              {t.signInStartShift}
             </p>
           </motion.div>
 
@@ -109,9 +123,9 @@ const Login: React.FC<LoginProps> = ({ onLogin, staffList, shopName, onGoToSignU
             className="space-y-3"
           >
             {[
-              { icon: '⚡', text: 'Fast POS checkout' },
-              { icon: '📅', text: 'Appointment management' },
-              { icon: '💰', text: 'Track your commissions' },
+              { icon: '⚡', text: t.fastPosCheckout },
+              { icon: '📅', text: t.appointmentManagement },
+              { icon: '💰', text: t.trackCommissions },
             ].map((feat, i) => (
               <div key={i} className="flex items-center gap-3 text-slate-400">
                 <span className="text-lg">{feat.icon}</span>
@@ -124,7 +138,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, staffList, shopName, onGoToSignU
         {/* Bottom tagline */}
         <div>
           <p className="text-slate-600 text-xs">
-            Session secured with bcrypt encryption. Shift sessions expire after 12 hours.
+            {t.sessionSecuredBcrypt}
           </p>
         </div>
       </motion.div>
@@ -146,13 +160,13 @@ const Login: React.FC<LoginProps> = ({ onLogin, staffList, shopName, onGoToSignU
               {shopInitial}
             </motion.div>
             <h1 className="text-3xl font-black text-white tracking-tight font-brand">{shopName || 'TrimTime'}</h1>
-            <p className="text-slate-500 text-xs font-bold uppercase tracking-[0.3em] mt-2">Staff Portal</p>
+            <p className="text-slate-500 text-xs font-bold uppercase tracking-[0.3em] mt-2">{t.staffPortal}</p>
           </div>
 
           {/* Desktop greeting */}
-          <div className="hidden lg:block mb-10">
-            <h2 className="text-3xl font-black text-white tracking-tight">Staff Sign In</h2>
-            <p className="text-slate-500 mt-1 text-sm">Enter your credentials to start your shift.</p>
+          <div className="hidden lg:block mb-10" style={{ textAlign: sessionLanguage === 'ur' ? 'right' : 'left' }}>
+            <h2 className="text-3xl font-black text-white tracking-tight">{t.staffSignInTitle}</h2>
+            <p className="text-slate-500 mt-1 text-sm">{t.enterCredentialsStartShift}</p>
           </div>
 
           {/* Form card */}
@@ -164,11 +178,11 @@ const Login: React.FC<LoginProps> = ({ onLogin, staffList, shopName, onGoToSignU
             <form onSubmit={handleLogin} className="space-y-5">
               {/* Username */}
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
-                  Username
+                <label className={`text-[10px] font-black text-slate-400 uppercase tracking-widest block ${sessionLanguage === 'ur' ? 'text-right' : ''}`}>
+                  {t.usernameLabel}
                 </label>
                 <div className="relative">
-                  <svg className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className={`w-4 h-4 absolute top-1/2 -translate-y-1/2 text-slate-500 ${sessionLanguage === 'ur' ? 'right-4' : 'left-4'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
                   <input
@@ -177,7 +191,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, staffList, shopName, onGoToSignU
                     onChange={e => { setUsername(e.target.value); setError(''); }}
                     placeholder="your.username"
                     autoComplete="username"
-                    className="w-full bg-white/5 border border-white/10 text-white rounded-xl px-4 py-3.5 pl-11 focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 outline-none transition-all placeholder:text-slate-600 font-medium text-sm"
+                    className={`w-full bg-white/5 border border-white/10 text-white rounded-xl px-4 py-3.5 focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 outline-none transition-all placeholder:text-slate-600 font-medium text-sm ${sessionLanguage === 'ur' ? 'pr-11 text-right' : 'pl-11'}`}
                     required
                   />
                 </div>
@@ -185,11 +199,11 @@ const Login: React.FC<LoginProps> = ({ onLogin, staffList, shopName, onGoToSignU
 
               {/* Password */}
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
-                  Password
+                <label className={`text-[10px] font-black text-slate-400 uppercase tracking-widest block ${sessionLanguage === 'ur' ? 'text-right' : ''}`}>
+                  {t.passwordLabel}
                 </label>
                 <div className="relative">
-                  <svg className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className={`w-4 h-4 absolute top-1/2 -translate-y-1/2 text-slate-500 ${sessionLanguage === 'ur' ? 'right-4' : 'left-4'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                   </svg>
                   <input
@@ -198,13 +212,14 @@ const Login: React.FC<LoginProps> = ({ onLogin, staffList, shopName, onGoToSignU
                     onChange={e => { setPassword(e.target.value); setError(''); }}
                     placeholder="••••••••"
                     autoComplete="current-password"
-                    className="w-full bg-white/5 border border-white/10 text-white rounded-xl px-4 py-3.5 pl-11 pr-12 focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 outline-none transition-all placeholder:text-slate-600 font-medium text-sm"
+                    className={`w-full bg-white/5 border border-white/10 text-white rounded-xl px-4 py-3.5 focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 outline-none transition-all placeholder:text-slate-600 font-medium text-sm ${sessionLanguage === 'ur' ? 'pr-11 pl-12 text-right' : 'pl-11 pr-12'}`}
                     required
+                    dir="ltr"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
+                    className={`absolute top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors ${sessionLanguage === 'ur' ? 'left-4' : 'right-4'}`}
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
                     {showPassword ? (
@@ -231,7 +246,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, staffList, shopName, onGoToSignU
                   </svg>
                 </div>
                 <label htmlFor="rememberMe" className="text-xs font-medium text-slate-400 cursor-pointer select-none hover:text-slate-200 transition-colors">
-                  {t.stayLoggedIn}
+                  {t.stayLoggedInStaff}
                 </label>
               </div>
 
@@ -265,8 +280,8 @@ const Login: React.FC<LoginProps> = ({ onLogin, staffList, shopName, onGoToSignU
                   </>
                 ) : (
                   <>
-                    {t.enterDashboard}
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
+                    {t.enterDashboardStaff}
+                    <svg className={`w-4 h-4 ${sessionLanguage === 'ur' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
                   </>
                 )}
               </motion.button>
@@ -275,7 +290,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, staffList, shopName, onGoToSignU
             {/* Divider */}
             <div className="flex items-center gap-4 my-6">
               <div className="h-px bg-white/8 flex-1" />
-              <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">or</span>
+              <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">{t.orText}</span>
               <div className="h-px bg-white/8 flex-1" />
             </div>
 
@@ -285,7 +300,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, staffList, shopName, onGoToSignU
               onClick={() => setShowContactModal(true)}
               className="w-full py-3 rounded-xl border border-white/8 text-slate-400 hover:text-slate-200 hover:border-white/20 text-xs font-bold uppercase tracking-widest transition-all"
             >
-              Can't access? Contact Admin
+              {t.cantAccessContactAdmin}
             </button>
           </motion.div>
 
@@ -299,8 +314,8 @@ const Login: React.FC<LoginProps> = ({ onLogin, staffList, shopName, onGoToSignU
               onClick={onGoToLanding}
               className="w-full mt-6 text-slate-600 text-sm font-bold hover:text-slate-400 transition-colors flex items-center justify-center gap-2"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 17l-5-5m0 0l5-5m-5 5h12" /></svg>
-              Back to Home
+              <svg className={`w-4 h-4 ${sessionLanguage === 'ur' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 17l-5-5m0 0l5-5m-5 5h12" /></svg>
+              {t.backToHome}
             </motion.button>
           )}
         </div>
@@ -327,19 +342,19 @@ const Login: React.FC<LoginProps> = ({ onLogin, staffList, shopName, onGoToSignU
                 <svg className="w-7 h-7 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
               </div>
 
-              <h3 className="text-lg font-black text-white text-center mb-1">System Administrator</h3>
+              <h3 className="text-lg font-black text-white text-center mb-1">{t.systemAdministrator}</h3>
               <p className="text-slate-400 text-center text-sm mb-6">
-                Contact your administrator to reset your password or unlock your account.
+                {t.contactAdminToReset}
               </p>
 
               <div className="bg-white/5 border border-white/8 rounded-2xl p-4 text-center">
                 {getAdminContact() ? (
                   <>
                     <p className="text-white font-bold">{getAdminContact()?.name}</p>
-                    <p className="text-indigo-400 text-sm mt-1 font-medium">{getAdminContact()?.email || 'No email configured'}</p>
+                    <p className="text-indigo-400 text-sm mt-1 font-medium">{getAdminContact()?.email || t.noEmailConfigured}</p>
                   </>
                 ) : (
-                  <p className="text-slate-400 italic text-sm">No administrator account found.</p>
+                  <p className="text-slate-400 italic text-sm">{t.noAdminFound}</p>
                 )}
               </div>
 
@@ -347,7 +362,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, staffList, shopName, onGoToSignU
                 onClick={() => setShowContactModal(false)}
                 className="w-full mt-5 bg-white/5 hover:bg-white/10 text-slate-300 font-bold py-3 rounded-xl transition-colors text-sm"
               >
-                Close
+                {t.closeButton}
               </button>
             </motion.div>
           </div>

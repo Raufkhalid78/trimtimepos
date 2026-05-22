@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BusinessType, PLAN_PRICES } from '../types';
-import { completeBusinessRegistration, SignUpData } from '../services/authService';
+import { setupBusinessProfile, SetupBusinessData } from '../services/authService';
 import { useAuth } from '../contexts/AuthContext';
+import { TRANSLATIONS } from '../constants';
 
 interface BusinessOnboardingProps {
   onSuccess: () => void | Promise<void>;
@@ -43,7 +44,8 @@ function getServicesForType(type: BusinessType) {
 }
 
 const BusinessOnboarding: React.FC<BusinessOnboardingProps> = ({ onSuccess, onLogout }) => {
-  const { authUser } = useAuth();
+  const { authUser, sessionLanguage } = useAuth();
+  const t = TRANSLATIONS[sessionLanguage] || TRANSLATIONS.en;
   const [step, setStep] = useState(1);
   const totalSteps = 4; // Skipped email/password step!
 
@@ -83,13 +85,13 @@ const BusinessOnboarding: React.FC<BusinessOnboardingProps> = ({ onSuccess, onLo
     setError('');
     switch (step) {
       case 1:
-        if (!businessName.trim()) { setError('Business name is required.'); return false; }
-        if (businessName.trim().length < 2) { setError('Business name must be at least 2 characters.'); return false; }
+        if (!businessName.trim()) { setError(t.businessNameRequired); return false; }
+        if (businessName.trim().length < 2) { setError(t.businessNameRequired); return false; }
         return true;
       case 2:
         return true; // Plan always has a default
       case 3:
-        if (selectedServiceIds.size === 0) { setError('Please select at least one service to start with.'); return false; }
+        if (selectedServiceIds.size === 0) { setError(t.noServicesFound); return false; }
         return true;
       case 4:
         return true; // Staff is optional
@@ -161,20 +163,15 @@ const BusinessOnboarding: React.FC<BusinessOnboardingProps> = ({ onSuccess, onLo
     const allServices = getServicesForType(businessType);
     const selectedServices = allServices.filter(s => selectedServiceIds.has(s.id));
 
-    const email = authUser.email || '';
-    const ownerName = authUser.user_metadata?.full_name || email.split('@')[0] || 'Owner';
-
-    const data = {
+    const data: SetupBusinessData = {
       businessName: businessName.trim(),
       businessType,
       plan,
       selectedServices,
       staffMembers: finalStaffList,
-      email,
-      ownerName
     };
 
-    const result = await completeBusinessRegistration(data);
+    const result = await setupBusinessProfile(data);
 
     if (result.success) {
       setGeneratedSlug(result.slug || '');
@@ -205,8 +202,8 @@ const BusinessOnboarding: React.FC<BusinessOnboardingProps> = ({ onSuccess, onLo
             <div className="w-16 h-16 bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl flex items-center justify-center font-brand text-3xl text-slate-950 mx-auto mb-4 shadow-xl shadow-amber-500/20">
               T
             </div>
-            <h1 className="text-3xl font-black text-white font-brand tracking-tight">Complete Setup</h1>
-            <p className="text-slate-500 text-sm mt-2">Step {step} of {totalSteps}</p>
+            <h1 className="text-3xl font-black text-white font-brand tracking-tight">{t.completeSetup}</h1>
+            <p className="text-slate-500 text-sm mt-2">{t.stepText} {step} {t.ofText} {totalSteps}</p>
 
             {/* Progress Bar */}
             <div className="flex gap-2 mt-6 max-w-xs mx-auto">
@@ -239,14 +236,14 @@ const BusinessOnboarding: React.FC<BusinessOnboardingProps> = ({ onSuccess, onLo
                     <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
                   </div>
                   <div>
-                    <h2 className="text-3xl font-black text-white mb-2">Setup Complete!</h2>
-                    <p className="text-slate-400 text-sm">Your business account is ready.</p>
+                    <h2 className="text-3xl font-black text-white mb-2">{t.setupComplete}</h2>
+                    <p className="text-slate-400 text-sm">{t.yourBusinessAccountIsReady}</p>
                   </div>
 
                   <div className="bg-slate-900/50 border border-slate-700/50 rounded-2xl p-5 text-left mb-6">
                     <div>
-                      <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-3">Employee Login Link</p>
-                      <p className="text-xs text-slate-400 mb-4 px-2 italic">Share this link with your team so they can login for their shifts. Bookmark it on your staff tablet or phone.</p>
+                      <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-3">{t.employeeLoginLink}</p>
+                      <p className="text-xs text-slate-400 mb-4 px-2 italic">{t.shareThisLinkWithYourTeam}</p>
                     </div>
 
                     <div className="relative group">
@@ -287,30 +284,31 @@ const BusinessOnboarding: React.FC<BusinessOnboardingProps> = ({ onSuccess, onLo
                 <>
                   {/* ========== CARD 1: Business Details ========== */}
                   {step === 1 && (
-                    <div className="space-y-6">
+                    <div className="space-y-6" style={{ textAlign: sessionLanguage === 'ur' ? 'right' : 'left' }}>
                       <div>
-                        <h2 className="text-xl font-black text-white mb-1">Business Details</h2>
-                        <p className="text-slate-500 text-sm">Tell us about your business.</p>
+                        <h2 className="text-xl font-black text-white mb-1">{t.businessDetailsTab}</h2>
+                        <p className="text-slate-500 text-sm">{t.tellUsAboutBusiness}</p>
                       </div>
 
                       <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block ml-1">Business Name</label>
+                        <label className={`text-[10px] font-black text-slate-500 uppercase tracking-widest block ${sessionLanguage === 'ur' ? 'mr-1' : 'ml-1'}`}>{t.businessNameLabel}</label>
                         <input
                           type="text"
                           value={businessName}
                           onChange={e => setBusinessName(e.target.value)}
-                          placeholder="e.g. The Sharp Fade"
+                          placeholder={t.businessNamePlaceholder}
                           className="w-full bg-slate-800/30 border border-slate-700/50 text-white rounded-2xl px-5 py-4 focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all placeholder:text-slate-600 font-medium"
                           autoFocus
+                          dir={sessionLanguage === 'ur' ? 'rtl' : 'ltr'}
                         />
                       </div>
 
                       <div className="space-y-3">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block ml-1">Business Type</label>
+                        <label className={`text-[10px] font-black text-slate-500 uppercase tracking-widest block ${sessionLanguage === 'ur' ? 'mr-1' : 'ml-1'}`}>{t.businessTypeLabel}</label>
                         <div className="space-y-3">
                           {[
-                            { value: 'barbershop', label: 'Barbershop', icon: '💈', desc: 'Fades, beards, classic cuts' },
-                            { value: 'beauty_salon', label: 'Beauty Salon', icon: '✨', desc: 'Color, styling, nails, aesthetics' },
+                            { value: 'barbershop', label: t.barbershopLabel, icon: '💈', desc: 'Fades, beards, classic cuts' },
+                            { value: 'beauty_salon', label: t.salonLabel, icon: '✨', desc: 'Color, styling, nails, aesthetics' },
                             { value: 'both', label: 'Both', icon: '✂️', desc: 'Full service hair and beauty' },
                           ].map(bt => (
                             <button
@@ -339,10 +337,10 @@ const BusinessOnboarding: React.FC<BusinessOnboardingProps> = ({ onSuccess, onLo
 
                   {/* ========== CARD 2: Choose Plan ========== */}
                   {step === 2 && (
-                    <div className="space-y-6">
+                    <div className="space-y-6" style={{ textAlign: sessionLanguage === 'ur' ? 'right' : 'left' }}>
                       <div>
-                        <h2 className="text-xl font-black text-white mb-1">Choose Your Plan</h2>
-                        <p className="text-slate-500 text-sm">Both plans include a 1-month free trial. No credit card needed.</p>
+                        <h2 className="text-xl font-black text-white mb-1">{t.chooseYourPlanTab}</h2>
+                        <p className="text-slate-500 text-sm">{t.startWithFreeTrial}</p>
                       </div>
 
                       <div className="space-y-4">
@@ -354,14 +352,14 @@ const BusinessOnboarding: React.FC<BusinessOnboardingProps> = ({ onSuccess, onLo
                             : 'border-slate-700/50 bg-slate-800/20 hover:border-slate-600'
                             }`}
                         >
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="font-black text-white text-lg">Monthly</p>
-                              <p className="text-slate-500 text-xs mt-0.5">Billed monthly, cancel anytime</p>
+                          <div className={`flex items-center justify-between ${sessionLanguage === 'ur' ? 'flex-row-reverse' : ''}`}>
+                            <div className={sessionLanguage === 'ur' ? 'text-right' : 'text-left'}>
+                              <p className="font-black text-white text-lg">{t.monthlyLabel}</p>
+                              <p className="text-slate-500 text-xs mt-0.5">{t.billedMonthly}</p>
                             </div>
-                            <div className="text-right">
-                              <p className="text-2xl font-black text-white">${PLAN_PRICES.monthly}</p>
-                              <p className="text-slate-500 text-xs">/month</p>
+                            <div className={sessionLanguage === 'ur' ? 'text-left' : 'text-right'}>
+                              <p className="text-2xl font-black text-white" dir="ltr">${PLAN_PRICES.monthly}</p>
+                              <p className="text-slate-500 text-xs">/ {t.monthlyLabel.toLowerCase()}</p>
                             </div>
                           </div>
                         </button>
@@ -377,14 +375,14 @@ const BusinessOnboarding: React.FC<BusinessOnboardingProps> = ({ onSuccess, onLo
                           <div className="absolute -top-2.5 right-4 bg-emerald-500 text-white px-3 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider">
                             Save $40
                           </div>
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="font-black text-white text-lg">Yearly</p>
-                              <p className="text-slate-500 text-xs mt-0.5">Best value — only $16.67/mo</p>
+                          <div className={`flex items-center justify-between ${sessionLanguage === 'ur' ? 'flex-row-reverse' : ''}`}>
+                            <div className={sessionLanguage === 'ur' ? 'text-right' : 'text-left'}>
+                              <p className="font-black text-white text-lg">{t.yearlyLabel}</p>
+                              <p className="text-slate-500 text-xs mt-0.5">{t.billedYearly}</p>
                             </div>
-                            <div className="text-right">
-                              <p className="text-2xl font-black text-white">${PLAN_PRICES.yearly}</p>
-                              <p className="text-slate-500 text-xs">/year</p>
+                            <div className={sessionLanguage === 'ur' ? 'text-left' : 'text-right'}>
+                              <p className="text-2xl font-black text-white" dir="ltr">${PLAN_PRICES.yearly}</p>
+                              <p className="text-slate-500 text-xs">/ {t.yearlyLabel.toLowerCase()}</p>
                             </div>
                           </div>
                         </button>
@@ -398,10 +396,10 @@ const BusinessOnboarding: React.FC<BusinessOnboardingProps> = ({ onSuccess, onLo
 
                   {/* ========== CARD 3: Starting Services ========== */}
                   {step === 3 && (
-                    <div className="space-y-6 h-full flex flex-col">
+                    <div className="space-y-6 h-full flex flex-col" style={{ textAlign: sessionLanguage === 'ur' ? 'right' : 'left' }}>
                       <div>
-                        <h2 className="text-xl font-black text-white mb-1">Starting Services</h2>
-                        <p className="text-slate-500 text-sm">We've selected popular services for a {businessType.replace('_', ' ')}. You can edit prices and add more later.</p>
+                        <h2 className="text-xl font-black text-white mb-1">{t.startingServicesTab}</h2>
+                        <p className="text-slate-500 text-sm">{t.canEditLater}</p>
                       </div>
 
                       <div className="flex-1 overflow-y-auto max-h-[300px] pr-2 space-y-2 scrollbar-hide">
@@ -436,10 +434,10 @@ const BusinessOnboarding: React.FC<BusinessOnboardingProps> = ({ onSuccess, onLo
 
                   {/* ========== CARD 4: Staff Setup ========== */}
                   {step === 4 && (
-                    <div className="space-y-6">
+                    <div className="space-y-6" style={{ textAlign: sessionLanguage === 'ur' ? 'right' : 'left' }}>
                       <div>
-                        <h2 className="text-xl font-black text-white mb-1">Add Your Team</h2>
-                        <p className="text-slate-500 text-sm">Add staff members who will use the POS. You can skip this and add them later.</p>
+                        <h2 className="text-xl font-black text-white mb-1">{t.addYourTeamTab}</h2>
+                        <p className="text-slate-500 text-sm">{t.addStaffLater}</p>
                       </div>
 
                       {staffList.length > 0 && (
@@ -538,7 +536,7 @@ const BusinessOnboarding: React.FC<BusinessOnboardingProps> = ({ onSuccess, onLo
               onClick={handleBack}
               className="flex-1 py-4 bg-slate-800/50 border border-slate-700/50 text-slate-400 rounded-2xl font-bold hover:bg-slate-800 transition-colors"
             >
-              {step === 1 ? 'Cancel Setup' : '← Previous'}
+              {step === 1 ? t.cancelSetup : (sessionLanguage === 'ur' ? `→ ${t.previous}` : `← ${t.previous}`)}
             </button>
 
             {step < totalSteps ? (
@@ -548,7 +546,7 @@ const BusinessOnboarding: React.FC<BusinessOnboardingProps> = ({ onSuccess, onLo
                 onClick={handleNext}
                 className="flex-1 py-4 bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 rounded-2xl font-black shadow-lg shadow-amber-500/20 hover:shadow-amber-500/40 transition-all"
               >
-                Next →
+                {sessionLanguage === 'ur' ? `${t.next} ←` : `${t.next} →`}
               </motion.button>
             ) : (
               <motion.button
@@ -561,9 +559,9 @@ const BusinessOnboarding: React.FC<BusinessOnboardingProps> = ({ onSuccess, onLo
                 {loading ? (
                   <span className="flex items-center justify-center gap-2">
                     <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>
-                    Creating...
+                    {t.buildingYourShop}
                   </span>
-                ) : 'Launch My Business 🚀'}
+                ) : `${t.launchMyBusiness} 🚀`}
               </motion.button>
             )}
           </div>

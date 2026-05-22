@@ -7,184 +7,44 @@ import { logger } from './logger';
 // AUTH SERVICE — Registration, Login, Tenant Management
 // ==========================================
 
-export interface SignUpData {
-  // Card 1: Business Details
-  businessName: string;
-  businessType: BusinessType;
-  // Card 2: Account
+export interface RegisterAccountData {
   email: string;
   password: string;
   ownerName: string;
-  // Card 3: Plan
+}
+
+export interface SetupBusinessData {
+  businessName: string;
+  businessType: BusinessType;
   plan: 'monthly' | 'yearly';
-  // Card 4: Services (pre-selected based on businessType)
+  ownerName?: string;
   selectedServices: Array<{ id: string; name: string; price: number; duration: number; category: string }>;
-  // Card 5: Staff
   staffMembers: Array<{ name: string; role: 'admin' | 'employee'; commission: number; username: string; password: string }>;
 }
 
 /**
  * Register a new business — creates auth user, tenant, subscription, and seed data
  */
-export async function registerNewBusiness(data: SignUpData): Promise<{ success: boolean; error?: string; tenantId?: string; slug?: string }> {
+/**
+ * Phase 1: Register a new user account (creates Supabase Auth user)
+ */
+export async function registerUserAccount(data: RegisterAccountData): Promise<{ success: boolean; error?: string }> {
   try {
-    // 1. Create Supabase Auth user
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email: data.email,
       password: data.password,
       options: {
         data: {
           full_name: data.ownerName,
-          business_name: data.businessName,
         }
       }
     });
 
     if (authError) throw new Error(authError.message);
     if (!authData.user) throw new Error('Failed to create user account.');
-    if (!authData.session) {
-      throw new Error('Account already exists or email confirmation is required. Please use a different email or log in.');
-    }
-
-    // Explicitly set the session to ensure the next request has the Authorization header
-    await supabase.auth.setSession({
-      access_token: authData.session.access_token,
-      refresh_token: authData.session.refresh_token,
-    });
-
-    const userId = authData.user.id;
-
-    // Generate a URL-safe slug from business name
-    const slug = data.businessName
-      .toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
-      + '-' + Math.random().toString(36).substring(2, 6);
-
-    // 2. Create Tenant
-    const { data: tenant, error: tenantError } = await supabase
-      .from('tenants')
-      .insert({
-        owner_id: userId,
-        business_name: data.businessName,
-        business_type: data.businessType,
-        slug: slug,
-        is_active: true,
-      })
-      .select()
-      .single();
-
-    if (tenantError) throw new Error(`Tenant creation failed: ${tenantError.message}`);
-
-    const tenantId = tenant.id;
-
-    // 3. Create Subscription (starts with 30-day free trial)
-    const trialEnd = new Date();
-    trialEnd.setDate(trialEnd.getDate() + 30);
-
-    const { error: subError } = await supabase
-      .from('subscriptions')
-      .insert({
-        tenant_id: tenantId,
-        plan: data.plan,
-        status: 'trial',
-        trial_start: new Date().toISOString(),
-        trial_end: trialEnd.toISOString(),
-        current_period_start: new Date().toISOString(),
-        current_period_end: trialEnd.toISOString(),
-        price: PLAN_PRICES[data.plan],
-      });
-
-    if (subError) throw new Error(`Subscription creation failed: ${subError.message}`);
-
-    // Hash passwords concurrently
-    const ownerPassword = await hashPassword(data.password);
+    // No error if session is null; we expect the user to confirm their email!
     
-    // 4. Create Admin Staff (the owner)
-    // Append a random suffix to avoid username collisions between tenants with the same email prefix
-    const ownerUsername = data.email.split('@')[0] + '_' + Math.random().toString(36).substring(2, 6);
-    const { error: staffError } = await supabase
-      .from('staff')
-      .insert({
-        id: 'st_owner_' + userId.substring(0, 8),
-        tenant_id: tenantId,
-        name: data.ownerName,
-        role: 'admin',
-        commission: 0,
-        username: ownerUsername,
-        password: ownerPassword,
-        email: data.email,
-      });
-
-    if (staffError) logger.error('Staff seed error:', staffError);
-
-    // 5. Seed additional staff from wizard
-    if (data.staffMembers.length > 0) {
-      const staffRows = await Promise.all(
-        data.staffMembers.map(async (s) => ({
-          id: 'st_' + Math.random().toString(36).substr(2, 9),
-          tenant_id: tenantId,
-          name: s.name,
-          role: s.role,
-          commission: s.commission,
-          username: s.username,
-          password: await hashPassword(s.password),
-          email: null,
-        }))
-      );
-
-      const { error: extraStaffError } = await supabase.from('staff').insert(staffRows);
-      if (extraStaffError) logger.error('Extra staff seed error:', extraStaffError);
-    }
-
-    // 6. Seed selected services
-    if (data.selectedServices.length > 0) {
-      const serviceRows = data.selectedServices.map(s => ({
-        id: s.id,
-        tenant_id: tenantId,
-        name: s.name,
-        price: s.price,
-        duration: s.duration,
-        category: s.category,
-      }));
-
-      const { error: svcError } = await supabase.from('services').insert(serviceRows);
-      if (svcError) logger.error('Service seed error:', svcError);
-    }
-
-    // 7. Seed default settings
-    // Do NOT pass id: 1 here — let the DB auto-assign a serial PK per tenant
-    const { error: settError } = await supabase
-      .from('settings')
-      .insert({
-        tenant_id: tenantId,
-        data: {
-          shopName: data.businessName,
-          currency: '$',
-          language: 'en',
-          countryCode: '+1',
-          taxRate: 0,
-          taxType: 'excluded',
-          whatsappEnabled: false,
-          whatsappNumber: '',
-          receiptFooter: 'Thank you for choosing us!',
-          billingCycleDay: 1,
-          deductExpensesFromCommission: false,
-          loyaltyEnabled: false,
-          pointsPerCurrency: 1,
-          minPointsToRedeem: 100,
-          promoCodes: [],
-          bookingEnabled: false,
-          bookingSlug: slug,
-        }
-      });
-
-    if (settError) logger.error('Settings seed error:', settError);
-
-    return { success: true, tenantId, slug };
-
+    return { success: true };
   } catch (err: any) {
     logger.error('Registration Error:', err);
     return { success: false, error: err.message || 'Registration failed. Please try again.' };
@@ -192,9 +52,9 @@ export async function registerNewBusiness(data: SignUpData): Promise<{ success: 
 }
 
 /**
- * Complete business registration for users already authenticated (e.g. via Google)
+ * Phase 2: Complete business registration for users already authenticated
  */
-export async function completeBusinessRegistration(data: Omit<SignUpData, 'password'> & { email: string; ownerName: string }): Promise<{ success: boolean; tenantId?: string; slug?: string; error?: string }> {
+export async function setupBusinessProfile(data: SetupBusinessData): Promise<{ success: boolean; tenantId?: string; slug?: string; error?: string }> {
   try {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) throw new Error('User not authenticated.');
@@ -260,9 +120,9 @@ export async function completeBusinessRegistration(data: Omit<SignUpData, 'passw
         name: data.ownerName || user.user_metadata?.full_name || 'Owner',
         role: 'admin',
         commission: 0,
-        username: data.email.split('@')[0] + '_' + Math.random().toString(36).substring(2, 6),
+        username: (user.email ? user.email.split('@')[0] : 'admin') + '_' + Math.random().toString(36).substring(2, 6),
         password: ownerPassword,
-        email: data.email,
+        email: user.email || '',
       });
 
     if (staffError) logger.error('Staff seed error:', staffError);
