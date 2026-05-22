@@ -42,6 +42,15 @@ export async function registerNewBusiness(data: SignUpData): Promise<{ success: 
 
     if (authError) throw new Error(authError.message);
     if (!authData.user) throw new Error('Failed to create user account.');
+    if (!authData.session) {
+      throw new Error('Account already exists or email confirmation is required. Please use a different email or log in.');
+    }
+
+    // Explicitly set the session to ensure the next request has the Authorization header
+    await supabase.auth.setSession({
+      access_token: authData.session.access_token,
+      refresh_token: authData.session.refresh_token,
+    });
 
     const userId = authData.user.id;
 
