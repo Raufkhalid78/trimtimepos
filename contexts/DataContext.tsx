@@ -8,7 +8,8 @@ import { logger } from '../services/logger';
 import {
   Service, Product, Staff, Expense, Customer, Sale,
   AdvancePayment, Supplier, StockLog, ShopSettings,
-  Appointment, StaffAvailability, AppointmentStatus
+  Appointment, StaffAvailability, AppointmentStatus,
+  Branch, ProductInventory
 } from '../types';
 import { DEFAULT_SETTINGS } from '../constants';
 import { ensureHashed } from '../services/passwordService';
@@ -26,6 +27,8 @@ interface DataContextType {
   appointments: Appointment[];
   staffAvailability: StaffAvailability[];
   settings: ShopSettings;
+  branches: Branch[];
+  productInventory: ProductInventory[];
   loading: boolean;
 
   fetchData: (isSilent?: boolean) => Promise<void>;
@@ -41,6 +44,8 @@ interface DataContextType {
   updateAppointments: (updated: Appointment[]) => Promise<void>;
   updateAppointmentStatus: (id: string, status: AppointmentStatus) => Promise<void>;
   updateStaffAvailability: (staffId: string, updated: StaffAvailability[]) => Promise<void>;
+  updateBranches: (updated: Branch[]) => Promise<void>;
+  updateProductInventory: (updated: ProductInventory[]) => Promise<void>;
   addStockLog: (log: StockLog) => Promise<void>;
   completeSale: (sale: Sale) => Promise<boolean>;
   deleteSales: (ids: string[]) => Promise<void>;
@@ -71,6 +76,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [staffAvailability, setStaffAvailability] = useState<StaffAvailability[]>([]);
   const [settings, setSettings] = useState<ShopSettings>(DEFAULT_SETTINGS);
+  const [branches, setBranches] = useState<Branch[]>([]);
+  const [productInventory, setProductInventory] = useState<ProductInventory[]>([]);
 
   const tenantId = currentTenant?.id;
 
@@ -82,10 +89,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const salesCutoff = subDays(new Date(), 90).toISOString();
 
     try {
-      const [sv, pr, st, ex, cu, sa, se, ap, sup, sl, appts, avail] = await Promise.all([
+      const [sv, pr, st, ex, cu, sa, se, ap, sup, sl, appts, avail, br, pi] = await Promise.all([
         supabase.from('services').select('*').eq('tenant_id', tid),
         supabase.from('products').select('*').eq('tenant_id', tid),
-        supabase.from('staff').select('id, name, role, commission, username, email, tenant_id').eq('tenant_id', tid),
+        supabase.from('staff').select('id, name, role, commission, commission_services, commission_products, base_salary, username, email, tenant_id, branch_id').eq('tenant_id', tid),
         supabase.from('expenses').select('*').eq('tenant_id', tid),
         supabase.from('customers').select('*').eq('tenant_id', tid),
         supabase.from('sales').select('*').eq('tenant_id', tid).gte('timestamp', salesCutoff).order('timestamp', { ascending: false }),
@@ -94,7 +101,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         supabase.from('suppliers').select('*').eq('tenant_id', tid),
         supabase.from('stock_logs').select('*').eq('tenant_id', tid).order('timestamp', { ascending: false }).limit(500),
         supabase.from('appointments').select('*').eq('tenant_id', tid),
-        supabase.from('staff_availability').select('*').eq('tenant_id', tid)
+        supabase.from('staff_availability').select('*').eq('tenant_id', tid),
+        supabase.from('branches').select('*').eq('tenant_id', tid),
+        supabase.from('product_inventory').select('*').eq('tenant_id', tid)
       ]);
 
       if (sv.data) setServices(sv.data.map((s: any) => ({ ...s, nameUr: s.name_ur })));
@@ -116,8 +125,15 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
           });
         }
       }
-      if (st.data) setStaff(st.data.map((s: any) => ({ ...s, commission: typeof s.commission === 'string' ? parseFloat(s.commission) : (s.commission || 0), baseSalary: typeof s.base_salary === 'string' ? parseFloat(s.base_salary) : (s.base_salary || 0) })));
-      if (ex.data) setExpenses(ex.data.map((e: any) => ({ ...e, receiptImage: e.receipt_image })));
+      if (st.data) setStaff(st.data.map((s: any) => ({
+        ...s,
+        commission: typeof s.commission === 'string' ? parseFloat(s.commission) : (s.commission || 0),
+        commissionServices: typeof s.commission_services === 'string' ? parseFloat(s.commission_services) : (s.commission_services || 0),
+        commissionProducts: typeof s.commission_products === 'string' ? parseFloat(s.commission_products) : (s.commission_products || 0),
+        baseSalary: typeof s.base_salary === 'string' ? parseFloat(s.base_salary) : (s.base_salary || 0),
+        branchId: s.branch_id
+      })));
+      if (ex.data) setExpenses(ex.data.map((e: any) => ({ ...e, receiptImage: e.receipt_image, branchId: e.branch_id })));
       if (cu.data) setCustomers(cu.data.map((c: any) => ({ ...c, createdAt: c.created_at })));
 
       if (sa.data) {
@@ -130,7 +146,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
           customerId: s.customer_id,
           discountCode: s.discount_code,
           taxType: s.tax_type,
-          // BUG-FIX: Map remaining snake_case DB columns to camelCase Sale properties
           paymentMethod: s.payment_method,
           splitDetails: s.split_details,
           costOfGoods: s.cost_of_goods,
@@ -138,7 +153,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
           refundReason: s.refund_reason,
           redeemedPoints: s.redeemed_points || 0,
           earnedPoints: s.earned_points || 0,
-          tip: s.tip || 0
+          tip: s.tip || 0,
+          branchId: s.branch_id
         })));
       }
 
@@ -155,7 +171,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
           startTime: a.start_time,
           endTime: a.end_time,
           customerName: a.customer_name,
-          customerPhone: a.customer_phone
+          customerPhone: a.customer_phone,
+          branchId: a.branch_id
         })));
       }
 
@@ -170,6 +187,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (se.data?.data) setSettings({ ...DEFAULT_SETTINGS, ...se.data.data });
+      if (br.data) setBranches(br.data.map((b: any) => ({ ...b, tenantId: b.tenant_id, isActive: b.is_active })));
+      if (pi.data) setProductInventory(pi.data.map((p: any) => ({ productId: p.product_id, branchId: p.branch_id, tenantId: p.tenant_id, stock: typeof p.stock === 'string' ? parseFloat(p.stock) : (p.stock || 0) })));
 
     } catch (err) {
       logger.error('Data loading error:', err);
@@ -202,15 +221,23 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const publicTenantId = tenantData.id;
 
       // 2. Fetch all public data for this tenant
-      const [sv, st, se, avail] = await Promise.all([
+      const [sv, st, se, avail, br, pi] = await Promise.all([
         supabase.from('services').select('*').eq('tenant_id', publicTenantId),
-        supabase.from('staff').select('id, name, role, commission, username, password, email, tenant_id').eq('tenant_id', publicTenantId),
+        supabase.from('staff').select('id, name, role, commission, commission_services, commission_products, username, password, email, tenant_id, branch_id').eq('tenant_id', publicTenantId),
         supabase.from('settings').select('*').eq('tenant_id', publicTenantId).single(),
-        supabase.from('staff_availability').select('*').eq('tenant_id', publicTenantId)
+        supabase.from('staff_availability').select('*').eq('tenant_id', publicTenantId),
+        supabase.from('branches').select('*').eq('tenant_id', publicTenantId).eq('is_active', true),
+        supabase.from('product_inventory').select('*').eq('tenant_id', publicTenantId)
       ]);
 
       if (sv.data) setServices(sv.data.map((s: any) => ({ ...s, nameUr: s.name_ur })));
-      if (st.data) setStaff(st.data.map((s: any) => ({ ...s, commission: typeof s.commission === 'string' ? parseFloat(s.commission) : (s.commission || 0) })));
+      if (st.data) setStaff(st.data.map((s: any) => ({
+        ...s,
+        commission: typeof s.commission === 'string' ? parseFloat(s.commission) : (s.commission || 0),
+        commissionServices: typeof s.commission_services === 'string' ? parseFloat(s.commission_services) : (s.commission_services || 0),
+        commissionProducts: typeof s.commission_products === 'string' ? parseFloat(s.commission_products) : (s.commission_products || 0),
+        branchId: s.branch_id
+      })));
 
       if (se.data?.data) {
         const fetchedSettings = { ...DEFAULT_SETTINGS, ...se.data.data };
@@ -233,6 +260,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         })));
       }
 
+      if (br.data) setBranches(br.data.map((b: any) => ({ ...b, tenantId: b.tenant_id, isActive: b.is_active })));
+      if (pi.data) setProductInventory(pi.data.map((p: any) => ({ productId: p.product_id, branchId: p.branch_id, tenantId: p.tenant_id, stock: typeof p.stock === 'string' ? parseFloat(p.stock) : (p.stock || 0) })));
+
       // We also need to fetch existing appointments to check for conflicts (only future ones)
       const { data: apptsData } = await supabase
         .from('appointments')
@@ -249,7 +279,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
           startTime: a.start_time,
           endTime: a.end_time,
           customerName: a.customer_name,
-          customerPhone: a.customer_phone
+          customerPhone: a.customer_phone,
+          branchId: a.branch_id
         })));
       }
 
@@ -314,13 +345,76 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       if (toDelete.length) await supabase.from('staff').delete().in('id', toDelete);
       if (updated.length) {
-        const rows = await Promise.all(updated.map(async s => ({ id: s.id, tenant_id: tenantId, name: s.name, role: s.role, commission: s.commission, base_salary: s.baseSalary || 0, username: s.username, password: await ensureHashed(s.password || ''), email: s.email })));
+        const rows = await Promise.all(updated.map(async s => ({
+          id: s.id,
+          tenant_id: tenantId,
+          name: s.name,
+          role: s.role,
+          commission: s.commission,
+          commission_services: s.commissionServices ?? s.commission,
+          commission_products: s.commissionProducts ?? s.commission,
+          base_salary: s.baseSalary || 0,
+          username: s.username,
+          password: await ensureHashed(s.password || ''),
+          email: s.email,
+          branch_id: s.branchId || null
+        })));
         const { error } = await supabase.from('staff').upsert(rows);
         if (error) throw error;
       }
     } catch (e) {
       setStaff(snapshot);
       showToast("Failed to sync staff", "error");
+    }
+  };
+
+  const updateBranches = async (updated: Branch[]) => {
+    if (!tenantId) return;
+    const snapshot = branches;
+    const currentIds = new Set(branches.map(i => i.id));
+    const newIds = new Set(updated.map(i => i.id));
+    const toDelete = Array.from(currentIds).filter(id => !newIds.has(id));
+    setBranches(updated);
+    try {
+      if (toDelete.length) {
+        await supabase.from('branches').delete().in('id', toDelete);
+      }
+      if (updated.length) {
+        const rows = updated.map(b => ({
+          id: b.id,
+          tenant_id: tenantId,
+          name: b.name,
+          address: b.address || '',
+          phone: b.phone || '',
+          is_active: b.isActive
+        }));
+        const { error } = await supabase.from('branches').upsert(rows);
+        if (error) throw error;
+      }
+    } catch (e) {
+      setBranches(snapshot);
+      showToast("Failed to sync branches", "error");
+    }
+  };
+
+  const updateProductInventory = async (updated: ProductInventory[]) => {
+    if (!tenantId) return;
+    const snapshot = productInventory;
+    setProductInventory(updated);
+    try {
+      if (updated.length) {
+        const rows = updated.map(pi => ({
+          product_id: pi.productId,
+          branch_id: pi.branchId,
+          tenant_id: tenantId,
+          stock: pi.stock
+        }));
+        const { error } = await supabase.from('product_inventory').upsert(rows);
+        if (error) throw error;
+      }
+    } catch (e) {
+      setProductInventory(snapshot);
+      showToast("Failed to sync product inventory", "error");
     }
   };
 
@@ -410,7 +504,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
           notes: a.notes || null,
           customer_name: a.customerName || null,
           customer_phone: a.customerPhone || null,
-          customer_email: a.customerEmail || null
+          customer_email: a.customerEmail || null,
+          branch_id: a.branchId || null
         }));
         const { error } = await supabase.from('appointments').upsert(rows);
         if (error) throw error;
@@ -465,7 +560,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     else setSales(prev => [...prev, sale]);
 
     try {
-      const { error } = await supabase.from('sales').upsert({ id: sale.id, tenant_id: tenantId, timestamp: sale.timestamp, items: sale.items, staff_id: sale.staffId, customer_id: sale.customerId, total: sale.total, subtotal: sale.subtotal, tax: sale.tax, discount: sale.discount, discount_code: sale.discountCode, payment_method: sale.paymentMethod, split_details: sale.splitDetails || null, tax_type: sale.taxType, cost_of_goods: sale.costOfGoods, is_refunded: sale.isRefunded || false, refund_reason: sale.refundReason || null, redeemed_points: sale.redeemedPoints || 0, earned_points: sale.earnedPoints || 0, tip: sale.tip || 0, customer_name: sale.customerName, professional_name: sale.staffName });
+      const { error } = await supabase.from('sales').upsert({ id: sale.id, tenant_id: tenantId, timestamp: sale.timestamp, items: sale.items, staff_id: sale.staffId, customer_id: sale.customerId, total: sale.total, subtotal: sale.subtotal, tax: sale.tax, discount: sale.discount, discount_code: sale.discountCode, payment_method: sale.paymentMethod, split_details: sale.splitDetails || null, tax_type: sale.taxType, cost_of_goods: sale.costOfGoods, is_refunded: sale.isRefunded || false, refund_reason: sale.refundReason || null, redeemed_points: sale.redeemedPoints || 0, earned_points: sale.earnedPoints || 0, tip: sale.tip || 0, customer_name: sale.customerName, professional_name: sale.staffName, branch_id: sale.branchId || null });
       if (error) throw error;
 
       if (sale.customerId && !isRefund) {
@@ -490,6 +585,31 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       });
       updateProducts(newProducts);
+
+      // Update Branch-Specific Stock Levels
+      if (sale.branchId) {
+        const newInventory = [...productInventory];
+        sale.items.forEach(item => {
+          if (item.type === 'product') {
+            const idx = newInventory.findIndex(pi => pi.productId === item.id && pi.branchId === sale.branchId);
+            const stockChange = isRefund ? item.quantity : -item.quantity;
+            if (idx > -1) {
+              newInventory[idx].stock = Math.max(0, newInventory[idx].stock + stockChange);
+            } else {
+              const existingProd = products.find(p => p.id === item.id);
+              const baseStock = existingProd ? existingProd.stock : 0;
+              newInventory.push({
+                productId: item.id,
+                branchId: sale.branchId!,
+                tenantId: tenantId,
+                stock: Math.max(0, baseStock + stockChange)
+              });
+            }
+          }
+        });
+        updateProductInventory(newInventory);
+      }
+
       return true;
     } catch (e) { showToast("Failed to sync sale", "error"); return false; }
   };
@@ -502,7 +622,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const addExpense = async (expense: Expense) => {
     if (!tenantId) return;
     setExpenses(prev => [...prev, expense]);
-    try { await supabase.from('expenses').insert({ id: expense.id, tenant_id: tenantId, date: expense.date, category: expense.category, amount: expense.amount, description: expense.description || '', receipt_image: expense.receiptImage || null }); } catch (e) { showToast("Failed to save expense", "error"); }
+    try { await supabase.from('expenses').insert({ id: expense.id, tenant_id: tenantId, date: expense.date, category: expense.category, amount: expense.amount, description: expense.description || '', receipt_image: expense.receiptImage || null, branch_id: expense.branchId || null }); } catch (e) { showToast("Failed to save expense", "error"); }
   };
 
   const deleteExpense = async (id: string) => {
@@ -535,7 +655,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         notes: appointment.notes || null,
         customer_name: appointment.customerName || null,
         customer_phone: appointment.customerPhone || null,
-        customer_email: appointment.customerEmail || null
+        customer_email: appointment.customerEmail || null,
+        branch_id: appointment.branchId || null
       }).select();
 
       if (error) {
@@ -648,8 +769,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     <DataContext.Provider value={{
       services, products, staff, expenses, customers, sales,
       advancePayments, suppliers, stockLogs, appointments, staffAvailability, settings,
+      branches, productInventory,
       loading, fetchData, fetchPublicTenantBySlug,
       updateServices, updateProducts, updateStaff, updateCustomers, updateSettings, updateSuppliers, updateAppointments, updateAppointmentStatus, updateStaffAvailability,
+      updateBranches, updateProductInventory,
       addStockLog, completeSale, deleteSales, addExpense, deleteExpense, addAdvance, deleteAdvance, publicCreateAppointment,
       testNotification
     }}>

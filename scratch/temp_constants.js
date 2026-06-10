@@ -1,7 +1,7 @@
 
 import { Service, Product, Staff, Expense, Customer, DiscountCode, ShopSettings, Language } from './types';
 
-export const CURRENCY_OPTIONS = [
+const CURRENCY_OPTIONS = [
   { label: 'US Dollar ($)', symbol: '$' },
   { label: 'Euro (€)', symbol: '€' },
   { label: 'British Pound (£)', symbol: '£' },
@@ -13,7 +13,7 @@ export const CURRENCY_OPTIONS = [
   { label: 'Australian Dollar (A$)', symbol: 'A$' },
 ];
 
-export const COUNTRY_CODES = [
+const COUNTRY_CODES = [
   { code: '+1', label: 'US/Canada (+1)' },
   { code: '+44', label: 'UK (+44)' },
   { code: '+92', label: 'Pakistan (+92)' },
@@ -27,13 +27,13 @@ export const COUNTRY_CODES = [
   { code: '+20', label: 'Egypt (+20)' },
 ];
 
-export const INITIAL_DISCOUNT_CODES: DiscountCode[] = [
+const INITIAL_DISCOUNT_CODES: DiscountCode[] = [
   { code: 'WELCOME10', type: 'percentage', value: 10, description: '10% off for new customers' },
   { code: 'VIP20', type: 'percentage', value: 20, description: '20% off for VIP members' },
   { code: 'SAVE5', type: 'fixed', value: 5, description: '$5 off total' },
 ];
 
-export const DEFAULT_SETTINGS: ShopSettings = {
+const DEFAULT_SETTINGS: ShopSettings = {
   shopName: 'My Business',
   currency: '$',
   language: 'en',
@@ -54,7 +54,7 @@ export const DEFAULT_SETTINGS: ShopSettings = {
   bookingSlug: ''
 };
 
-const RAW_TRANSLATIONS: Record<Language, any> = {
+const RAW_TRANSLATIONS = {
   en: {
     // Navigation
     dashboard: 'Dashboard',
@@ -1479,87 +1479,6 @@ const RAW_TRANSLATIONS: Record<Language, any> = {
     staffShiftLogin: 'تسجيل دخول مناوبة الموظفين',
     startShiftButton: 'بدء المناوبة',
 
-    // SignUp Page
-    createAccount: 'إنشاء حسابك',
-    getStartedToday: 'ابدأ مع TrimTime اليوم.',
-    checkYourEmail: 'تحقق من بريدك الإلكتروني',
-    verificationLinkSentTo: 'لقد أرسلنا رابط التحقق إلى',
-    pleaseVerifyEmail: 'يرجى التحقق من عنوان بريدك الإلكتروني لإكمال إعداد عملك.',
-    checkSpamFolder: 'إذا لم تجد البريد الإلكتروني في غضون بضع دقائق، يرجى التحقق من مجلد الرسائل غير المرغوب فيها.',
-    returnToLogin: 'العودة إلى تسجيل الدخول',
-    accountSetup: 'إعداد الحساب',
-    createLoginCredentials: 'إنشاء بيانات اعتماد تسجيل الدخول الخاصة بك.',
-    yourFullName: 'اسمك الكامل',
-    emailAddress: 'البريد الإلكتروني',
-    passwordSignUp: 'كلمة المرور',
-    confirmPassword: 'تأكيد كلمة المرور',
-    atLeast6Chars: 'على الأقل 6 أحرف',
-    reEnterPassword: 'أعد إدخال كلمة المرور الخاصة بك',
-    orSkipEmailSignup: 'أو تخطي التسجيل بالبريد الإلكتروني',
-    continueWithGoogle: 'المتابعة باستخدام Google',
-    back: 'رجوع',
-    creating: 'جاري الإنشاء...',
-    alreadyHaveAccount: 'هل لديك حساب بالفعل؟',
-    logInButton: 'تسجيل الدخول',
-    nameRequired: 'الاسم مطلوب.',
-    emailRequired: 'البريد الإلكتروني الصحيح مطلوب.',
-    passwordMinLength: 'يجب أن تتكون كلمة المرور من 6 أحرف على الأقل.',
-    passwordsDoNotMatch: 'كلمات المرور غير متطابقة.',
-    registrationFailed: 'فشل التسجيل.',
-    networkErrorSupabase: 'خطأ في الشبكة: يرجى التحقق من اتصالك.',
-
-    // Business Onboarding
-    settingUpShop: 'جاري إعداد متجرك',
-    businessDetailsTab: 'تفاصيل العمل',
-    chooseYourPlanTab: 'اختر خطتك',
-    startingServicesTab: 'الخدمات الأولية',
-    addYourTeamTab: 'إضافة فريقك',
-    stepText: 'خطوة',
-    ofText: 'من',
-    shopSetupTitle: 'إعداد المتجر',
-    tellUsAboutBusiness: 'أخبرنا عن عملك.',
-    businessNameLabel: 'اسم العمل',
-    businessNamePlaceholder: 'مثال: صالون الجنتلمان',
-    businessTypeLabel: 'نوع العمل',
-    barbershopLabel: 'صالون حلاقة رجالي',
-    salonLabel: 'صالون تجميل',
-    nextStep: 'الخطوة التالية',
-    selectYourPlanTitle: 'اختر خطتك',
-    startWithFreeTrial: 'ابدأ بتجربة مجانية لمدة 30 يومًا.',
-    billedMonthly: 'فاتورة شهرياً',
-    billedYearly: 'فاتورة سنوياً',
-    save20Percent: 'وفر 20%',
-    monthlyLabel: 'شهري',
-    yearlyLabel: 'سنوي',
-    freeTrialThen: 'تجربة مجانية لمدة 30 يومًا، ثم',
-    selectButton: 'تحديد',
-    selectedButton: 'محدد',
-    featuresLabel: 'المميزات',
-    selectStartingServicesTitle: 'اختر الخدمات الأولية',
-    canEditLater: 'يمكنك تعديلها أو إضافتها لاحقاً في الكتالوج.',
-    noServicesFound: 'لم يتم العثور على خدمات لهذا النوع من الأعمال.',
-    addYourTeamTitle: 'أضف فريقك (اختياري)',
-    addStaffLater: 'أضف موظفين الآن أو لاحقاً.',
-    staffNameLabel: 'اسم الموظف',
-    commissionPercentage: 'نسبة العمولة %',
-    removeStaff: 'إزالة',
-    launchMyBusiness: 'إطلاق عملي',
-    buildingYourShop: 'جاري بناء متجرك...',
-    businessNameRequired: 'اسم العمل مطلوب.',
-    planRequired: 'يرجى اختيار خطة الاشتراك.',
-    staffNameRequiredError: 'يجب أن يكون لجميع الموظفين اسم.',
-    cancelSetup: 'إلغاء الإعداد',
-    previous: 'السابق',
-    next: 'التالي',
-    loadingDashboard: 'جاري تحميل لوحة القيادة...',
-    goToDashboard: 'الانتقال إلى لوحة القيادة',
-    completeSetup: 'إكمال الإعداد',
-    setupComplete: 'اكتمل الإعداد!',
-    yourBusinessAccountIsReady: 'حساب عملك جاهز الآن.',
-    employeeLoginLink: 'رابط دخول الموظفين',
-    shareThisLinkWithYourTeam: 'شارك هذا الرابط مع فريقك حتى يتمكنوا من تسجيل الدخول لنوباتهم. احفظه على أجهزة عملائك أو هواتفهم.',
-
-
 },
   hi: {
     dashboard: 'डैशबोर्ड',
@@ -1965,91 +1884,10 @@ const RAW_TRANSLATIONS: Record<Language, any> = {
     twelveHourShiftSession: '12-घंटे की शिफ्ट का सत्र',
     staffShiftLogin: 'स्टाफ शिफ्ट लॉगिन',
     startShiftButton: 'शिफ्ट शुरू करें',
-
-    // SignUp Page
-    createAccount: 'अपना खाता बनाएं',
-    getStartedToday: 'आज ही TrimTime के साथ शुरुआत करें।',
-    checkYourEmail: 'अपना ईमेल जांचें',
-    verificationLinkSentTo: 'हमने सत्यापन लिंक भेजा है',
-    pleaseVerifyEmail: 'कृपया अपना व्यवसाय सेटअप पूरा करने के लिए अपने ईमेल पते को सत्यापित करें।',
-    checkSpamFolder: 'यदि आपको कुछ मिनटों में ईमेल नहीं दिखता है, तो कृपया अपना स्पैम फ़ोल्डर जांचें।',
-    returnToLogin: 'लॉगिन पर लौटें',
-    accountSetup: 'खाता सेटअप',
-    createLoginCredentials: 'अपनी लॉगिन साख बनाएं।',
-    yourFullName: 'आपका पूरा नाम',
-    emailAddress: 'ईमेल पता',
-    passwordSignUp: 'पासवर्ड',
-    confirmPassword: 'पासवर्ड की पुष्टि करें',
-    atLeast6Chars: 'कम से कम 6 वर्ण',
-    reEnterPassword: 'अपना पासवर्ड दोबारा दर्ज करें',
-    orSkipEmailSignup: 'या ईमेल साइनअप छोड़ें',
-    continueWithGoogle: 'Google के साथ जारी रखें',
-    back: 'पीछे',
-    creating: 'बनाया जा रहा है...',
-    alreadyHaveAccount: 'क्या आपके पास पहले से एक खाता है?',
-    logInButton: 'लॉग इन करें',
-    nameRequired: 'नाम आवश्यक है।',
-    emailRequired: 'मान्य ईमेल आवश्यक है।',
-    passwordMinLength: 'पासवर्ड कम से कम 6 वर्णों का होना चाहिए।',
-    passwordsDoNotMatch: 'पासवर्ड मेल नहीं खाते।',
-    registrationFailed: 'पंजीकरण विफल रहा।',
-    networkErrorSupabase: 'नेटवर्क त्रुटि: कृपया अपना कनेक्शन जांचें।',
-
-    // Business Onboarding
-    settingUpShop: 'आपकी दुकान सेटअप की जा रही है',
-    businessDetailsTab: 'व्यवसाय का विवरण',
-    chooseYourPlanTab: 'अपनी योजना चुनें',
-    startingServicesTab: 'शुरुआती सेवाएं',
-    addYourTeamTab: 'अपनी टीम जोड़ें',
-    stepText: 'कदम',
-    ofText: 'में से',
-    shopSetupTitle: 'दुकान सेटअप',
-    tellUsAboutBusiness: 'हमें अपने व्यवसाय के बारे में बताएं।',
-    businessNameLabel: 'व्यवसाय का नाम',
-    businessNamePlaceholder: 'जैसे: द जेंटलमैन लाउंज',
-    businessTypeLabel: 'व्यवसाय का प्रकार',
-    barbershopLabel: 'नाई की दुकान',
-    salonLabel: 'सैलून',
-    nextStep: 'अगला कदम',
-    selectYourPlanTitle: 'अपनी योजना चुनें',
-    startWithFreeTrial: '30 दिनों के निःशुल्क परीक्षण के साथ शुरुआत करें।',
-    billedMonthly: 'माहौन बिलिंग',
-    billedYearly: 'वार्षिक बिलिंग',
-    save20Percent: '20% बचाएं',
-    monthlyLabel: 'मासिक',
-    yearlyLabel: 'वार्षिक',
-    freeTrialThen: 'निःशुल्क 30 दिन का परीक्षण, फिर',
-    selectButton: 'चुनें',
-    selectedButton: 'चुना गया',
-    featuresLabel: 'विशेषताएं',
-    selectStartingServicesTitle: 'शुरुआती सेवाएं चुनें',
-    canEditLater: 'आप बाद में उन्हें कैटलॉग में संपादित या जोड़ सकते हैं।',
-    noServicesFound: 'इस प्रकार के व्यवसाय के लिए कोई सेवा नहीं मिली।',
-    addYourTeamTitle: 'अपनी टीम जोड़ें (वैकल्पिक)',
-    addStaffLater: 'कर्मचारियों को अभी या बाद में जोड़ें।',
-    staffNameLabel: 'कर्मचारी का नाम',
-    commissionPercentage: 'कमीशन %',
-    removeStaff: 'हटाएं',
-    launchMyBusiness: 'मेरा व्यवसाय शुरू करें',
-    buildingYourShop: 'आपकी दुकान बनाई जा रही है...',
-    businessNameRequired: 'व्यवसाय का नाम आवश्यक है।',
-    planRequired: 'कृपया एक सदस्यता योजना चुनें।',
-    staffNameRequiredError: 'सभी टीम सदस्यों का नाम होना आवश्यक है।',
-    cancelSetup: 'सेटअप रद्द करें',
-    previous: 'पिछला',
-    next: 'आगे',
-    loadingDashboard: 'डैशबोर्ड लोड हो रहा है...',
-    goToDashboard: 'डैशबोर्ड पर जाएं',
-    completeSetup: 'सेटअप पूरा करें',
-    setupComplete: 'सेटअप पूरा हुआ!',
-    yourBusinessAccountIsReady: 'आपका व्यावसायिक खाता तैयार है।',
-    employeeLoginLink: 'कर्मचारी लॉगिन लिंक',
-    shareThisLinkWithYourTeam: 'इस लिंक को अपनी टीम के साथ साझा करें ताकि वे अपनी पाली के लिए लॉगिन कर सकें। इसे अपने कर्मचारियों के टैबलेट या फोन पर सहेजें।',
-
   },
 };
 
-export const INITIAL_SERVICES: Service[] = [
+const INITIAL_SERVICES = [
   { id: 's1', name: 'Classic Haircut', nameUr: 'کلاسک ہیئر کٹ', price: 35, duration: 30, category: 'Hair' },
   { id: 's2', name: 'Skin Fade', nameUr: 'اسکن فیڈ', price: 45, duration: 45, category: 'Hair' },
   { id: 's3', name: 'Beard Trim', nameUr: 'داڑھی کی تراش خراش', price: 20, duration: 20, category: 'Beard' },
@@ -2058,31 +1896,31 @@ export const INITIAL_SERVICES: Service[] = [
   { id: 's6', name: 'Head Shave', nameUr: 'سر منڈوانا', price: 30, duration: 30, category: 'Hair' },
 ];
 
-export const INITIAL_PRODUCTS: Product[] = [
+const INITIAL_PRODUCTS = [
   { id: 'p1', name: 'Pomade Matte', nameUr: 'پومیڈ میٹ', price: 18, cost: 8, stock: 24, barcode: '123456789012', lowStockThreshold: 15 },
   { id: 'p2', name: 'Beard Oil', nameUr: 'داڑھی کا تیل', price: 22, cost: 10, stock: 15, barcode: '098765432109', lowStockThreshold: 15 },
   { id: 'p3', name: 'Aftershave Balm', nameUr: 'آفٹر شیو بام', price: 25, cost: 12, stock: 10, barcode: '112233445566', lowStockThreshold: 15 },
   { id: 'p4', name: 'Texture Spray', nameUr: 'ٹیکسچر سپرے', price: 20, cost: 9, stock: 8, barcode: '665544332211', lowStockThreshold: 15 },
 ];
 
-export const INITIAL_STAFF: Staff[] = [
+const INITIAL_STAFF = [
   { id: 'st1', name: 'Admin User', role: 'admin', commission: 0, username: '1234', password: '1234', isFallback: true },
   { id: 'st2', name: 'Alex Rivers', role: 'employee', commission: 40, username: 'alex', password: 'password123', isFallback: true },
 ];
 
-export const INITIAL_EXPENSES: Expense[] = [
+const INITIAL_EXPENSES = [
   { id: 'e1', date: '2024-05-01', category: 'Rent', amount: 2000, description: 'Monthly Shop Rent' },
   { id: 'e2', date: '2024-05-02', category: 'Utilities', amount: 350, description: 'Electricity & Water' },
   { id: 'e3', date: '2024-05-05', category: 'Supplies', amount: 150, description: 'Towels & Cleaning' },
 ];
 
-export const INITIAL_CUSTOMERS: Customer[] = [
+const INITIAL_CUSTOMERS = [
   { id: 'c1', name: 'John Smith', phone: '555-0101', email: 'john@example.com', notes: 'Likes a low taper fade.', createdAt: '2024-01-15', loyaltyPoints: 150 },
   { id: 'c2', name: 'Marcus Brown', phone: '555-0102', email: 'marcus@example.com', notes: 'Grows beard long.', createdAt: '2024-02-20', loyaltyPoints: 85 },
 ];
 
 
-export const TRANSLATIONS = new Proxy(RAW_TRANSLATIONS, {
+const TRANSLATIONS = new Proxy(RAW_TRANSLATIONS, {
   get(target, lang) {
     const language = lang as Language;
     if (!target[language]) return target.en;
@@ -2093,3 +1931,5 @@ export const TRANSLATIONS = new Proxy(RAW_TRANSLATIONS, {
     });
   }
 });
+
+module.exports = { RAW_TRANSLATIONS };

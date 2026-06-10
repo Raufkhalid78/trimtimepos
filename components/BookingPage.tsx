@@ -10,13 +10,31 @@ const BookingPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { 
-    services, staff, staffAvailability, appointments, settings, loading,
+    services, staff, staffAvailability, appointments, settings, loading, branches,
     fetchPublicTenantBySlug, publicCreateAppointment 
   } = useData();
 
   useEffect(() => { setPageMeta('Book Your Appointment', 'Book an appointment at your favorite barber shop or beauty salon online with TrimTime.'); }, []);
 
   const [step, setStep] = useState(1);
+  const [selectedBranchId, setSelectedBranchId] = useState('');
+
+  const filteredStaffForBranch = useMemo(() => {
+    if (!selectedBranchId) return staff;
+    return staff.filter(s => s.branchId === selectedBranchId);
+  }, [staff, selectedBranchId]);
+
+  useEffect(() => {
+    if (branches.length > 0) {
+      if (branches.length === 1) {
+        setSelectedBranchId(branches[0].id);
+        setStep(1);
+      } else {
+        setStep(0);
+      }
+    }
+  }, [branches]);
+
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -102,6 +120,7 @@ const BookingPage: React.FC = () => {
       const endDateTime = addMinutes(startDateTime, selectedService.duration);
 
       const newAppointment = {
+        branchId: selectedBranchId || undefined,
         staffId: selectedStaff.id,
         serviceIds: [selectedService.id],
         startTime: startDateTime.toISOString(),
@@ -168,10 +187,39 @@ const BookingPage: React.FC = () => {
         </div>
       )}
 
+      
       <AnimatePresence mode="wait">
+        {/* Step 0: Location Selection */}
+        {step === 0 && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} key="step0">
+            <h2 className="text-xl font-bold text-white mb-6">Choose a Location</h2>
+            <div className="grid gap-4">
+              {branches.filter(b => b.isActive).map(b => (
+                <button
+                  key={b.id}
+                  onClick={() => { setSelectedBranchId(b.id); setStep(1); }}
+                  className="flex flex-col p-6 rounded-[2rem] border transition-all bg-slate-900/50 border-white/5 text-slate-300 hover:border-white/10 text-left hover:scale-[1.01] active:scale-95"
+                >
+                  <span className="font-bold text-white text-lg">{b.name}</span>
+                  {b.address && <span className="text-sm text-slate-400 mt-1">📍 {b.address}</span>}
+                  {b.phone && <span className="text-xs text-slate-500 mt-1">📞 {b.phone}</span>}
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
         {/* Step 1: Services */}
         {step === 1 && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} key="step1">
+            {branches.length > 1 && (
+              <button onClick={() => setStep(0)} className="mb-6 p-2 text-slate-500 hover:text-white transition-colors bg-white/5 rounded-xl flex items-center gap-2 text-xs font-bold self-start">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+                Back to Locations
+              </button>
+            )}
             <h2 className="text-xl font-bold text-white mb-6">Which service would you like?</h2>
             <div className="grid gap-3">
               {services.map(s => (
@@ -201,7 +249,7 @@ const BookingPage: React.FC = () => {
               <h2 className="text-xl font-bold text-white">Choose a professional</h2>
             </div>
             <div className="grid gap-3">
-              {staff.map(s => (
+              {filteredStaffForBranch.map(s => (
                 <button
                   key={s.id}
                   onClick={() => { setSelectedStaff(s); setStep(3); }}

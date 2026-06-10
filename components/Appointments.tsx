@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Appointment, Staff, Service, Customer, Language, AppointmentStatus, ShopSettings } from '../types';
 import { TRANSLATIONS } from '../constants';
@@ -24,21 +24,40 @@ interface AppointmentsProps {
 
 const HOURS = Array.from({ length: 11 }, (_, i) => i + 9); // 9 AM to 7 PM
 
+import { useData } from '../contexts/DataContext';
+
 const Appointments: React.FC<AppointmentsProps> = ({ 
   appointments, staffList, services, customers, language, 
   onUpdateAppointments, onUpdateStatus, settings, staffAvailability, onRefresh, onConvertToSale
 }) => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const { branches } = useData();
+  const [selectedBranchId, setSelectedBranchId] = useState('all');
+
+  const currentStaffList = useMemo(() => {
+    return selectedBranchId === 'all' ? staffList : staffList.filter(s => s.branchId === selectedBranchId);
+  }, [staffList, selectedBranchId]);
+
+  const currentAppointments = useMemo(() => {
+    return selectedBranchId === 'all' ? appointments : appointments.filter(a => a.branchId === selectedBranchId);
+  }, [appointments, selectedBranchId]);
+
   const [isAdding, setIsAdding] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
   const [formData, setFormData] = useState<Partial<Appointment>>({
-    staffId: staffList[0]?.id || '',
+    staffId: currentStaffList[0]?.id || '',
     serviceIds: [],
     startTime: '',
     endTime: '',
     status: 'pending'
   });
+
+  useEffect(() => {
+    if (currentStaffList.length > 0 && !currentStaffList.some(s => s.id === formData.staffId)) {
+      setFormData(prev => ({ ...prev, staffId: currentStaffList[0].id }));
+    }
+  }, [currentStaffList]);
 
   const t = TRANSLATIONS[language];
 
@@ -46,7 +65,7 @@ const Appointments: React.FC<AppointmentsProps> = ({
 
   // Utility to check if an appointment falls on the selected date
   const getAppointmentsForDate = () => {
-    return appointments.filter(app => {
+    return currentAppointments.filter(app => {
       const appDate = new Date(app.startTime);
       return appDate.getDate() === selectedDate.getDate() &&
              appDate.getMonth() === selectedDate.getMonth() &&
@@ -66,7 +85,7 @@ const Appointments: React.FC<AppointmentsProps> = ({
     // Overlap Detection
     const start = new Date(formData.startTime);
     const end = new Date(formData.endTime);
-    const hasOverlap = appointments.some(app => {
+    const hasOverlap = currentAppointments.some(app => {
       if (editingAppointment && app.id === editingAppointment.id) return false;
       if (app.staffId !== formData.staffId) return false;
       if (app.status === 'cancelled') return false;
@@ -105,6 +124,7 @@ const Appointments: React.FC<AppointmentsProps> = ({
     } else {
       const newApp: Appointment = {
         id: 'app_' + Math.random().toString(36).substr(2, 9),
+        branchId: selectedBranchId !== 'all' ? selectedBranchId : (currentStaffList.find(s => s.id === formData.staffId)?.branchId || undefined),
         ...(formData as Omit<Appointment, 'id'>)
       };
       onUpdateAppointments([...appointments, newApp]);
@@ -116,7 +136,7 @@ const Appointments: React.FC<AppointmentsProps> = ({
     setIsAdding(false);
     setEditingAppointment(null);
     setFormData({
-      staffId: staffList[0]?.id || '',
+      staffId: currentStaffList[0]?.id || '',
       serviceIds: [],
       startTime: '',
       endTime: '',
@@ -145,9 +165,25 @@ const Appointments: React.FC<AppointmentsProps> = ({
   return (
     <div className="space-y-6 flex flex-col h-full">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h2 className="text-2xl md:text-3xl font-bold text-slate-800 dark:text-white font-brand">Appointments</h2>
-          <p className="text-slate-500 dark:text-slate-400 text-sm">Manage your daily schedule and bookings.</p>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+          <div>
+            <h2 className="text-2xl md:text-3xl font-bold text-slate-800 dark:text-white font-brand">Appointments</h2>
+            <p className="text-slate-500 dark:text-slate-400 text-sm">Manage your daily schedule and bookings.</p>
+          </div>
+          {branches.length > 1 && (
+            <div className="flex bg-[var(--tt-surface-2)] p-1 rounded-2xl border border-[var(--tt-border)] shadow-sm">
+              <select
+                value={selectedBranchId}
+                onChange={(e) => setSelectedBranchId(e.target.value)}
+                className="bg-transparent text-[10px] font-black uppercase tracking-wider text-[var(--tt-text-main)] outline-none px-3 py-2 cursor-pointer rounded-xl font-sans"
+              >
+                <option value="all" className="bg-[var(--tt-surface)]">{t.allBranches || 'All Locations'}</option>
+                {branches.filter(b => b.isActive).map(b => (
+                  <option key={b.id} value={b.id} className="bg-[var(--tt-surface)]">{b.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
         <div className="flex gap-4 items-center">
           <input 
@@ -183,7 +219,7 @@ const Appointments: React.FC<AppointmentsProps> = ({
 
       {/* Approval Queue */}
       <AnimatePresence mode="wait">
-        {appointments.filter(a => a.status === 'unconfirmed').length > 0 && (
+        {currentAppointments.filter(a => a.status === 'unconfirmed').length > 0 && (
           <motion.div 
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -196,15 +232,15 @@ const Appointments: React.FC<AppointmentsProps> = ({
                 <div>
                   <h3 className="text-xl font-black text-amber-900 dark:text-amber-400 leading-tight">Approval Queue</h3>
                   <p className="text-amber-700/60 dark:text-amber-500/60 text-[10px] font-bold uppercase tracking-widest">
-                    {appointments.filter(a => a.status === 'unconfirmed').length} {appointments.filter(a => a.status === 'unconfirmed').length === 1 ? 'Pending Request' : 'Pending Requests'}
+                    {currentAppointments.filter(a => a.status === 'unconfirmed').length} {currentAppointments.filter(a => a.status === 'unconfirmed').length === 1 ? 'Pending Request' : 'Pending Requests'}
                   </p>
                 </div>
               </div>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {appointments.filter(a => a.status === 'unconfirmed').map(app => {
-                const staff = staffList.find(s => s.id === app.staffId);
+              {currentAppointments.filter(a => a.status === 'unconfirmed').map(app => {
+                const staff = currentStaffList.find(s => s.id === app.staffId);
                 const appServices = services.filter(s => app.serviceIds.includes(s.id));
                 const appDate = new Date(app.startTime);
                 
@@ -304,7 +340,7 @@ const Appointments: React.FC<AppointmentsProps> = ({
             <thead className="sticky top-0 bg-slate-50 dark:bg-slate-800 z-10">
               <tr>
                 <th className="p-4 border-b border-r dark:border-slate-700 w-24">Time</th>
-                {staffList.map(staff => (
+                {currentStaffList.map(staff => (
                   <th key={staff.id} className="p-4 border-b border-r dark:border-slate-700 text-center font-bold text-slate-800 dark:text-white truncate">
                     {staff.name}
                   </th>
@@ -317,7 +353,7 @@ const Appointments: React.FC<AppointmentsProps> = ({
                   <td className="p-4 border-b border-r border-[var(--tt-border)] text-xs font-bold text-[var(--tt-text-muted)] text-right uppercase sticky left-0 bg-[var(--tt-surface)]">
                     {hour === 12 ? '12 PM' : hour > 12 ? `${hour - 12} PM` : `${hour} AM`}
                   </td>
-                  {staffList.map(staff => {
+                  {currentStaffList.map(staff => {
                     // Find appointments for this slot
                     const slotAppts = filteredAppointments.filter(app => {
                       const appStart = new Date(app.startTime);
@@ -509,7 +545,7 @@ const Appointments: React.FC<AppointmentsProps> = ({
                      onChange={e => setFormData({...formData, staffId: e.target.value})}
                      className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200"
                    >
-                     {staffList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                     {currentStaffList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                    </select>
                 </div>
 

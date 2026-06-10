@@ -15,7 +15,7 @@ import AvailabilityModal from './AvailabilityModal';
 import { useData } from '../contexts/DataContext';
 
 const StaffManagement: React.FC<StaffManagementProps> = ({ staffList, onUpdateStaff, currentUser, language }) => {
-  const { staffAvailability, updateStaffAvailability } = useData();
+  const { staffAvailability, updateStaffAvailability, branches } = useData();
   const [isAdding, setIsAdding] = useState(false);
   const [editingStaff, setEditingStaff] = useState<Staff | null>(null);
   const [availabilityStaff, setAvailabilityStaff] = useState<Staff | null>(null);
@@ -26,7 +26,10 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ staffList, onUpdateSt
     password: '',
     role: 'employee' as UserRole,
     commission: 30,
-    baseSalary: 0
+    commissionServices: 30,
+    commissionProducts: 10,
+    baseSalary: 0,
+    branchId: ''
   });
 
   const t = TRANSLATIONS[language];
@@ -36,13 +39,17 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ staffList, onUpdateSt
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const submitData = {
+      ...formData,
+      commission: formData.commissionServices // Legacy support
+    };
     if (editingStaff) {
-      const updatedList = staffList.map(s => s.id === editingStaff.id ? { ...editingStaff, ...formData } : s);
+      const updatedList = staffList.map(s => s.id === editingStaff.id ? { ...editingStaff, ...submitData } : s);
       onUpdateStaff(updatedList);
     } else {
       const newStaff: Staff = {
         id: Math.random().toString(36).substr(2, 9).toUpperCase(),
-        ...formData
+        ...submitData
       };
       onUpdateStaff([...staffList, newStaff]);
     }
@@ -53,7 +60,17 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ staffList, onUpdateSt
     setIsAdding(false);
     setEditingStaff(null);
     setShowPassword(false);
-    setFormData({ name: '', username: '', password: '', role: 'employee', commission: 30, baseSalary: 0 });
+    setFormData({
+      name: '',
+      username: '',
+      password: '',
+      role: 'employee',
+      commission: 30,
+      commissionServices: 30,
+      commissionProducts: 10,
+      baseSalary: 0,
+      branchId: branches.length === 1 ? branches[0].id : ''
+    });
   };
 
   const deleteStaff = (id: string) => {
@@ -119,14 +136,17 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ staffList, onUpdateSt
                <button 
                  onClick={() => {
                    setEditingStaff(staff);
-                   setFormData({ 
-                     name: staff.name, 
-                     username: staff.username, 
-                     password: staff.password || '', 
-                     role: staff.role, 
-                     commission: staff.commission,
-                     baseSalary: staff.baseSalary || 0
-                   });
+                  setFormData({ 
+                    name: staff.name, 
+                    username: staff.username, 
+                    password: staff.password || '', 
+                    role: staff.role, 
+                    commission: staff.commission,
+                    commissionServices: staff.commissionServices ?? staff.commission,
+                    commissionProducts: staff.commissionProducts ?? staff.commission,
+                    baseSalary: staff.baseSalary || 0,
+                    branchId: staff.branchId || ''
+                  });
                    setIsAdding(true);
                  }}
                  className="flex-1 py-3 rounded-xl bg-[var(--tt-surface-2)] text-[var(--tt-text-main)] font-bold text-sm hover:bg-[var(--tt-surface)] transition-colors"
@@ -160,6 +180,7 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ staffList, onUpdateSt
                 <th className="px-8 py-5">{t.professional}</th>
                 <th className="px-8 py-5">{t.loginId}</th>
                 <th className="px-8 py-5">{t.role}</th>
+                {branches.length > 1 && <th className="px-8 py-5">{t.branch || 'Branch'}</th>}
                 <th className="px-8 py-5">{t.commission}</th>
                 <th className="px-8 py-5 text-right">{t.actions}</th>
               </tr>
@@ -184,7 +205,14 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ staffList, onUpdateSt
                       {staff.role === 'admin' ? t.admin : t.employee}
                     </span>
                   </td>
-                  <td className="px-8 py-6 font-black text-slate-900 dark:text-white">{staff.commission}%</td>
+                  {branches.length > 1 && (
+                    <td className="px-8 py-6 text-sm font-bold text-slate-600 dark:text-slate-400">
+                      {branches.find(b => b.id === staff.branchId)?.name || 'All Branches'}
+                    </td>
+                  )}
+                  <td className="px-8 py-6 font-black text-slate-900 dark:text-white">
+                    {staff.commissionServices ?? staff.commission}% / {staff.commissionProducts ?? staff.commission}%
+                  </td>
                   <td className="px-8 py-6 text-right space-x-2">
                     <button 
                       onClick={() => setAvailabilityStaff(staff)}
@@ -202,7 +230,10 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ staffList, onUpdateSt
                           password: staff.password || '', 
                           role: staff.role, 
                           commission: staff.commission,
-                          baseSalary: staff.baseSalary || 0
+                          commissionServices: staff.commissionServices ?? staff.commission,
+                          commissionProducts: staff.commissionProducts ?? staff.commission,
+                          baseSalary: staff.baseSalary || 0,
+                          branchId: staff.branchId || ''
                         });
                         setIsAdding(true);
                       }}
@@ -283,7 +314,7 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ staffList, onUpdateSt
                     </button>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.role}</label>
                     <select 
@@ -296,18 +327,7 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ staffList, onUpdateSt
                     </select>
                   </div>
                   <div>
-                    <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.commission} (%)</label>
-                    <input 
-                      name="commission" 
-                      type="number" 
-                      value={formData.commission} 
-                      onChange={e => setFormData({...formData, commission: parseInt(e.target.value) || 0})} 
-                      required 
-                      className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200" 
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.baseSalary}</label>
+                    <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.baseSalary || 'Base Salary'}</label>
                     <input 
                       name="baseSalary" 
                       type="number" 
@@ -316,6 +336,43 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ staffList, onUpdateSt
                       className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200" 
                     />
                   </div>
+                  <div>
+                    <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.commissionServices || 'Service Comm'} (%)</label>
+                    <input 
+                      name="commissionServices" 
+                      type="number" 
+                      value={formData.commissionServices} 
+                      onChange={e => setFormData({...formData, commissionServices: parseInt(e.target.value) || 0})} 
+                      required 
+                      className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200" 
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.commissionProducts || 'Product Comm'} (%)</label>
+                    <input 
+                      name="commissionProducts" 
+                      type="number" 
+                      value={formData.commissionProducts} 
+                      onChange={e => setFormData({...formData, commissionProducts: parseInt(e.target.value) || 0})} 
+                      required 
+                      className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200" 
+                    />
+                  </div>
+                  {branches.length > 1 && (
+                    <div className="col-span-2">
+                      <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.assignedBranch || 'Assigned Branch'}</label>
+                      <select 
+                        value={formData.branchId} 
+                        onChange={e => setFormData({...formData, branchId: e.target.value})} 
+                        className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200"
+                      >
+                        <option value="">Select Branch...</option>
+                        {branches.map(b => (
+                          <option key={b.id} value={b.id}>{b.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                 </div>
                 <div className="flex gap-4 mt-8">
                   <button type="submit" className="flex-1 px-4 py-4 bg-slate-950 dark:bg-amber-500 text-white dark:text-slate-950 rounded-2xl font-black text-base hover:bg-slate-800 dark:hover:bg-amber-600 transition-all shadow-xl">

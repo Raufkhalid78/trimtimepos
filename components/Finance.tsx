@@ -1,4 +1,40 @@
+
+// Helper to calculate split commissions (service vs product)
+const calculateCommissionForStaff = (staffMember, salesList) => {
+  let commission = 0;
+  salesList.forEach(sale => {
+    let saleServiceTotal = 0;
+    let saleProductTotal = 0;
+    sale.items.forEach(item => {
+      const itemTotal = item.price * item.quantity;
+      if (item.type === 'service') {
+        saleServiceTotal += itemTotal;
+      } else {
+        saleProductTotal += itemTotal;
+      }
+    });
+
+    const itemSum = saleServiceTotal + saleProductTotal;
+    if (itemSum <= 0) return;
+
+    const serviceProp = saleServiceTotal / itemSum;
+    const productProp = saleProductTotal / itemSum;
+
+    // net commissionable amount after discounts
+    const netAmount = Math.max(0, sale.subtotal - sale.discount);
+
+    const serviceNet = netAmount * serviceProp;
+    const productNet = netAmount * productProp;
+
+    const servRate = staffMember.commissionServices !== undefined ? staffMember.commissionServices : (staffMember.commission || 0);
+    const prodRate = staffMember.commissionProducts !== undefined ? staffMember.commissionProducts : (staffMember.commission || 0);
+
+    commission += (serviceNet * servRate) / 100 + (productNet * prodRate) / 100;
+  });
+  return commission;
+};
 import React, { useState, useRef, useMemo, useEffect, Suspense, lazy } from 'react';
+import { useData } from '../contexts/DataContext';
 import { Sale, Expense, Staff, Language, Customer, ShopSettings, AdvancePayment } from '../types';
 import { TRANSLATIONS } from '../constants';
 import { getFinancialInsights } from '../services/geminiService';
@@ -27,7 +63,29 @@ interface FinanceProps {
 
 const Finance: React.FC<FinanceProps> = ({ sales, expenses, staffList, customers, currency, language, currentUser, onAddExpense, onDeleteExpense, onAddAdvance, onDeleteAdvance, onDeleteSales, settings, advancePayments }) => {
   const [activeTab, setActiveTab] = useState<'overview' | 'transactions' | 'expenses' | 'payroll' | 'cash-drawer'>(currentUser.role === 'admin' ? 'overview' : 'expenses');
-  const [newExp, setNewExp] = useState<{ category: string; amount: string; description: string; receiptImage: string | null }>({
+  
+  const { branches } = useData();
+  const [selectedBranchId, setSelectedBranchId] = useState('all');
+
+  const currentSales = useMemo(() => {
+    return selectedBranchId === 'all' ? sales : sales.filter(s => s.branchId === selectedBranchId);
+  }, [sales, selectedBranchId]);
+
+  const currentExpenses = useMemo(() => {
+    return selectedBranchId === 'all' ? expenses : expenses.filter(e => e.branchId === selectedBranchId);
+  }, [expenses, selectedBranchId]);
+
+  const currentAdvances = useMemo(() => {
+    return selectedBranchId === 'all' ? advancePayments : advancePayments.filter(a => {
+      const s = staffList.find(x => x.id === a.staffId);
+      return s && s.branchId === selectedBranchId;
+    });
+  }, [advancePayments, selectedBranchId, staffList]);
+
+  const currentStaffList = useMemo(() => {
+    return selectedBranchId === 'all' ? staffList : staffList.filter(s => s.branchId === selectedBranchId);
+  }, [staffList, selectedBranchId]);
+const [newExp, setNewExp] = useState<{ category: string; amount: string; description: string; receiptImage: string | null }>({
     category: '',
     amount: '',
     description: '',
@@ -55,52 +113,52 @@ const Finance: React.FC<FinanceProps> = ({ sales, expenses, staffList, customers
 
   const filteredSales = useMemo(() => {
     const targetMonthStr = `${selectedYear}-${(selectedMonth + 1).toString().padStart(2, '0')}`;
-    return sales.filter(sale => {
+    return currentSales.filter(sale => {
       const d = parseISO(sale.timestamp);
       if (!isValid(d)) return false;
       return format(d, 'yyyy-MM') === targetMonthStr;
     });
-  }, [sales, selectedMonth, selectedYear]);
+  }, [currentSales, selectedMonth, selectedYear]);
 
   const filteredExpenses = useMemo(() => {
     const targetMonthStr = `${selectedYear}-${(selectedMonth + 1).toString().padStart(2, '0')}`;
-    return expenses.filter(exp => {
+    return currentExpenses.filter(exp => {
       const d = parseISO(exp.date);
       if (!isValid(d)) return false;
       return format(d, 'yyyy-MM') === targetMonthStr;
     });
-  }, [expenses, selectedMonth, selectedYear]);
+  }, [currentExpenses, selectedMonth, selectedYear]);
 
   const filteredAdvances = useMemo(() => {
     const targetMonthStr = `${selectedYear}-${(selectedMonth + 1).toString().padStart(2, '0')}`;
-    return advancePayments.filter(adv => {
+    return currentAdvances.filter(adv => {
       const d = parseISO(adv.date);
       if (!isValid(d)) return false;
       return format(d, 'yyyy-MM') === targetMonthStr;
     });
-  }, [advancePayments, selectedMonth, selectedYear]);
+  }, [currentAdvances, selectedMonth, selectedYear]);
 
   const payrollSales = useMemo(() => {
     if (!payrollStart || !payrollEnd) return [];
     const start = startOfDay(parseISO(payrollStart));
     const end = endOfDay(parseISO(payrollEnd));
-    return sales.filter(sale => {
+    return currentSales.filter(sale => {
       const d = parseISO(sale.timestamp);
       if (!isValid(d)) return false;
       return isWithinInterval(d, { start, end });
     });
-  }, [sales, payrollStart, payrollEnd]);
+  }, [currentSales, payrollStart, payrollEnd]);
 
   const payrollAdvances = useMemo(() => {
     if (!payrollStart || !payrollEnd) return [];
     const start = startOfDay(parseISO(payrollStart));
     const end = endOfDay(parseISO(payrollEnd));
-    return advancePayments.filter(adv => {
+    return currentAdvances.filter(adv => {
       const d = parseISO(adv.date);
       if (!isValid(d)) return false;
       return isWithinInterval(d, { start, end });
     });
-  }, [advancePayments, payrollStart, payrollEnd]);
+  }, [currentAdvances, payrollStart, payrollEnd]);
 
 
 
@@ -187,6 +245,72 @@ const Finance: React.FC<FinanceProps> = ({ sales, expenses, staffList, customers
     const url = URL.createObjectURL(blob);
     link.setAttribute("href", url);
     link.setAttribute("download", `PL_Statement_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  
+  const handleExportQuickBooks = () => {
+    const headers = ['Date', 'Ref No', 'Customer', 'Payment Method', 'Item Type', 'Item Name', 'Quantity', 'Amount', 'Tax'];
+    const rows = [];
+    
+    enrichedSales.forEach(s => {
+      s.items.forEach(item => {
+        rows.push([
+          new Date(s.timestamp).toISOString().split('T')[0],
+          s.id,
+          s.customerName || 'Walk-in',
+          s.paymentMethod,
+          item.type,
+          item.name,
+          item.quantity,
+          item.price.toFixed(2),
+          ((s.tax || 0) / s.items.length).toFixed(2)
+        ]);
+      });
+    });
+
+    const csvContent = [headers, ...rows].map(e => e.map(val => `"${String(val).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `quickbooks_sales_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleExportXero = () => {
+    const headers = ['*ContactName', 'EmailAddress', 'Date', 'InvoiceNumber', 'Reference', '*Description', '*Quantity', '*UnitAmount', 'TaxType', 'TaxAmount'];
+    const rows = [];
+    
+    enrichedSales.forEach(s => {
+      s.items.forEach(item => {
+        rows.push([
+          s.customerName || 'Walk-in Client',
+          '',
+          new Date(s.timestamp).toISOString().split('T')[0],
+          s.id,
+          s.paymentMethod,
+          item.name,
+          item.quantity,
+          item.price.toFixed(2),
+          s.tax > 0 ? 'Tax on Sales' : 'Tax Exempt',
+          ((s.tax || 0) / s.items.length).toFixed(2)
+        ]);
+      });
+    });
+
+    const csvContent = [headers, ...rows].map(e => e.map(val => `"${String(val).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `xero_sales_${new Date().toISOString().split('T')[0]}.csv`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -408,7 +532,23 @@ const Finance: React.FC<FinanceProps> = ({ sales, expenses, staffList, customers
       </motion.div>
 
       {/* Date Filter Selection */}
-      <div className="flex gap-4 items-center bg-[var(--tt-surface)] p-4 rounded-3xl border border-[var(--tt-border)] shadow-sm">
+      <div className="flex gap-4 items-center bg-[var(--tt-surface)] p-4 rounded-3xl border border-[var(--tt-border)] shadow-sm flex-wrap md:flex-nowrap">
+        {branches.length > 1 && (
+          <div className="flex-1 flex flex-col gap-1 min-w-[150px]">
+            <label className="text-[10px] font-black uppercase text-[var(--tt-text-muted)] tracking-widest px-2">{t.locationsAndBranches || 'Location'}</label>
+            <select
+              value={selectedBranchId}
+              onChange={(e) => setSelectedBranchId(e.target.value)}
+              className="tt-input py-2.5"
+            >
+              <option value="all">{t.allBranches || 'All Locations'}</option>
+              {branches.filter(b => b.isActive).map(b => (
+                <option key={b.id} value={b.id}>{b.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
         <div className="flex-1 flex flex-col gap-1">
           <label className="text-[10px] font-black uppercase text-[var(--tt-text-muted)] tracking-widest px-2">{t.selectMonth}</label>
           <select
@@ -513,9 +653,9 @@ const Finance: React.FC<FinanceProps> = ({ sales, expenses, staffList, customers
               <div className="tt-card p-6">
                 <h3 className="font-bold mb-4 text-[var(--tt-text-main)]">{t.commissionReport}</h3>
                 <div className="space-y-3">
-                  {staffList.filter(s => s.role === 'employee').map(s => {
+                  {currentStaffList.filter(s => s.role === 'employee').map(s => {
                     const sRev = filteredSales.filter(x => String(x.staffId) === String(s.id) && !x.isRefunded).reduce((a, b) => a + b.total, 0);
-                    const commissionEarned = (sRev * (s.commission || 0)) / 100;
+                    const commissionEarned = calculateCommissionForStaff(s, filteredSales.filter(x => String(x.staffId) === String(s.id) && !x.isRefunded));
                     return (
                       <div key={s.id} className="flex justify-between items-center p-4 bg-[var(--tt-surface-2)] border border-[var(--tt-border)] rounded-2xl">
                         <div className="flex flex-col">
@@ -551,9 +691,17 @@ const Finance: React.FC<FinanceProps> = ({ sales, expenses, staffList, customers
                   {enrichedSales.length} {t.totalSales} | <span className="text-[var(--tt-emerald)]">Filtered for: {`${selectedYear}-${(selectedMonth + 1).toString().padStart(2, '0')}`}</span>
                 </p>
               </div>
-              <button onClick={handleExportCSV} className="text-[10px] font-black text-[var(--tt-emerald)] bg-[var(--tt-emerald)]/10 px-4 py-2 rounded-xl uppercase tracking-widest flex items-center gap-2 hover:bg-[var(--tt-emerald)]/20 transition-colors">
-                <span>📥</span> {t.exportCSV}
-              </button>
+              <div className="flex gap-2 flex-wrap">
+                <button onClick={handleExportCSV} className="text-[10px] font-black text-[var(--tt-text-main)] bg-slate-800 border border-[var(--tt-border)] px-4 py-2 rounded-xl uppercase tracking-widest flex items-center gap-2 hover:bg-slate-700 transition-colors">
+                  <span>📥</span> {t.exportCSV || 'Export CSV'}
+                </button>
+                <button onClick={handleExportQuickBooks} className="text-[10px] font-black text-amber-500 bg-amber-500/10 px-4 py-2 rounded-xl uppercase tracking-widest flex items-center gap-2 hover:bg-amber-500/20 transition-colors">
+                  <span>📊</span> QuickBooks
+                </button>
+                <button onClick={handleExportXero} className="text-[10px] font-black text-blue-500 bg-blue-500/10 px-4 py-2 rounded-xl uppercase tracking-widest flex items-center gap-2 hover:bg-blue-500/20 transition-colors">
+                  <span>💼</span> Xero
+                </button>
+              </div>
             </div>
             <div className="tt-card overflow-hidden">
               <div className="p-4 border-b border-[var(--tt-border)] flex justify-between items-center">
@@ -642,7 +790,7 @@ const Finance: React.FC<FinanceProps> = ({ sales, expenses, staffList, customers
                     required
                   >
                     <option value="">{t.chooseProfessional}</option>
-                    {staffList.filter(s => s.role === 'employee').map(s => (
+                    {currentStaffList.filter(s => s.role === 'employee').map(s => (
                       <option key={s.id} value={s.id}>{s.name}</option>
                     ))}
                   </select>
@@ -696,21 +844,26 @@ const Finance: React.FC<FinanceProps> = ({ sales, expenses, staffList, customers
                   </div>
                 </div>
                 <div className="space-y-4">
-                  {staffList.filter(s => s.role === 'employee').map(s => {
+                  {currentStaffList.filter(s => s.role === 'employee').map(s => {
                     const sSales = payrollSales.filter(x => String(x.staffId) === String(s.id) && !x.isRefunded);
                     const sRev = sSales.reduce((a, b) => a + b.total, 0);
                     const tipTotal = sSales.reduce((a, b) => a + (b.tip || 0), 0);
                     const baseSalary = s.baseSalary || 0;
 
                     // Calculation logic
+                    const pRev = payrollSales.filter(x => !x.isRefunded).reduce((a, b) => a + b.total, 0);
                     let baseRevenue = sRev;
                     if (settings.deductExpensesFromCommission) {
-                      const pRev = payrollSales.filter(x => !x.isRefunded).reduce((a, b) => a + b.total, 0);
                       const expenseShare = pRev > 0 ? (sRev / pRev) * totalExpenses : 0;
                       baseRevenue = Math.max(0, sRev - expenseShare);
                     }
 
-                    const commissionEarned = (baseRevenue * (s.commission || 0)) / 100;
+                    const commissionEarnedRaw = calculateCommissionForStaff(s, sSales);
+                    let commissionEarned = commissionEarnedRaw;
+                    if (settings.deductExpensesFromCommission && sRev > 0) {
+                      const ratio = Math.max(0, sRev - (pRev > 0 ? (sRev / pRev) * totalExpenses : 0)) / sRev;
+                      commissionEarned = commissionEarnedRaw * ratio;
+                    }
                     const totalAdvances = payrollAdvances.filter(a => a.staffId === s.id).reduce((a, b) => a + b.amount, 0);
                     const finalPayout = Math.max(0, baseSalary + tipTotal + commissionEarned - totalAdvances);
 
@@ -743,7 +896,9 @@ const Finance: React.FC<FinanceProps> = ({ sales, expenses, staffList, customers
                         <div className="flex justify-between items-start mb-4">
                           <div>
                             <h4 className="text-lg font-black text-[var(--tt-text-main)]">{s.name}</h4>
-                            <p className="text-xs text-[var(--tt-text-muted)] font-bold uppercase tracking-widest">{t.commission}: {s.commission}%</p>
+                            <p className="text-xs text-[var(--tt-text-muted)] font-bold uppercase tracking-widest">
+                              {t.commission}: {s.commission}% (Services: {s.commissionServices !== undefined ? s.commissionServices : s.commission}% | Products: {s.commissionProducts !== undefined ? s.commissionProducts : s.commission}%)
+                            </p>
                           </div>
                           <div className="text-right">
                             <p className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest">{t.totalSales}</p>

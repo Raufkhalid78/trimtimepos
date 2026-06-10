@@ -20,8 +20,15 @@ interface POSProps {
   dbStatus: 'connected' | 'offline' | 'error';
 }
 
+import { useData } from '../contexts/DataContext';
+
 const POS: React.FC<POSProps> = ({ services, products, staff, customers, sales, settings, currentUser, onCompleteSale, onAddCustomer, dbStatus }) => {
   const [cart, setCart] = useState<SaleItem[]>([]);
+  const { branches, productInventory } = useData();
+  const [selectedBranchId, setSelectedBranchId] = useState(
+    currentUser.branchId || (branches.length > 0 ? branches[0].id : '')
+  );
+
   const [selectedStaff, setSelectedStaff] = useState<string>(currentUser.role === 'employee' ? currentUser.id : '');
   const [selectedCustomer, setSelectedCustomer] = useState<string>('');
   const [discountCode, setDiscountCode] = useState<string>('');
@@ -540,6 +547,7 @@ const POS: React.FC<POSProps> = ({ services, products, staff, customers, sales, 
         }, 0);
 
         const sale: Sale = {
+          branchId: selectedBranchId || undefined,
           id: Math.random().toString(36).substr(2, 9).toUpperCase(),
           timestamp: new Date().toISOString(),
           items: [...cart],
@@ -741,7 +749,22 @@ const POS: React.FC<POSProps> = ({ services, products, staff, customers, sales, 
           </motion.div>
         )}
         <div className="mb-4 md:mb-6 flex flex-col sm:flex-row gap-3 md:gap-4">
+          
           <div className="flex-1 flex gap-2">
+            {branches.length > 1 && (
+              <div className="flex bg-[var(--tt-surface)] rounded-2xl border border-[var(--tt-border)] shadow-sm px-3 items-center">
+                <select
+                  value={selectedBranchId}
+                  onChange={(e) => setSelectedBranchId(e.target.value)}
+                  className="bg-transparent text-[10px] font-black uppercase tracking-wider text-[var(--tt-text-main)] outline-none cursor-pointer py-2.5 font-sans"
+                >
+                  {branches.filter(b => b.isActive).map(b => (
+                    <option key={b.id} value={b.id} className="bg-[var(--tt-surface)]">{b.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             <div className="flex-1 relative">
                 <svg className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                 <input type="text" placeholder={isRefundMode ? t.searchRefund : t.searchCatalog} value={isRefundMode ? refundSearchTerm : searchTerm} onChange={(e) => isRefundMode ? setRefundSearchTerm(e.target.value) : setSearchTerm(e.target.value)} className="tt-input py-3 md:py-3.5 pl-11 pr-4 md:pl-12 md:pr-6" />
@@ -766,6 +789,11 @@ const POS: React.FC<POSProps> = ({ services, products, staff, customers, sales, 
                 <h4 className="font-bold text-[var(--tt-text-main)] text-sm md:text-base leading-tight line-clamp-2">
                     {getItemName(item)}
                 </h4>
+                {activeTab === 'products' && (
+                  <p className="text-[10px] text-[var(--tt-text-muted)] font-black uppercase mt-1 tracking-widest">
+                    Stock: {productInventory.find(pi => pi.productId === item.id && pi.branchId === selectedBranchId)?.stock ?? 0}
+                  </p>
+                )}
               </div>
               <div className="flex items-center justify-between relative z-10">
                 <p className="text-lg md:text-xl font-black text-[var(--tt-text-main)] tracking-tighter">{settings.currency}{item.price}</p>

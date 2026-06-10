@@ -16,6 +16,25 @@ export interface Tenant {
   isActive: boolean;
 }
 
+export interface Branch {
+  id: string;
+  tenantId: string;
+  name: string;
+  address?: string;
+  phone?: string;
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ProductInventory {
+  productId: string;
+  branchId: string;
+  tenantId: string;
+  stock: number;
+}
+
+
 export interface Subscription {
   id: string;
   tenantId: string;
@@ -129,11 +148,14 @@ export interface Staff {
   name: string;
   role: UserRole;
   commission: number; // percentage
+  commissionServices?: number; // service commission percentage
+  commissionProducts?: number; // product commission percentage
   baseSalary?: number; // fixed monthly/period salary
   username: string;
   password?: string;
   email?: string;
   isFallback?: boolean;
+  branchId?: string;
 }
 
 export interface Customer {
@@ -161,6 +183,7 @@ export interface Appointment {
   customerName?: string;
   customerPhone?: string;
   customerEmail?: string;
+  branchId?: string;
 }
 
 export interface StaffAvailability {
@@ -219,6 +242,7 @@ export interface Sale {
   // Stored snapshots of names at time of sale
   staffName?: string;
   customerName?: string;
+  branchId?: string;
 }
 
 export interface Refund {
@@ -258,6 +282,7 @@ export interface Expense {
   amount: number;
   description: string;
   receiptImage?: string; // Base64 string of the receipt
+  branchId?: string;
 }
 
 export interface AdvancePayment {

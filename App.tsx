@@ -7,8 +7,7 @@ import LogoutScreen from '@/components/LogoutScreen';
 import OnboardingTour from '@/components/OnboardingTour';
 const LandingPage = lazy(() => import('@/components/LandingPage'));
 const SignUp = lazy(() => import('@/components/SignUp'));
-const SubscriptionBanner = lazy(() => import('@/components/SubscriptionBanner'));
-const SubscriptionExpiredScreen = lazy(() => import('@/components/SubscriptionBanner').then(m => ({ default: m.SubscriptionExpiredScreen })));
+import SubscriptionBanner, { SubscriptionExpiredScreen } from '@/components/SubscriptionBanner';
 const PricingPage = lazy(() => import('@/components/PricingPage'));
 const BusinessOnboarding = lazy(() => import('@/components/BusinessOnboarding'));
 

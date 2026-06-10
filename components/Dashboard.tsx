@@ -4,6 +4,7 @@ import { TRANSLATIONS } from '../constants';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format, subDays, addDays, isWithinInterval, startOfDay, endOfDay, startOfMonth, endOfMonth, parseISO, getDaysInMonth, isValid, isSameDay } from 'date-fns';
 import { setPageMeta } from '../utils/seo';
+import { useData } from '../contexts/DataContext';
 
 const RevenueChart = lazy(() => import('./Charts').then(m => ({ default: m.RevenueChart })));
 const ExpensePieChart = lazy(() => import('./Charts').then(m => ({ default: m.ExpensePieChart })));
@@ -45,6 +46,21 @@ const CountUp: React.FC<{ value: number; prefix?: string; duration?: number }> =
 
 const Dashboard: React.FC<DashboardProps> = ({ sales, expenses, products, staff, appointments, currentUser, currency, language, onViewChange }) => {
   const t = TRANSLATIONS[language];
+  const { branches, productInventory } = useData();
+  const [selectedBranchId, setSelectedBranchId] = useState('all');
+
+  const currentSales = useMemo(() => {
+    return selectedBranchId === 'all' ? sales : sales.filter(s => s.branchId === selectedBranchId);
+  }, [sales, selectedBranchId]);
+
+  const currentExpenses = useMemo(() => {
+    return selectedBranchId === 'all' ? expenses : expenses.filter(e => e.branchId === selectedBranchId);
+  }, [expenses, selectedBranchId]);
+
+  const currentAppointments = useMemo(() => {
+    return selectedBranchId === 'all' ? appointments : appointments.filter(a => a.branchId === selectedBranchId);
+  }, [appointments, selectedBranchId]);
+
   const [dateRange, setDateRange] = useState<DateRange>('month');
   const [customRange, setCustomRange] = useState({ start: format(subDays(new Date(), 7), 'yyyy-MM-dd'), end: format(new Date(), 'yyyy-MM-dd') });
 
@@ -55,7 +71,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sales, expenses, products, staff,
     const currentMonthStr = format(now, 'yyyy-MM');
     const todayStr = format(now, 'yyyy-MM-dd');
     
-    return sales.filter(sale => {
+    return currentSales.filter(sale => {
       const saleDate = parseISO(sale.timestamp);
       if (!isValid(saleDate)) return false;
       const saleMonthStr = format(saleDate, 'yyyy-MM');
@@ -69,14 +85,14 @@ const Dashboard: React.FC<DashboardProps> = ({ sales, expenses, products, staff,
         default: return true;
       }
     });
-  }, [sales, dateRange, customRange]);
+  }, [currentSales, dateRange, customRange]);
 
   const filteredExpenses = useMemo(() => {
     const now = new Date();
     const currentMonthStr = format(now, 'yyyy-MM');
     const todayStr = format(now, 'yyyy-MM-dd');
 
-    return expenses.filter(expense => {
+    return currentExpenses.filter(expense => {
       const expenseDate = parseISO(expense.date);
       if (!isValid(expenseDate)) return false;
       const expenseMonthStr = format(expenseDate, 'yyyy-MM');
@@ -90,7 +106,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sales, expenses, products, staff,
         default: return true;
       }
     });
-  }, [expenses, dateRange, customRange]);
+  }, [currentExpenses, dateRange, customRange]);
 
   const stats = useMemo(() => {
     // Separate active sales from refunded ones for accurate accounting
@@ -106,12 +122,17 @@ const Dashboard: React.FC<DashboardProps> = ({ sales, expenses, products, staff,
       return acc + (sale.total * (commissionRate / 100));
     }, 0);
 
-    const inventoryValue = products.reduce((acc, p) => acc + (p.price * p.stock), 0);
+    const inventoryValue = products.reduce((acc, p) => {
+      const stock = selectedBranchId === 'all'
+        ? productInventory.filter(pi => pi.productId === p.id).reduce((sum, pi) => sum + pi.stock, 0)
+        : (productInventory.find(pi => pi.productId === p.id && pi.branchId === selectedBranchId)?.stock || 0);
+      return acc + (p.price * stock);
+    }, 0);
     const avgTicket = activeSales.length > 0 ? revenue / activeSales.length : 0;
     const remainingBalance = revenue - expensesTotal - payroll;
 
     return { revenue, totalRefunds, expenses: expensesTotal, payroll, inventoryValue, avgTicket, remainingBalance };
-  }, [filteredSales, filteredExpenses, products, staff]);
+  }, [filteredSales, filteredExpenses, products, staff, productInventory, selectedBranchId]);
 
   const chartData = useMemo(() => {
     const now = new Date();
@@ -132,14 +153,14 @@ const Dashboard: React.FC<DashboardProps> = ({ sales, expenses, products, staff,
       const date = addDays(startDate, i);
       const dayStr = format(date, 'MMM dd');
       // Exclude refunded sales from the revenue chart
-      const daySales = sales.filter(s => {
+      const daySales = currentSales.filter(s => {
         if (s.isRefunded) return false;
         const sDate = parseISO(s.timestamp);
         return isValid(sDate) && format(sDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd');
       });
       return { name: dayStr, revenue: daySales.reduce((acc, s) => acc + s.total, 0) };
     });
-  }, [sales, dateRange, customRange]);
+  }, [currentSales, dateRange, customRange]);
 
   const staffLeaderboard = useMemo(() => {
     const staffMap: Record<string, number> = {};
@@ -158,17 +179,22 @@ const Dashboard: React.FC<DashboardProps> = ({ sales, expenses, products, staff,
   }, [filteredExpenses]);
 
   const lowStockItems = useMemo(() => {
-    return products.filter(p => p.stock <= (p.lowStockThreshold || 5));
-  }, [products]);
+    return products.map(p => {
+      const stock = selectedBranchId === 'all'
+        ? productInventory.filter(pi => pi.productId === p.id).reduce((sum, pi) => sum + pi.stock, 0)
+        : (productInventory.find(pi => pi.productId === p.id && pi.branchId === selectedBranchId)?.stock || 0);
+      return { ...p, stock };
+    }).filter(p => p.stock <= (p.lowStockThreshold || 5));
+  }, [products, productInventory, selectedBranchId]);
 
   const todayAppointments = useMemo(() => {
     const today = new Date();
-    return appointments.filter(a => isSameDay(parseISO(a.startTime), today)).sort((a, b) => parseISO(a.startTime).getTime() - parseISO(b.startTime).getTime()).slice(0, 5);
-  }, [appointments]);
+    return currentAppointments.filter(a => isSameDay(parseISO(a.startTime), today)).sort((a, b) => parseISO(a.startTime).getTime() - parseISO(b.startTime).getTime()).slice(0, 5);
+  }, [currentAppointments]);
 
   const recentSales = useMemo(() => {
-    return [...sales].sort((a, b) => parseISO(b.timestamp).getTime() - parseISO(a.timestamp).getTime()).slice(0, 5);
-  }, [sales]);
+    return [...currentSales].sort((a, b) => parseISO(b.timestamp).getTime() - parseISO(a.timestamp).getTime()).slice(0, 5);
+  }, [currentSales]);
 
   const greeting = useMemo(() => {
     const hour = new Date().getHours();
@@ -192,7 +218,24 @@ const Dashboard: React.FC<DashboardProps> = ({ sales, expenses, products, staff,
           </p>
         </motion.div>
 
+        
         <div className="flex flex-col items-end gap-3">
+          {/* Branch Filter Dropdown */}
+          {branches.length > 1 && (
+            <div className="flex bg-[var(--tt-surface-2)] p-1 rounded-2xl border border-[var(--tt-border)] shadow-sm">
+              <select
+                value={selectedBranchId}
+                onChange={(e) => setSelectedBranchId(e.target.value)}
+                className="bg-transparent text-[10px] font-black uppercase tracking-wider text-[var(--tt-text-main)] outline-none px-3 py-2 cursor-pointer rounded-xl font-sans"
+              >
+                <option value="all" className="bg-[var(--tt-surface)]">{t.allBranches || 'All Locations'}</option>
+                {branches.filter(b => b.isActive).map(b => (
+                  <option key={b.id} value={b.id} className="bg-[var(--tt-surface)]">{b.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <div className="flex bg-[var(--tt-surface-2)] p-1 rounded-2xl border border-[var(--tt-border)] shadow-sm">
             {(['today', 'week', 'month', 'all', 'custom'] as const).map((range) => (
               <button
