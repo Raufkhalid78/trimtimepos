@@ -124,15 +124,15 @@ export const SubscriptionExpiredScreen: React.FC<{ onManageSubscription: () => v
               onClick={onManageSubscription}
               className="p-4 bg-slate-800/50 border border-slate-700/50 rounded-2xl hover:border-amber-500/30 transition-all"
             >
-              <p className="text-2xl font-black text-white">$20</p>
+              <p className="text-2xl font-black text-white">$15</p>
               <p className="text-slate-500 text-xs">/month</p>
             </button>
             <button
               onClick={onManageSubscription}
               className="p-4 bg-amber-500/5 border-2 border-amber-500/30 rounded-2xl relative"
             >
-              <div className="absolute -top-2 right-2 bg-amber-500 text-slate-950 px-2 py-0.5 rounded-full text-[8px] font-black">SAVE $40</div>
-              <p className="text-2xl font-black text-white">$200</p>
+              <div className="absolute -top-2 right-2 bg-amber-500 text-slate-950 px-2 py-0.5 rounded-full text-[8px] font-black">SAVE $30</div>
+              <p className="text-2xl font-black text-white">$150</p>
               <p className="text-slate-500 text-xs">/year</p>
             </button>
           </div>

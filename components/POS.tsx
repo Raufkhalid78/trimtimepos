@@ -5,7 +5,7 @@ import { jsPDF } from 'jspdf';
 import { setPageMeta } from '../utils/seo';
 import html2canvas from 'html2canvas';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
+import type { Html5Qrcode as Html5QrcodeType } from 'html5-qrcode';
 
 interface POSProps {
   services: Service[];
@@ -77,7 +77,7 @@ const POS: React.FC<POSProps> = ({ services, products, staff, customers, sales, 
   const [showSuccessAlert, setShowSuccessAlert] = useState<string | null>(null);
   
   const feedbackTimeoutRef = useRef<number | null>(null);
-  const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
+  const html5QrCodeRef = useRef<Html5QrcodeType | null>(null);
   const isScannerActiveRef = useRef(false);
   const processingScanRef = useRef(false);
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth < 1024 : false);
@@ -149,6 +149,7 @@ const POS: React.FC<POSProps> = ({ services, products, staff, customers, sales, 
             await cleanupScanner();
 
             try {
+                const { Html5Qrcode, Html5QrcodeSupportedFormats } = await import('html5-qrcode');
                 const html5QrCode = new Html5Qrcode("reader", {
                   formatsToSupport: [
                     Html5QrcodeSupportedFormats.EAN_13,
@@ -1283,7 +1284,7 @@ const POS: React.FC<POSProps> = ({ services, products, staff, customers, sales, 
                       initial={{ y: "100%" }}
                       animate={{ y: 0 }}
                       exit={{ y: "100%" }}
-                      className="tt-card w-full max-w-md p-8 md:p-10 shadow-2xl"
+                      className="tt-card w-full max-w-md p-8 md:p-10 shadow-2xl overflow-y-auto max-h-[90vh]"
                   >
                       <div className="flex justify-between items-center mb-6">
                           <h3 className="text-xl font-black text-slate-900 dark:text-white">{t.quickAddClient}</h3>

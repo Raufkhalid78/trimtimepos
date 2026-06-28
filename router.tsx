@@ -19,6 +19,7 @@ const StaffLogin = lazy(() => import('@/components/StaffLogin'));
 const PrivacyPolicy = lazy(() => import('@/components/PrivacyPolicy'));
 const TermsOfService = lazy(() => import('@/components/TermsOfService'));
 const PaymentSuccess = lazy(() => import('@/components/PaymentSuccess'));
+const NotFound = lazy(() => import('@/components/NotFound'));
 
 const Loading = () => (
   <div className="h-full w-full flex items-center justify-center bg-slate-50 dark:bg-slate-950">
@@ -92,8 +93,8 @@ function InventoryWithData() {
 
 function StaffWithData() {
   const { staff, updateStaff } = useData();
-  const { currentUser, sessionLanguage } = useAuth();
-  return <StaffManagement staffList={staff} onUpdateStaff={updateStaff} currentUser={currentUser} language={sessionLanguage} />;
+  const { currentUser, sessionLanguage, subscription } = useAuth();
+  return <StaffManagement staffList={staff} onUpdateStaff={updateStaff} currentUser={currentUser} language={sessionLanguage} subscription={subscription} />;
 }
 
 function SettingsWithData() {
@@ -132,6 +133,17 @@ function AppointmentsWithData() {
   />;
 }
 
+function RoleGuard({ allowedRoles, children }: { allowedRoles: string[]; children: React.ReactNode }) {
+  const { currentUser } = useAuth();
+  if (!currentUser) {
+    return <Navigate to="/" replace />;
+  }
+  if (!allowedRoles.includes(currentUser.role)) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  return <>{children}</>;
+}
+
 function LoginRedirect() {
   const { setSaasView, currentUser } = useAuth();
   React.useEffect(() => {
@@ -152,8 +164,8 @@ export const router = createBrowserRouter([
       { path: 'pos', element: <Suspense fallback={<Loading />}><POSWithData /></Suspense> },
       { path: 'finance', element: <Suspense fallback={<Loading />}><FinanceWithData /></Suspense> },
       { path: 'customers', element: <Suspense fallback={<Loading />}><CustomersWithData /></Suspense> },
-      { path: 'inventory', element: <Suspense fallback={<Loading />}><InventoryWithData /></Suspense> },
-      { path: 'staff', element: <Suspense fallback={<Loading />}><StaffWithData /></Suspense> },
+      { path: 'inventory', element: <Suspense fallback={<Loading />}><RoleGuard allowedRoles={['admin']}><InventoryWithData /></RoleGuard></Suspense> },
+      { path: 'staff', element: <Suspense fallback={<Loading />}><RoleGuard allowedRoles={['admin']}><StaffWithData /></RoleGuard></Suspense> },
       { path: 'settings', element: <Suspense fallback={<Loading />}><SettingsWithData /></Suspense> },
       { path: 'appointments', element: <Suspense fallback={<Loading />}><AppointmentsWithData /></Suspense> },
       { path: 'app/*', element: <Navigate to="/dashboard" replace /> } // Backwards compatibility for the /app prefix
@@ -189,5 +201,9 @@ export const router = createBrowserRouter([
   {
     path: '/payment-success',
     element: <Suspense fallback={<Loading />}><PaymentSuccess /></Suspense>
+  },
+  {
+    path: '*',
+    element: <Suspense fallback={<Loading />}><NotFound /></Suspense>
   }
 ]);

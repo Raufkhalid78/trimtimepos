@@ -46,11 +46,12 @@ export interface Subscription {
   currentPeriodEnd: string;
   price: number;
   createdAt: string;
+  addOnPacks?: number;
 }
 
 export const PLAN_PRICES = {
-  monthly: 20,
-  yearly: 200,
+  monthly: 15,
+  yearly: 150,
 } as const;
 
 export type SaaSView = 'landing' | 'signup' | 'login' | 'app' | 'onboarding';

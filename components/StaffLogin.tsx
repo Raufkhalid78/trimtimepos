@@ -72,7 +72,7 @@ const StaffLogin: React.FC = () => {
       // 2. Directly fetch staff for this tenant (bypass shared context to avoid race conditions)
       const { data: staffData, error: staffError } = await supabase
         .from('staff')
-        .select('id, name, role, commission, username, password, email, base_salary, tenant_id')
+        .select('id, name, role, commission, username, email, base_salary, tenant_id')
         .eq('tenant_id', tenantData.id);
 
       if (!staffError && staffData) {
@@ -99,29 +99,43 @@ const StaffLogin: React.FC = () => {
     setLoading(true);
     setError('');
 
+    const cleanUsername = username.toLowerCase().trim();
     const potentialUsers = staffList.filter(
-      s => s.username?.toLowerCase().trim() === username.toLowerCase().trim()
+      s => s.username?.toLowerCase().trim() === cleanUsername
     );
 
     let matchedUser: Staff | null = null;
 
-    for (const user of potentialUsers) {
-      const storedPass = user.password || '';
-      // Check bcrypt hash first
-      if (storedPass.startsWith('$2a$') || storedPass.startsWith('$2b$')) {
+    try {
+      for (const user of potentialUsers) {
+        const { data, error: fetchError } = await supabase
+          .from('staff')
+          .select('password')
+          .eq('id', user.id)
+          .single();
+
+        if (fetchError || !data) {
+          console.error("Could not fetch staff credentials:", fetchError);
+          continue;
+        }
+
+        const storedPass = data.password || '';
         const ok = await verifyPassword(password, storedPass);
         if (ok) { matchedUser = user; break; }
-      } else {
-        // Plaintext fallback for legacy / un-hashed passwords
-        if (password === storedPass) { matchedUser = user; break; }
       }
-    }
 
-    if (matchedUser) {
-      const expiry = Date.now() + 12 * 60 * 60 * 1000;
-      loginStaff(matchedUser, expiry);
-      navigate('/dashboard');
-    } else {
+      if (matchedUser) {
+        const expiry = Date.now() + 12 * 60 * 60 * 1000;
+        loginStaff(matchedUser, expiry);
+        navigate('/dashboard');
+      } else {
+        setError(t.invalidLogin);
+        setShake(true);
+        setTimeout(() => setShake(false), 600);
+        setLoading(false);
+      }
+    } catch (err: any) {
+      console.error("Staff login error:", err);
       setError(t.invalidLogin);
       setShake(true);
       setTimeout(() => setShake(false), 600);

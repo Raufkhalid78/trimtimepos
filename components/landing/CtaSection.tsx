@@ -48,7 +48,7 @@ const CtaSection: React.FC<CtaSectionProps> = ({ onGoToSignUp }) => {
             {/* Trust chips */}
             <div className="flex flex-wrap justify-center items-center gap-x-6 gap-y-3 mt-8">
               {[
-                '30-day free trial',
+                '1 month free trial',
                 'No contracts',
                 'Works on all devices',
                 'Cancel anytime',

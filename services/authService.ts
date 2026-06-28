@@ -294,6 +294,7 @@ export async function getCurrentSubscription(tenantId: string): Promise<Subscrip
     currentPeriodEnd: data.current_period_end,
     price: data.price,
     createdAt: data.created_at,
+    addOnPacks: data.add_on_packs || 0,
   };
 }
 
@@ -369,6 +370,32 @@ export async function deleteStore(tenantId: string): Promise<boolean> {
     .from('tenants')
     .delete()
     .eq('id', tenantId);
+
+  return !error;
+}
+
+/**
+ * Add a demo add-on pack (+10 branches, +50 employees)
+ */
+export async function addDemoAddOnPack(tenantId: string): Promise<boolean> {
+  const { data, error: fetchError } = await supabase
+    .from('subscriptions')
+    .select('add_on_packs')
+    .eq('tenant_id', tenantId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single();
+
+  if (fetchError || !data) return false;
+
+  const currentPacks = data.add_on_packs || 0;
+
+  const { error } = await supabase
+    .from('subscriptions')
+    .update({ 
+      add_on_packs: currentPacks + 1
+    })
+    .eq('tenant_id', tenantId);
 
   return !error;
 }

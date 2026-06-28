@@ -1,21 +1,25 @@
 
 import React, { useState } from 'react';
-import { Staff, UserRole, Language } from '../types';
+import { Staff, UserRole, Language, Subscription } from '../types';
 import { TRANSLATIONS } from '../constants';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getSubscriptionLimits } from '../services/subscriptionService';
+import { useToast } from '../contexts/ToastContext';
 
 interface StaffManagementProps {
   staffList: Staff[];
   onUpdateStaff: (staff: Staff[]) => void;
   currentUser: Staff;
   language: Language;
+  subscription?: Subscription | null;
 }
 
 import AvailabilityModal from './AvailabilityModal';
 import { useData } from '../contexts/DataContext';
 
-const StaffManagement: React.FC<StaffManagementProps> = ({ staffList, onUpdateStaff, currentUser, language }) => {
+const StaffManagement: React.FC<StaffManagementProps> = ({ staffList, onUpdateStaff, currentUser, language, subscription }) => {
   const { staffAvailability, updateStaffAvailability, branches } = useData();
+  const { showToast } = useToast();
   const [isAdding, setIsAdding] = useState(false);
   const [editingStaff, setEditingStaff] = useState<Staff | null>(null);
   const [availabilityStaff, setAvailabilityStaff] = useState<Staff | null>(null);
@@ -47,6 +51,14 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ staffList, onUpdateSt
       const updatedList = staffList.map(s => s.id === editingStaff.id ? { ...editingStaff, ...submitData } : s);
       onUpdateStaff(updatedList);
     } else {
+      // Quota Limit Enforcement
+      const limits = getSubscriptionLimits(subscription);
+      const activeStaff = staffList.length;
+      if (activeStaff >= limits.maxEmployees) {
+        showToast(`Employee limit reached: Your plan allows up to ${limits.maxEmployees} employees. Upgrade or purchase an Add-on to add more.`, 'error');
+        return;
+      }
+
       const newStaff: Staff = {
         id: Math.random().toString(36).substr(2, 9).toUpperCase(),
         ...submitData
@@ -94,7 +106,12 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ staffList, onUpdateSt
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-2xl md:text-3xl font-bold text-slate-800 dark:text-white font-brand">{t.teamHub}</h2>
-          <p className="text-slate-500 dark:text-slate-400 text-sm">{t.manageAccess}</p>
+          <p className="text-slate-500 dark:text-slate-400 text-sm flex flex-wrap items-center gap-2">
+            <span>{t.manageAccess}</span>
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black bg-[var(--tt-surface-2)] text-[var(--tt-text-muted)] border border-[var(--tt-border)] shadow-sm">
+              Quota: {staffList.length} / {getSubscriptionLimits(subscription).maxEmployees}
+            </span>
+          </p>
         </div>
         <button 
           onClick={() => setIsAdding(true)}
@@ -269,8 +286,9 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ staffList, onUpdateSt
               </div>
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div>
-                  <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.fullName}</label>
+                  <label htmlFor="staff-name" className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.fullName}</label>
                   <input 
+                    id="staff-name"
                     name="name" 
                     type="text" 
                     value={formData.name} 
@@ -280,8 +298,9 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ staffList, onUpdateSt
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.username}</label>
+                  <label htmlFor="staff-username" className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.username}</label>
                   <input 
+                    id="staff-username"
                     name="username" 
                     type="text" 
                     value={formData.username} 
@@ -291,9 +310,10 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ staffList, onUpdateSt
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.password}</label>
+                  <label htmlFor="staff-password" className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.password}</label>
                   <div className="relative">
                     <input 
+                      id="staff-password"
                       name="password" 
                       type={showPassword ? "text" : "password"} 
                       value={formData.password} 
@@ -316,8 +336,9 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ staffList, onUpdateSt
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.role}</label>
+                    <label htmlFor="staff-role" className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.role}</label>
                     <select 
+                      id="staff-role"
                       value={formData.role} 
                       onChange={e => setFormData({...formData, role: e.target.value as UserRole})} 
                       className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200"
@@ -327,8 +348,9 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ staffList, onUpdateSt
                     </select>
                   </div>
                   <div>
-                    <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.baseSalary || 'Base Salary'}</label>
+                    <label htmlFor="staff-salary" className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.baseSalary || 'Base Salary'}</label>
                     <input 
+                      id="staff-salary"
                       name="baseSalary" 
                       type="number" 
                       value={formData.baseSalary} 
@@ -337,8 +359,9 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ staffList, onUpdateSt
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.commissionServices || 'Service Comm'} (%)</label>
+                    <label htmlFor="staff-comm-services" className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.commissionServices || 'Service Comm'} (%)</label>
                     <input 
+                      id="staff-comm-services"
                       name="commissionServices" 
                       type="number" 
                       value={formData.commissionServices} 
@@ -348,8 +371,9 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ staffList, onUpdateSt
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.commissionProducts || 'Product Comm'} (%)</label>
+                    <label htmlFor="staff-comm-products" className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.commissionProducts || 'Product Comm'} (%)</label>
                     <input 
+                      id="staff-comm-products"
                       name="commissionProducts" 
                       type="number" 
                       value={formData.commissionProducts} 
@@ -360,8 +384,9 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ staffList, onUpdateSt
                   </div>
                   {branches.length > 1 && (
                     <div className="col-span-2">
-                      <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.assignedBranch || 'Assigned Branch'}</label>
+                      <label htmlFor="staff-branch" className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.assignedBranch || 'Assigned Branch'}</label>
                       <select 
+                        id="staff-branch"
                         value={formData.branchId} 
                         onChange={e => setFormData({...formData, branchId: e.target.value})} 
                         className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200"

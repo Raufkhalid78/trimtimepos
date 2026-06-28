@@ -31,8 +31,25 @@ const faqs = [
 const FaqSection: React.FC = () => {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": faqs.map(faq => ({
+      "@type": "Question",
+      "name": faq.q,
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": faq.a
+      }
+    }))
+  };
+
   return (
     <section id="faq" aria-labelledby="faq-heading" className="py-24 px-6">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
       <div className="max-w-3xl mx-auto">
         {/* Header */}
         <motion.div

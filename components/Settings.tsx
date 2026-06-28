@@ -5,6 +5,8 @@ import { useData } from '../contexts/DataContext';
 import { CURRENCY_OPTIONS, TRANSLATIONS, COUNTRY_CODES } from '../constants';
 import { motion, AnimatePresence } from 'framer-motion';
 import { setPageMeta } from '../utils/seo';
+import { getSubscriptionLimits } from '../services/subscriptionService';
+import { useToast } from '../contexts/ToastContext';
 
 interface SettingsProps {
   settings: ShopSettings;
@@ -28,11 +30,21 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
   const [newPromo, setNewPromo] = useState<DiscountCode>({ code: '', type: 'percentage', value: 0, description: '' });
   const [newBranch, setNewBranch] = useState({ name: '', address: '', phone: '', isActive: true });
   const { branches, updateBranches } = useData();
+  const { showToast } = useToast();
 
   const handleAddBranch = () => {
     if (!newBranch.name.trim()) return;
+
+    // Quota Limit Enforcement
+    const limits = getSubscriptionLimits(subscription);
+    const activeBranches = branches.length;
+    if (activeBranches >= limits.maxBranches) {
+      showToast(`Branch limit reached: Your plan allows up to ${limits.maxBranches} branches. Upgrade or purchase an Add-on to add more.`, 'error');
+      return;
+    }
+
     const branchToAdd = {
-      id: 'br' + Math.random().toString(36).substr(2, 9).toUpperCase(),
+      id: 'BR' + crypto.randomUUID().replace(/-/g, '').substring(0, 9).toUpperCase(),
       tenantId: currentTenant?.id || '',
       name: newBranch.name.trim(),
       address: newBranch.address.trim(),
@@ -192,7 +204,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
           </div>
           <div>
             <h3 className="font-bold text-slate-800 dark:text-white">Need a refresher?</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Replay the platform tutorial to see how Obsidian works.</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Replay the platform tutorial to see how TrimTime works.</p>
           </div>
         </div>
         <button 
@@ -225,8 +237,9 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
             <div>
-              <label className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest block mb-2 ml-1">{t.terminalIdentity}</label>
+              <label htmlFor="shop-name" className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest block mb-2 ml-1">{t.terminalIdentity}</label>
               <input 
+                id="shop-name"
                 type="text" 
                 value={formData.shopName}
                 onChange={e => setFormData({...formData, shopName: e.target.value})}
@@ -235,8 +248,9 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
             </div>
 
             <div>
-              <label className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest block mb-2 ml-1">{t.language} / زبان</label>
+              <label htmlFor="shop-lang" className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest block mb-2 ml-1">{t.language} / زبان</label>
               <select 
+                id="shop-lang"
                 value={formData.language}
                 onChange={e => setFormData({...formData, language: e.target.value as Language})}
                 className="tt-input"
@@ -249,8 +263,9 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
             </div>
             
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest block ml-1">{t.preferredCurrency}</label>
+              <label htmlFor="shop-curr" className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest block ml-1">{t.preferredCurrency}</label>
               <select 
+                id="shop-curr"
                 value={isCustomCurrency ? 'CUSTOM' : formData.currency}
                 onChange={e => handleCurrencyChange(e.target.value)}
                 className="tt-input"
@@ -267,91 +282,99 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
-                    className="mt-2"
+                    className="space-y-2"
                   >
+                    <label htmlFor="shop-curr-custom" className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest block ml-1">{t.customCurrencySymbol || 'Custom Symbol'}</label>
                     <input 
-                      type="text" 
-                      placeholder="Symbol (e.g. Rs.)"
+                      id="shop-curr-custom"
+                      type="text"
                       value={formData.currency}
                       onChange={e => setFormData({...formData, currency: e.target.value})}
-                      className="tt-input py-3" 
+                      placeholder="e.g. USD, EUR, PKR"
+                      className="tt-input py-3"
+                      maxLength={10}
                     />
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
 
-            <div>
-              <label className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest block mb-2 ml-1">{t.countryCode}</label>
-              <select 
-                value={formData.countryCode}
-                onChange={e => setFormData({...formData, countryCode: e.target.value})}
-                className="tt-input"
-              >
-                {COUNTRY_CODES.map(code => (
-                  <option key={code.code} value={code.code}>{code.label}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest block mb-2 ml-1">{t.taxCalculation}</label>
-              <div className="flex bg-[var(--tt-surface-2)] p-1 rounded-2xl border border-[var(--tt-border)]">
-                <button 
-                  type="button"
-                  onClick={() => setFormData({...formData, taxType: 'excluded'})}
-                  className={`flex-1 py-2.5 rounded-xl font-bold text-xs transition-all ${formData.taxType === 'excluded' ? 'bg-[var(--tt-surface)] shadow-sm text-[var(--tt-text-main)]' : 'text-[var(--tt-text-muted)] hover:text-[var(--tt-text-main)]'}`}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6 mt-6">
+              <div>
+                <label htmlFor="shop-country" className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest block mb-2 ml-1">{t.countryCode}</label>
+                <select 
+                  id="shop-country"
+                  value={formData.countryCode}
+                  onChange={e => setFormData({...formData, countryCode: e.target.value})}
+                  className="tt-input"
                 >
-                  {t.excluded}
-                </button>
-                <button 
-                  type="button"
-                  onClick={() => setFormData({...formData, taxType: 'included'})}
-                  className={`flex-1 py-2.5 rounded-xl font-bold text-xs transition-all ${formData.taxType === 'included' ? 'bg-[var(--tt-surface)] shadow-sm text-[var(--tt-text-main)]' : 'text-[var(--tt-text-muted)] hover:text-[var(--tt-text-main)]'}`}
-                >
-                  {t.included}
-                </button>
+                  {COUNTRY_CODES.map(code => (
+                    <option key={code.code} value={code.code}>{code.label}</option>
+                  ))}
+                </select>
               </div>
-            </div>
 
-            <div>
-              <label className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest block mb-2 ml-1">{t.taxRate}</label>
-              <div className="relative">
-                <input 
-                  type="number" 
-                  step="0.1"
-                  min="0"
-                  max="100"
-                  value={formData.taxRate}
-                  onChange={e => setFormData({...formData, taxRate: parseFloat(e.target.value) || 0})}
-                  className="tt-input pr-12" 
+              <div>
+                <label className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest block mb-2 ml-1">{t.taxCalculation}</label>
+                <div className="flex bg-[var(--tt-surface-2)] p-1 rounded-2xl border border-[var(--tt-border)]">
+                  <button 
+                    type="button"
+                    onClick={() => setFormData({...formData, taxType: 'excluded'})}
+                    className={`flex-1 py-2.5 rounded-xl font-bold text-xs transition-all ${formData.taxType === 'excluded' ? 'bg-[var(--tt-surface)] shadow-sm text-[var(--tt-text-main)]' : 'text-[var(--tt-text-muted)] hover:text-[var(--tt-text-main)]'}`}
+                  >
+                    {t.excluded}
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={() => setFormData({...formData, taxType: 'included'})}
+                    className={`flex-1 py-2.5 rounded-xl font-bold text-xs transition-all ${formData.taxType === 'included' ? 'bg-[var(--tt-surface)] shadow-sm text-[var(--tt-text-main)]' : 'text-[var(--tt-text-muted)] hover:text-[var(--tt-text-main)]'}`}
+                  >
+                    {t.included}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="shop-taxrate" className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest block mb-2 ml-1">{t.taxRate}</label>
+                <div className="relative">
+                  <input 
+                    id="shop-taxrate"
+                    type="number" 
+                    step="0.1"
+                    min="0"
+                    max="100"
+                    value={formData.taxRate}
+                    onChange={e => setFormData({...formData, taxRate: parseFloat(e.target.value) || 0})}
+                    className="tt-input pr-12" 
+                  />
+                  <span className="absolute right-5 top-1/2 -translate-y-1/2 text-[var(--tt-text-muted)] font-black">%</span>
+                </div>
+              </div>
+
+              <div className="md:col-span-2 bg-[var(--tt-surface-2)] p-6 rounded-3xl border border-[var(--tt-border)] flex items-center justify-between">
+                <div className="flex-1 pr-4">
+                  <h4 className="text-sm font-bold text-[var(--tt-text-main)] mb-1">{t.deductExpenses}</h4>
+                  <p className="text-[10px] text-[var(--tt-text-muted)] leading-relaxed">{t.deductExpensesDesc}</p>
+                </div>
+                <div className="flex items-center">
+                  <input 
+                    type="checkbox" 
+                    checked={formData.deductExpensesFromCommission}
+                    onChange={e => setFormData({...formData, deductExpensesFromCommission: e.target.checked})}
+                    className="w-6 h-6 rounded-lg text-[var(--tt-amber)] focus:ring-[var(--tt-amber)] border-[var(--tt-border)] bg-transparent"
+                  />
+                </div>
+              </div>
+
+              <div className="md:col-span-2">
+                <label htmlFor="shop-receiptfooter" className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest block mb-2 ml-1">{t.receiptFooter}</label>
+                <textarea 
+                  id="shop-receiptfooter"
+                  value={formData.receiptFooter}
+                  onChange={e => setFormData({...formData, receiptFooter: e.target.value})}
+                  className="tt-input h-[52px] resize-none overflow-hidden" 
                 />
-                <span className="absolute right-5 top-1/2 -translate-y-1/2 text-[var(--tt-text-muted)] font-black">%</span>
               </div>
-            </div>
-
-            <div className="md:col-span-2 bg-[var(--tt-surface-2)] p-6 rounded-3xl border border-[var(--tt-border)] flex items-center justify-between">
-              <div className="flex-1 pr-4">
-                <h4 className="text-sm font-bold text-[var(--tt-text-main)] mb-1">{t.deductExpenses}</h4>
-                <p className="text-[10px] text-[var(--tt-text-muted)] leading-relaxed">{t.deductExpensesDesc}</p>
-              </div>
-              <div className="flex items-center">
-                <input 
-                  type="checkbox" 
-                  checked={formData.deductExpensesFromCommission}
-                  onChange={e => setFormData({...formData, deductExpensesFromCommission: e.target.checked})}
-                  className="w-6 h-6 rounded-lg text-[var(--tt-amber)] focus:ring-[var(--tt-amber)] border-[var(--tt-border)] bg-transparent"
-                />
-              </div>
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest block mb-2 ml-1">{t.receiptFooter}</label>
-              <textarea 
-                value={formData.receiptFooter}
-                onChange={e => setFormData({...formData, receiptFooter: e.target.value})}
-                className="tt-input h-[52px] resize-none overflow-hidden" 
-              />
             </div>
           </div>
         </motion.div>
@@ -527,8 +550,9 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
             <h4 className="text-xs font-black uppercase tracking-widest text-[var(--tt-text-main)]">{t.addNewBranch || 'Add New Location'}</h4>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest block mb-2 ml-1">{t.branchName || 'Branch Name'}</label>
+                <label htmlFor="branch-name" className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest block mb-2 ml-1">{t.branchName || 'Branch Name'}</label>
                 <input 
+                  id="branch-name"
                   type="text"
                   placeholder="e.g. Downtown"
                   value={newBranch.name}
@@ -537,8 +561,9 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
                 />
               </div>
               <div>
-                <label className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest block mb-2 ml-1">{t.address || 'Address'}</label>
+                <label htmlFor="branch-address" className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest block mb-2 ml-1">{t.address || 'Address'}</label>
                 <input 
+                  id="branch-address"
                   type="text"
                   placeholder="e.g. 123 Main St"
                   value={newBranch.address}
@@ -547,8 +572,9 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
                 />
               </div>
               <div>
-                <label className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest block mb-2 ml-1">{t.phone || 'Phone'}</label>
+                <label htmlFor="branch-phone" className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest block mb-2 ml-1">{t.phone || 'Phone'}</label>
                 <input 
+                  id="branch-phone"
                   type="tel"
                   placeholder="e.g. +1 555-0199"
                   value={newBranch.phone}
@@ -573,7 +599,12 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
 
           {/* List of Branches */}
           <div className="space-y-3">
-            <h4 className="text-xs font-black uppercase tracking-widest text-[var(--tt-text-muted)]">{t.activeBranches || 'Active Locations'} ({branches.length})</h4>
+            <h4 className="text-xs font-black uppercase tracking-widest text-[var(--tt-text-muted)] flex justify-between items-center">
+              <span>{t.activeBranches || 'Active Locations'} ({branches.length} / {getSubscriptionLimits(subscription).maxBranches})</span>
+              {branches.length >= getSubscriptionLimits(subscription).maxBranches && (
+                <span className="text-rose-500 font-extrabold text-[10px] animate-pulse uppercase">Limit Reached</span>
+              )}
+            </h4>
             <div className="grid grid-cols-1 gap-3">
               {branches.map(branch => (
                 <div 

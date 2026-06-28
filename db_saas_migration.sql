@@ -101,6 +101,7 @@ CREATE TABLE subscriptions (
   current_period_start  timestamptz NOT NULL DEFAULT now(),
   current_period_end    timestamptz,
   price                 numeric     NOT NULL DEFAULT 0,
+  add_on_packs          integer     NOT NULL DEFAULT 0,
   created_at            timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX idx_subscriptions_tenant_id ON subscriptions(tenant_id);

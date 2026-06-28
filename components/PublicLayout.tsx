@@ -41,9 +41,9 @@ const PublicLayout: React.FC = () => {
             Powered by <span className="text-white">TrimTime</span> SaaS
           </p>
           <div className="flex gap-6 mt-2">
-            <a href="#" className="text-slate-600 hover:text-slate-400 transition-colors text-[10px] font-black uppercase tracking-widest">Privacy</a>
-            <a href="#" className="text-slate-600 hover:text-slate-400 transition-colors text-[10px] font-black uppercase tracking-widest">Terms</a>
-            <a href="#" className="text-slate-600 hover:text-slate-400 transition-colors text-[10px] font-black uppercase tracking-widest">Support</a>
+            <Link to="/privacy" className="text-slate-600 hover:text-slate-400 transition-colors text-[10px] font-black uppercase tracking-widest">Privacy</Link>
+            <Link to="/terms" className="text-slate-600 hover:text-slate-400 transition-colors text-[10px] font-black uppercase tracking-widest">Terms</Link>
+            <a href="mailto:support@trimtimepos.com" className="text-slate-600 hover:text-slate-400 transition-colors text-[10px] font-black uppercase tracking-widest">Support</a>
           </div>
         </div>
       </footer>

@@ -1,6 +1,17 @@
 
+import React, { useState, useRef, useMemo, useEffect, Suspense, lazy } from 'react';
+import { useData } from '../contexts/DataContext';
+import { Sale, Expense, Staff, Language, Customer, ShopSettings, AdvancePayment } from '../types';
+import { TRANSLATIONS } from '../constants';
+import { getFinancialInsights } from '../services/geminiService';
+import { motion, AnimatePresence } from 'framer-motion';
+import ReactMarkdown from 'react-markdown';
+import { parseISO, isValid, isSameMonth, isSameYear, format, getDaysInMonth, startOfDay, endOfDay, isWithinInterval } from 'date-fns';
+
+const PerformanceBarChart = lazy(() => import('./Charts').then(m => ({ default: m.PerformanceBarChart })));
+
 // Helper to calculate split commissions (service vs product)
-const calculateCommissionForStaff = (staffMember, salesList) => {
+const calculateCommissionForStaff = (staffMember: Staff, salesList: Sale[]) => {
   let commission = 0;
   salesList.forEach(sale => {
     let saleServiceTotal = 0;
@@ -33,16 +44,13 @@ const calculateCommissionForStaff = (staffMember, salesList) => {
   });
   return commission;
 };
-import React, { useState, useRef, useMemo, useEffect, Suspense, lazy } from 'react';
-import { useData } from '../contexts/DataContext';
-import { Sale, Expense, Staff, Language, Customer, ShopSettings, AdvancePayment } from '../types';
-import { TRANSLATIONS } from '../constants';
-import { getFinancialInsights } from '../services/geminiService';
-import { motion, AnimatePresence } from 'framer-motion';
-import ReactMarkdown from 'react-markdown';
-import { parseISO, isValid, isSameMonth, isSameYear, format, getDaysInMonth, startOfDay, endOfDay, isWithinInterval } from 'date-fns';
 
-const PerformanceBarChart = lazy(() => import('./Charts').then(m => ({ default: m.PerformanceBarChart })));
+const financeWarnTranslations = {
+  en: "Historical Data Limit: To optimize performance, reports show data from the last 90 days only. Older records are safely stored in the database.",
+  ur: "تاریخی ڈیٹا کی حد: کارکردگی کو بہتر بنانے کے لیے، رپورٹس صرف گزشتہ 90 دنوں کا ڈیٹا دکھاتی ہیں۔ پرانے ریکارڈز ڈیٹا بیس میں محفوظ ہیں۔",
+  ar: "حد البيانات التاريخية: لتحسين الأداء، تعرض التقارير بيانات آخر 90 يومًا فقط. السجلات الأقدم محفوظة بشكل آمن في قاعدة البيانات.",
+  hi: "ऐतिहासिक डेटा सीमा: प्रदर्शन को बेहतर बनाने के लिए, रिपोर्ट केवल पिछले 90 दिनों का डेटा दिखाती हैं। पुराने रिकॉर्ड डेटाबेस में सुरक्षित हैं।"
+};
 
 interface FinanceProps {
   sales: Sale[];
@@ -576,6 +584,14 @@ const [newExp, setNewExp] = useState<{ category: string; amount: string; descrip
             })}
           </select>
         </div>
+      </div>
+
+      {/* 90-day Data Window Info Warning (BUG-06) */}
+      <div className="mb-6 p-4 bg-amber-500/10 border border-amber-500/20 rounded-3xl text-amber-400 text-xs flex items-start gap-3 shadow-sm no-print">
+        <span className="text-base shrink-0">⚠️</span>
+        <p className="leading-relaxed font-bold">
+          {financeWarnTranslations[language] || financeWarnTranslations['en']}
+        </p>
       </div>
 
       <AnimatePresence mode="wait">

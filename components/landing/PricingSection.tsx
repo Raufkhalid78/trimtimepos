@@ -7,24 +7,24 @@ interface PricingSectionProps {
 
 const features = {
   monthly: [
+    'Max 10 branches / locations',
+    'Max 30 employees / staff',
     'Unlimited transactions',
     'Full POS terminal',
     'Staff management & commissions',
     'Inventory & supplier tracking',
     'Customer CRM & loyalty',
-    'WhatsApp receipts',
-    'Mobile PWA (offline capable)',
     'Standard support',
   ],
   yearly: [
+    'Max 25 branches & 100 staff',
     'Everything in Monthly',
     'AI-powered financial reports',
     'Priority 24/7 support',
     'Advanced analytics dashboard',
     'Early access to new features',
-    'Unlimited staff members',
     'Custom booking page',
-    'Save $40 per year',
+    'Save $30 per year',
   ],
 };
 
@@ -80,7 +80,7 @@ const PricingSection: React.FC<PricingSectionProps> = ({ onGoToSignUp }) => {
                         ? 'bg-slate-950/20 text-slate-950'
                         : 'bg-amber-500/20 text-amber-400'
                     }`}>
-                      Save $40
+                      Save $30
                     </span>
                   )}
                 </span>
@@ -107,7 +107,7 @@ const PricingSection: React.FC<PricingSectionProps> = ({ onGoToSignUp }) => {
             <div className="mb-6">
               <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Monthly</h3>
               <div className="flex items-baseline gap-1 mb-1">
-                <span className="text-5xl font-black text-white">$20</span>
+                <span className="text-5xl font-black text-white">$15</span>
                 <span className="text-slate-500 font-bold">/month</span>
               </div>
               <p className="text-emerald-400 text-sm font-bold">+ 1 Month Free Trial</p>
@@ -145,13 +145,13 @@ const PricingSection: React.FC<PricingSectionProps> = ({ onGoToSignUp }) => {
           >
             {/* Best value badge */}
             <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 px-5 py-1.5 rounded-full text-[11px] font-black uppercase tracking-widest whitespace-nowrap shadow-lg shadow-amber-500/30">
-              Best Value · Save $40 · Just $16.67/mo
+              Best Value · Save $30 · Just $12.50/mo
             </div>
 
             <div className="mb-6 mt-4">
               <h3 className="text-xs font-black uppercase tracking-[0.2em] text-amber-400 mb-4">Yearly</h3>
               <div className="flex items-baseline gap-1 mb-1">
-                <span className="text-5xl font-black text-white">$200</span>
+                <span className="text-5xl font-black text-white">$150</span>
                 <span className="text-slate-500 font-bold">/year</span>
               </div>
               <p className="text-emerald-400 text-sm font-bold">+ 1 Month Free Trial</p>

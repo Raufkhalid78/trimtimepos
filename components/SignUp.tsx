@@ -142,8 +142,9 @@ const SignUp: React.FC<SignUpProps> = ({ onBack, onSuccess }) => {
                   </div>
 
                   <div className="space-y-2">
-                    <label className={`text-[10px] font-black text-slate-500 uppercase tracking-widest block ${sessionLanguage === 'ur' ? 'mr-1 text-right' : 'ml-1'}`}>{t.yourFullName}</label>
+                    <label htmlFor="ownerName" className={`text-[10px] font-black text-slate-500 uppercase tracking-widest block ${sessionLanguage === 'ur' ? 'mr-1 text-right' : 'ml-1'}`}>{t.yourFullName}</label>
                     <input
+                      id="ownerName"
                       type="text"
                       value={ownerName}
                       onChange={e => setOwnerName(e.target.value)}
@@ -154,8 +155,9 @@ const SignUp: React.FC<SignUpProps> = ({ onBack, onSuccess }) => {
                   </div>
 
                   <div className="space-y-2">
-                    <label className={`text-[10px] font-black text-slate-500 uppercase tracking-widest block ${sessionLanguage === 'ur' ? 'mr-1 text-right' : 'ml-1'}`}>{t.emailAddress}</label>
+                    <label htmlFor="email" className={`text-[10px] font-black text-slate-500 uppercase tracking-widest block ${sessionLanguage === 'ur' ? 'mr-1 text-right' : 'ml-1'}`}>{t.emailAddress}</label>
                     <input
+                      id="email"
                       type="email"
                       value={email}
                       onChange={e => setEmail(e.target.value)}
@@ -166,9 +168,10 @@ const SignUp: React.FC<SignUpProps> = ({ onBack, onSuccess }) => {
                   </div>
 
                   <div className="space-y-2">
-                    <label className={`text-[10px] font-black text-slate-500 uppercase tracking-widest block ${sessionLanguage === 'ur' ? 'mr-1 text-right' : 'ml-1'}`}>{t.passwordSignUp}</label>
+                    <label htmlFor="password" className={`text-[10px] font-black text-slate-500 uppercase tracking-widest block ${sessionLanguage === 'ur' ? 'mr-1 text-right' : 'ml-1'}`}>{t.passwordSignUp}</label>
                     <div className="relative">
                       <input
+                        id="password"
                         type={showPassword1 ? 'text' : 'password'}
                         value={password}
                         onChange={e => setPassword(e.target.value)}
@@ -183,9 +186,10 @@ const SignUp: React.FC<SignUpProps> = ({ onBack, onSuccess }) => {
                   </div>
 
                   <div className="space-y-2">
-                    <label className={`text-[10px] font-black text-slate-500 uppercase tracking-widest block ${sessionLanguage === 'ur' ? 'mr-1 text-right' : 'ml-1'}`}>{t.confirmPassword}</label>
+                    <label htmlFor="confirmPassword" className={`text-[10px] font-black text-slate-500 uppercase tracking-widest block ${sessionLanguage === 'ur' ? 'mr-1 text-right' : 'ml-1'}`}>{t.confirmPassword}</label>
                     <div className="relative">
                       <input
+                        id="confirmPassword"
                         type={showPassword2 ? 'text' : 'password'}
                         value={confirmPassword}
                         onChange={e => setConfirmPassword(e.target.value)}

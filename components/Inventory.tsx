@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Service, Product, ShopSettings, Supplier, StockLog } from '../types';
 import { TRANSLATIONS } from '../constants';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
+import type { Html5Qrcode as Html5QrcodeType } from 'html5-qrcode';
 import { format, parseISO } from 'date-fns';
 
 interface InventoryProps {
@@ -28,7 +28,7 @@ const Inventory: React.FC<InventoryProps> = ({
   const [isScanning, setIsScanning] = useState(false);
   const [showErrorAlert, setShowErrorAlert] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<{id: string, type: 'service' | 'product' | 'supplier'} | null>(null);
-  const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
+  const html5QrCodeRef = useRef<Html5QrcodeType | null>(null);
   const barcodeInputRef = useRef<HTMLInputElement>(null);
   const isScannerActiveRef = useRef(false);
 
@@ -71,6 +71,7 @@ const Inventory: React.FC<InventoryProps> = ({
             await cleanupScanner();
 
             try {
+                const { Html5Qrcode, Html5QrcodeSupportedFormats } = await import('html5-qrcode');
                 const html5QrCode = new Html5Qrcode(elementId, {
                   formatsToSupport: [
                     Html5QrcodeSupportedFormats.EAN_13,
@@ -408,45 +409,45 @@ const Inventory: React.FC<InventoryProps> = ({
                 {activeTab === 'suppliers' ? (
                   <>
                     <div>
-                        <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.supplierName}</label>
-                        <input name="name" type="text" defaultValue={isEditing.name || ''} required className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200" />
+                        <label htmlFor="sup-name" className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.supplierName}</label>
+                        <input id="sup-name" name="name" type="text" defaultValue={isEditing.name || ''} required className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200" />
                     </div>
                     <div>
-                        <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.contactPerson}</label>
-                        <input name="contactName" type="text" defaultValue={isEditing.contactName || ''} required className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200" />
+                        <label htmlFor="sup-contact" className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.contactPerson}</label>
+                        <input id="sup-contact" name="contactName" type="text" defaultValue={isEditing.contactName || ''} required className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200" />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.phone}</label>
-                            <input name="phone" type="text" defaultValue={isEditing.phone || ''} required className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200" />
+                            <label htmlFor="sup-phone" className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.phone}</label>
+                            <input id="sup-phone" name="phone" type="text" defaultValue={isEditing.phone || ''} required className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200" />
                         </div>
                         <div>
-                            <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.email}</label>
-                            <input name="email" type="email" defaultValue={isEditing.email || ''} className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200" />
+                            <label htmlFor="sup-email" className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.email}</label>
+                            <input id="sup-email" name="email" type="email" defaultValue={isEditing.email || ''} className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200" />
                         </div>
                     </div>
                     <div>
-                        <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.address}</label>
-                        <textarea name="address" defaultValue={isEditing.address || ''} className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200" rows={2} />
+                        <label htmlFor="sup-address" className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.address}</label>
+                        <textarea id="sup-address" name="address" defaultValue={isEditing.address || ''} className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200" rows={2} />
                     </div>
                   </>
                 ) : activeTab === 'logs' ? (
                   <>
                     <div>
-                        <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">Product</label>
-                        <select name="productId" required className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200">
+                        <label htmlFor="log-product" className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">Product</label>
+                        <select id="log-product" name="productId" required className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200">
                            <option value="">Select a product...</option>
                            {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                         </select>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">Change</label>
-                            <input name="change" type="number" placeholder="+5 or -2" required className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200" />
+                            <label htmlFor="log-change" className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">Change</label>
+                            <input id="log-change" name="change" type="number" placeholder="+5 or -2" required className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200" />
                         </div>
                         <div>
-                            <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">Reason</label>
-                            <select name="reason" required className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200">
+                            <label htmlFor="log-reason" className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">Reason</label>
+                            <select id="log-reason" name="reason" required className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200">
                                 <option value="restock">{t.restock}</option>
                                 <option value="adjustment">{t.adjustment}</option>
                                 <option value="damage">{t.damage}</option>
@@ -455,20 +456,21 @@ const Inventory: React.FC<InventoryProps> = ({
                         </div>
                     </div>
                     <div>
-                        <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">Notes (Optional)</label>
-                        <input name="notes" type="text" className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200" />
+                        <label htmlFor="log-notes" className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">Notes (Optional)</label>
+                        <input id="log-notes" name="notes" type="text" className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200" />
                     </div>
                   </>
                 ) : (
                   <>
                     <div>
-                        <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.name}</label>
-                        <input name="name" type="text" defaultValue={isEditing.name || ''} required className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200" />
+                        <label htmlFor="inv-name" className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.name}</label>
+                        <input id="inv-name" name="name" type="text" defaultValue={isEditing.name || ''} required className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200" />
                     </div>
                     
                     <div>
-                        <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.nameUr}</label>
+                        <label htmlFor="inv-name-ur" className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.nameUr}</label>
                         <input
+                          id="inv-name-ur"
                           name="nameUr"
                           type="text"
                           defaultValue={isEditing.nameUr || ''}
@@ -483,9 +485,9 @@ const Inventory: React.FC<InventoryProps> = ({
                     
                     {activeTab === 'products' && (
                       <div>
-                        <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.barcode}</label>
+                        <label htmlFor="inv-barcode" className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.barcode}</label>
                         <div className="flex gap-2">
-                            <input ref={barcodeInputRef} name="barcode" type="text" defaultValue={isEditing.barcode || ''} className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200" />
+                            <input ref={barcodeInputRef} id="inv-barcode" name="barcode" type="text" defaultValue={isEditing.barcode || ''} className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200" />
                             <button type="button" onClick={() => setIsScanning(true)} className="bg-slate-900 text-white p-3.5 rounded-2xl hover:bg-slate-800 transition-colors">
                                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
                             </button>
@@ -495,18 +497,18 @@ const Inventory: React.FC<InventoryProps> = ({
 
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.price}</label>
-                        <input name="price" type="number" step="0.01" defaultValue={isEditing.price || ''} required className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200" />
+                        <label htmlFor="inv-price" className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.price}</label>
+                        <input id="inv-price" name="price" type="number" step="0.01" defaultValue={isEditing.price || ''} required className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200" />
                       </div>
                       {activeTab === 'products' ? (
                           <div>
-                            <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.cost}</label>
-                            <input name="cost" type="number" step="0.01" defaultValue={isEditing.cost || ''} className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200" />
+                            <label htmlFor="inv-cost" className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.cost}</label>
+                            <input id="inv-cost" name="cost" type="number" step="0.01" defaultValue={isEditing.cost || ''} className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200" />
                           </div>
                       ) : (
                           <div>
-                            <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.mins}</label>
-                            <input name="duration" type="number" defaultValue={isEditing.duration || 30} className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200" />
+                            <label htmlFor="inv-duration" className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.mins}</label>
+                            <input id="inv-duration" name="duration" type="number" defaultValue={isEditing.duration || 30} className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200" />
                           </div>
                       )}
                     </div>
@@ -514,18 +516,18 @@ const Inventory: React.FC<InventoryProps> = ({
                     {activeTab === 'products' ? (
                       <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.stock}</label>
-                            <input name="stock" type="number" defaultValue={isEditing.stock || 0} className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200" />
+                            <label htmlFor="inv-stock" className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.stock}</label>
+                            <input id="inv-stock" name="stock" type="number" defaultValue={isEditing.stock || 0} className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200" />
                           </div>
                           <div>
-                            <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.alertQty}</label>
-                            <input name="lowStockThreshold" type="number" defaultValue={isEditing.lowStockThreshold || 15} className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200" />
+                            <label htmlFor="inv-lowstock-qty" className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.alertQty}</label>
+                            <input id="inv-lowstock-qty" name="lowStockThreshold" type="number" defaultValue={isEditing.lowStockThreshold || 15} className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200" />
                           </div>
                       </div>
                     ) : (
                        <div>
-                        <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.category}</label>
-                        <input name="category" type="text" defaultValue={isEditing.category || ''} required className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200" />
+                        <label htmlFor="inv-category" className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.category}</label>
+                        <input id="inv-category" name="category" type="text" defaultValue={isEditing.category || ''} required className="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3.5 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm font-bold dark:text-slate-200" />
                        </div>
                     )}
                   </>

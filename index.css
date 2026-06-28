@@ -105,6 +105,7 @@ html.dark {
   /* Glassmorphism */
   .glass-topbar {
     @apply backdrop-blur-xl border-b border-[var(--tt-border)];
+    background-color: var(--tt-surface);
     background-color: color-mix(in srgb, var(--tt-surface), transparent 20%);
   }
 

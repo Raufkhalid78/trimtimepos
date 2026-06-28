@@ -3,6 +3,7 @@ import Sidebar from '@/components/Sidebar';
 import TopBar from '@/components/TopBar';
 import Login from '@/components/Login';
 import InstallBanner from '@/components/InstallBanner';
+import IOSInstallGuide from '@/components/IOSInstallGuide';
 import LogoutScreen from '@/components/LogoutScreen';
 import OnboardingTour from '@/components/OnboardingTour';
 const LandingPage = lazy(() => import('@/components/LandingPage'));
@@ -208,6 +209,8 @@ const App: React.FC = () => {
       </div>
 
       <InstallBanner deferredPrompt={deferredPrompt} onClose={() => setDeferredPrompt(null)} />
+
+      <IOSInstallGuide />
 
       <OnboardingTour />
 

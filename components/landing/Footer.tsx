@@ -26,7 +26,7 @@ const Footer: React.FC<FooterProps> = ({ onGoToLogin, onGoToSignUp }) => {
             <p className="text-slate-500 text-sm leading-relaxed max-w-xs mb-6">
               The complete business management platform built exclusively for barbers and beauty professionals.
             </p>
-            {/* Social icons */}
+            {/* Social icons (uncomment and add links when available)
             <div className="flex items-center gap-3">
               {[
                 {
@@ -58,6 +58,7 @@ const Footer: React.FC<FooterProps> = ({ onGoToLogin, onGoToSignUp }) => {
                 </a>
               ))}
             </div>
+            */}
           </div>
 
           {/* Product col (2 cols) */}

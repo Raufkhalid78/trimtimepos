@@ -5,6 +5,7 @@ import { TRANSLATIONS } from '../constants';
 import { format } from 'date-fns';
 import { whatsAppService } from '../services/whatsAppService';
 import { setPageMeta } from '../utils/seo';
+import { useToast } from '../contexts/ToastContext';
 
 interface AppointmentsProps {
   appointments: Appointment[];
@@ -42,6 +43,8 @@ const Appointments: React.FC<AppointmentsProps> = ({
     return selectedBranchId === 'all' ? appointments : appointments.filter(a => a.branchId === selectedBranchId);
   }, [appointments, selectedBranchId]);
 
+  const { showToast } = useToast();
+  const [confirmModal, setConfirmModal] = useState<{ isOpen: boolean; message: string; onConfirm: () => void; } | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
@@ -73,12 +76,27 @@ const Appointments: React.FC<AppointmentsProps> = ({
     });
   };
 
+  const executeSave = () => {
+    if (editingAppointment) {
+      const updated = appointments.map(app => app.id === editingAppointment.id ? { ...editingAppointment, ...formData } as Appointment : app);
+      onUpdateAppointments(updated);
+    } else {
+      const newApp: Appointment = {
+        id: 'app_' + Math.random().toString(36).substr(2, 9),
+        branchId: selectedBranchId !== 'all' ? selectedBranchId : (currentStaffList.find(s => s.id === formData.staffId)?.branchId || undefined),
+        ...(formData as Omit<Appointment, 'id'>)
+      };
+      onUpdateAppointments([...appointments, newApp]);
+    }
+    closeModal();
+  };
+
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     
     // Quick validation
     if (!formData.startTime || !formData.endTime || !formData.staffId || formData.serviceIds?.length === 0) {
-      alert("Please fill in all required fields.");
+      showToast("Please fill in all required fields.", "error");
       return;
     }
 
@@ -95,41 +113,40 @@ const Appointments: React.FC<AppointmentsProps> = ({
       return (start < appEnd && end > appStart);
     });
 
-    if (hasOverlap) {
-      const confirmOverlap = window.confirm("Warning: This staff member already has an appointment at this time. Do you want to proceed anyway?");
-      if (!confirmOverlap) return;
-    }
+    const checkAvailabilityAndSave = () => {
+      const dayOfWeek = start.getDay();
+      const avail = staffAvailability.find(a => a.staffId === formData.staffId && a.dayOfWeek === dayOfWeek);
+      if (avail) {
+        const [startH, startM] = avail.startTime.split(':').map(Number);
+        const [endH, endM] = avail.endTime.split(':').map(Number);
+        
+        const availStart = new Date(start);
+        availStart.setHours(startH, startM, 0, 0);
+        const availEnd = new Date(start);
+        availEnd.setHours(endH, endM, 0, 0);
 
-    // Availability Check
-    const dayOfWeek = start.getDay();
-    const avail = staffAvailability.find(a => a.staffId === formData.staffId && a.dayOfWeek === dayOfWeek);
-    if (avail) {
-      const [startH, startM] = avail.startTime.split(':').map(Number);
-      const [endH, endM] = avail.endTime.split(':').map(Number);
-      
-      const availStart = new Date(start);
-      availStart.setHours(startH, startM, 0, 0);
-      const availEnd = new Date(start);
-      availEnd.setHours(endH, endM, 0, 0);
-
-      if (start < availStart || end > availEnd) {
-        const confirmAvail = window.confirm("Warning: This time is outside the staff member's working hours. Do you want to proceed?");
-        if (!confirmAvail) return;
+        if (start < availStart || end > availEnd) {
+          setConfirmModal({
+            isOpen: true,
+            message: "Warning: This time is outside the staff member's working hours. Do you want to proceed?",
+            onConfirm: () => executeSave()
+          });
+          return;
+        }
       }
+      executeSave();
+    };
+
+    if (hasOverlap) {
+      setConfirmModal({
+        isOpen: true,
+        message: "Warning: This staff member already has an appointment at this time. Do you want to proceed anyway?",
+        onConfirm: () => checkAvailabilityAndSave()
+      });
+      return;
     }
 
-    if (editingAppointment) {
-      const updated = appointments.map(app => app.id === editingAppointment.id ? { ...editingAppointment, ...formData } as Appointment : app);
-      onUpdateAppointments(updated);
-    } else {
-      const newApp: Appointment = {
-        id: 'app_' + Math.random().toString(36).substr(2, 9),
-        branchId: selectedBranchId !== 'all' ? selectedBranchId : (currentStaffList.find(s => s.id === formData.staffId)?.branchId || undefined),
-        ...(formData as Omit<Appointment, 'id'>)
-      };
-      onUpdateAppointments([...appointments, newApp]);
-    }
-    closeModal();
+    checkAvailabilityAndSave();
   };
 
   const closeModal = () => {
@@ -363,8 +380,12 @@ const Appointments: React.FC<AppointmentsProps> = ({
                     return (
                       <td 
                         key={`${staff.id}-${hour}`} 
-                        className="p-1 border-b border-r dark:border-slate-700 relative h-20 align-top group cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                        tabIndex={0}
+                        role="button"
+                        aria-label={`Book appointment with ${staff.name} at ${hour === 12 ? '12 PM' : hour > 12 ? `${hour - 12} PM` : `${hour} AM`}`}
+                        className="p-1 border-b border-r dark:border-slate-700 relative h-20 align-top group cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors focus:ring-2 focus:ring-amber-500 focus:outline-none"
                         onClick={() => openSlot(staff.id, hour)}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openSlot(staff.id, hour); } }}
                       >
                         {slotAppts.map(app => {
                           const customer = customers.find(c => c.id === app.customerId);
@@ -376,8 +397,12 @@ const Appointments: React.FC<AppointmentsProps> = ({
                           return (
                             <div 
                               key={app.id} 
+                              tabIndex={0}
+                              role="button"
+                              aria-label={`Edit appointment for ${app.customerName || 'Guest'} with ${staff.name}`}
                               onClick={(e) => { e.stopPropagation(); setEditingAppointment(app); setFormData(app); setIsAdding(true); }}
-                              className={`absolute inset-x-1 top-1 bottom-1 rounded-lg p-2 text-xs font-bold shadow-sm overflow-hidden border group/card
+                              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); e.preventDefault(); setEditingAppointment(app); setFormData(app); setIsAdding(true); } }}
+                              className={`absolute inset-x-1 top-1 bottom-1 rounded-lg p-2 text-xs font-bold shadow-sm overflow-hidden border group/card focus:ring-2 focus:ring-amber-500 focus:outline-none
                                 ${app.status === 'confirmed' ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800 dark:text-emerald-300' :
                                   app.status === 'completed' ? 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400 opacity-60' :
                                   isNoShow ? 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-900/20 dark:border-rose-800 dark:text-rose-300 opacity-70' :
@@ -645,6 +670,46 @@ const Appointments: React.FC<AppointmentsProps> = ({
                   )}
                 </div>
               </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Custom Overlap/Availability Warning Modal */}
+      <AnimatePresence>
+        {confirmModal && confirmModal.isOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm no-print">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-[var(--tt-surface)] border border-[var(--tt-border)] rounded-3xl p-6 max-w-sm w-full text-center shadow-2xl"
+            >
+              <div className="w-12 h-12 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-500 mx-auto mb-4">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-bold text-[var(--tt-text-main)] mb-2">Attention Required</h3>
+              <p className="text-[var(--tt-text-muted)] text-sm mb-6 leading-relaxed">{confirmModal.message}</p>
+              <div className="flex gap-4">
+                <button
+                  onClick={() => {
+                    const confirmFn = confirmModal.onConfirm;
+                    setConfirmModal(null);
+                    confirmFn();
+                  }}
+                  className="flex-1 py-3 bg-[var(--tt-amber)] hover:scale-105 active:scale-95 text-slate-950 rounded-xl font-black text-sm uppercase tracking-wider transition-all"
+                >
+                  Proceed
+                </button>
+                <button
+                  onClick={() => setConfirmModal(null)}
+                  className="flex-1 py-3 bg-[var(--tt-surface-2)] text-[var(--tt-text-main)] border border-[var(--tt-border)] rounded-xl font-bold text-sm transition-colors hover:bg-[var(--tt-surface)]"
+                >
+                  Cancel
+                </button>
+              </div>
             </motion.div>
           </div>
         )}

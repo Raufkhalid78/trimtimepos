@@ -84,7 +84,42 @@ export function isSubscriptionValid(subscription: Subscription | null): boolean 
  */
 export function getPlanDisplayInfo(plan: 'monthly' | 'yearly'): { name: string; price: string; period: string; savings?: string } {
   if (plan === 'monthly') {
-    return { name: 'Monthly', price: '$20', period: '/month' };
+    return { name: 'Monthly', price: '$15', period: '/month' };
   }
-  return { name: 'Yearly', price: '$200', period: '/year', savings: 'Save $40' };
+  return { name: 'Yearly', price: '$150', period: '/year', savings: 'Save $30' };
+}
+
+export interface SubscriptionLimits {
+  maxBranches: number;
+  maxEmployees: number;
+}
+
+/**
+ * Determine maximum branches and employees based on active plan and add-on packs.
+ */
+export function getSubscriptionLimits(subscription: Subscription | null): SubscriptionLimits {
+  if (!subscription) {
+    return { maxBranches: 1, maxEmployees: 1 };
+  }
+
+  // Base limits
+  let baseBranches = 10;
+  let baseEmployees = 30;
+
+  if (subscription.status === 'trial') {
+    // Generous trial quotas
+    baseBranches = 2;
+    baseEmployees = 5;
+  } else if (subscription.plan === 'yearly') {
+    baseBranches = 25;
+    baseEmployees = 100;
+  }
+
+  // Stackable add-on packs: each pack adds 10 branches and 50 employees
+  const packsCount = subscription.addOnPacks || 0;
+
+  return {
+    maxBranches: baseBranches + (packsCount * 10),
+    maxEmployees: baseEmployees + (packsCount * 50)
+  };
 }

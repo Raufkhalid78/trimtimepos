@@ -26,10 +26,8 @@ export const ensureHashed = async (password: string): Promise<string> => {
  * @returns True if the password matches the hash, false otherwise.
  */
 export const verifyPassword = async (password: string, hash: string): Promise<boolean> => {
-  // If the stored "hash" does not look like a bcrypt hash, it might be a plaintext legacy password
-  if (!hash.startsWith('$2a$') && !hash.startsWith('$2b$')) {
-    console.warn("Legacy plaintext password detected. This should be migrated.");
-    return password === hash;
+  if (!hash || (!hash.startsWith('$2a$') && !hash.startsWith('$2b$'))) {
+    return false;
   }
   return bcrypt.compare(password, hash);
 };

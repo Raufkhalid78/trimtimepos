@@ -48,7 +48,7 @@ export const DEFAULT_SETTINGS: ShopSettings = {
   deductExpensesFromCommission: false,
   loyaltyEnabled: true,
   pointsPerCurrency: 1,
-  pointRedemptionValue: 1,
+  pointRedemptionValue: 0.01,
   minPointsToRedeem: 100,
   bookingEnabled: false,
   bookingSlug: ''

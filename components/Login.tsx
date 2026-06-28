@@ -5,6 +5,7 @@ import { TRANSLATIONS } from '../constants';
 import { motion, AnimatePresence } from 'framer-motion';
 import { verifyPassword } from '../services/passwordService';
 import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../supabaseClient';
 
 interface LoginProps {
   onLogin: (user: Staff, rememberMe: boolean) => void;
@@ -35,21 +36,40 @@ const Login: React.FC<LoginProps> = ({ onLogin, staffList, shopName, onGoToSignU
     const potentialUsers = staffList.filter(s => s.username === username);
     let matchedUser: Staff | null = null;
 
-    for (const user of potentialUsers) {
-      if (await verifyPassword(password, user.password || '')) {
-        matchedUser = user;
-        break;
-      }
-    }
+    try {
+      for (const user of potentialUsers) {
+        const { data, error } = await supabase
+          .from('staff')
+          .select('password')
+          .eq('id', user.id)
+          .single();
 
-    if (matchedUser) {
-      onLogin(matchedUser, rememberMe);
-    } else {
+        if (error) {
+          console.error('Error fetching password hash:', error);
+          continue;
+        }
+
+        if (data && await verifyPassword(password, data.password || '')) {
+          matchedUser = user;
+          break;
+        }
+      }
+
+      if (matchedUser) {
+        onLogin(matchedUser, rememberMe);
+      } else {
+        setError(t.invalidLogin);
+        setShake(true);
+        setTimeout(() => setShake(false), 600);
+      }
+    } catch (err: any) {
+      console.error('Login error:', err);
       setError(t.invalidLogin);
       setShake(true);
       setTimeout(() => setShake(false), 600);
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   const getAdminContact = () => staffList.find(s => s.role === 'admin');
@@ -178,7 +198,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, staffList, shopName, onGoToSignU
             <form onSubmit={handleLogin} className="space-y-5">
               {/* Username */}
               <div className="space-y-2">
-                <label className={`text-[10px] font-black text-slate-400 uppercase tracking-widest block ${sessionLanguage === 'ur' ? 'text-right' : ''}`}>
+                <label htmlFor="username" className={`text-[10px] font-black text-slate-400 uppercase tracking-widest block ${sessionLanguage === 'ur' ? 'text-right' : ''}`}>
                   {t.usernameLabel}
                 </label>
                 <div className="relative">
@@ -186,6 +206,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, staffList, shopName, onGoToSignU
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
                   <input
+                    id="username"
                     type="text"
                     value={username}
                     onChange={e => { setUsername(e.target.value); setError(''); }}
@@ -199,7 +220,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, staffList, shopName, onGoToSignU
 
               {/* Password */}
               <div className="space-y-2">
-                <label className={`text-[10px] font-black text-slate-400 uppercase tracking-widest block ${sessionLanguage === 'ur' ? 'text-right' : ''}`}>
+                <label htmlFor="password" className={`text-[10px] font-black text-slate-400 uppercase tracking-widest block ${sessionLanguage === 'ur' ? 'text-right' : ''}`}>
                   {t.passwordLabel}
                 </label>
                 <div className="relative">
@@ -207,6 +228,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, staffList, shopName, onGoToSignU
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                   </svg>
                   <input
+                    id="password"
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={e => { setPassword(e.target.value); setError(''); }}

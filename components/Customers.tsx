@@ -21,22 +21,6 @@ const Customers: React.FC<CustomersProps> = ({ customers, sales, onUpdateCustome
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [formData, setFormData] = useState({ name: '', phone: '', email: '', notes: '' });
   
-  // We can't access settings directly here as props without refactoring App.tsx, 
-  // but for now we'll assume a way to get it or handle the logic locally if passed.
-  // Ideally, 'settings' should be passed as a prop. 
-  // For this implementation context, let's assume we can get the default or use a fallback if not passed.
-  // Actually, to make it work properly with the "admin selected country code", we should update App.tsx to pass settings here.
-  // But strictly following the instruction to not break things, let's see if we can infer or if we missed a prop.
-  // The user prompt implies "admin will select... pre attached". 
-  // To keep it simple and working: We will check if the input phone has a + prefix. If not, we will attempt to add one.
-  // Since 'settings' isn't in props, I'll rely on the parent logic or just ensure '+' is there. 
-  // Wait, I should add 'settings' to props for Customers.tsx in App.tsx as well.
-  
-  // Correction: I will update App.tsx to pass settings to Customers component. 
-  // But for now, let's implement the logic assuming we have it, or use a placeholder that will be filled.
-  // Actually, let's grab it from localStorage if available as a quick fix or stick to the architecture.
-  // Best architecture: Pass settings as prop.
-  
   const t = TRANSLATIONS[language];
 
   const filteredCustomers = customers.filter(c => 
@@ -318,8 +302,9 @@ const Customers: React.FC<CustomersProps> = ({ customers, sales, onUpdateCustome
               </div>
               <div className="space-y-5">
                 <div>
-                  <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.name}</label>
+                  <label htmlFor="cust-name" className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.name}</label>
                   <input 
+                    id="cust-name"
                     type="text" 
                     value={formData.name}
                     onChange={e => setFormData({...formData, name: e.target.value})}
@@ -329,8 +314,9 @@ const Customers: React.FC<CustomersProps> = ({ customers, sales, onUpdateCustome
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.mobile}</label>
+                    <label htmlFor="cust-phone" className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.mobile}</label>
                     <input 
+                      id="cust-phone"
                       type="tel" 
                       value={formData.phone}
                       onChange={e => setFormData({...formData, phone: e.target.value})}
@@ -339,8 +325,9 @@ const Customers: React.FC<CustomersProps> = ({ customers, sales, onUpdateCustome
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.email}</label>
+                    <label htmlFor="cust-email" className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.email}</label>
                     <input 
+                      id="cust-email"
                       type="email" 
                       value={formData.email}
                       onChange={e => setFormData({...formData, email: e.target.value})}
@@ -350,8 +337,9 @@ const Customers: React.FC<CustomersProps> = ({ customers, sales, onUpdateCustome
                   </div>
                 </div>
                 <div>
-                  <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.details}</label>
+                  <label htmlFor="cust-notes" className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 ml-1">{t.details}</label>
                   <textarea 
+                    id="cust-notes"
                     value={formData.notes}
                     onChange={e => setFormData({...formData, notes: e.target.value})}
                     placeholder=""

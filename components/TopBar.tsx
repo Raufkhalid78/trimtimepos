@@ -48,6 +48,7 @@ const TopBar: React.FC<TopBarProps> = ({ onToggleSidebar, onLogout }) => {
           onClick={() => setIsDarkMode(!isDarkMode)} 
           className="p-2.5 text-[var(--tt-text-muted)] hover:text-[var(--tt-amber)] bg-[var(--tt-surface-2)] rounded-xl transition-all"
           title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+          aria-label={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
         >
           {isDarkMode ? (
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -76,6 +77,7 @@ const TopBar: React.FC<TopBarProps> = ({ onToggleSidebar, onLogout }) => {
           onClick={onLogout} 
           className="p-2.5 text-[var(--tt-text-muted)] hover:text-[var(--tt-rose)] bg-[var(--tt-surface-2)] rounded-xl transition-all"
           title={t.logout}
+          aria-label={t.logout || 'Log Out'}
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
