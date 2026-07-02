@@ -66,12 +66,12 @@ const PricingPage: React.FC<PricingPageProps> = ({ tenantId, userEmail, language
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-center p-4 md:p-8 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8 bg-slate-950/80 backdrop-blur-md">
       <motion.div 
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="w-full max-w-5xl bg-slate-900 border border-slate-800 rounded-[2.5rem] p-8 md:p-12 relative my-auto"
+        className="w-full max-w-5xl bg-slate-900 border border-slate-800 rounded-[2.5rem] p-8 md:p-12 relative max-h-[90vh] overflow-y-auto scrollbar-hide"
       >
         <button 
           onClick={onClose}
