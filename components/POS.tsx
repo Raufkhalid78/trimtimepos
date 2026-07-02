@@ -699,7 +699,7 @@ const POS: React.FC<POSProps> = ({ services, products, staff, customers, sales, 
       <AnimatePresence>
         {lastSale && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-slate-950/80 backdrop-blur-xl z-[150] flex items-center justify-center p-6 no-print">
-            <motion.div initial={{ scale: 0.8, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} className="tt-card p-8 md:p-10 max-w-md w-full shadow-2xl text-center space-y-8">
+            <motion.div initial={{ scale: 0.8, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} className="tt-card p-8 md:p-10 max-w-md w-full shadow-2xl text-center space-y-8 max-h-[90vh] overflow-y-auto scrollbar-hide">
               <div className="w-16 h-16 md:w-20 md:h-20 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-500 rounded-full flex items-center justify-center text-3xl md:text-4xl mx-auto shadow-inner">✓</div>
                <div className="space-y-2">
                  <h3 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white tracking-tight">{t.saleSuccess}</h3>

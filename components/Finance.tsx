@@ -472,7 +472,7 @@ const [newExp, setNewExp] = useState<{ category: string; amount: string; descrip
       >
         <motion.div
           initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }}
-          className="bg-white text-slate-900 w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl relative"
+          className="bg-white text-slate-900 w-full max-w-sm rounded-3xl shadow-2xl relative max-h-[90vh] overflow-y-auto scrollbar-hide"
           onClick={e => e.stopPropagation()}
         >
           <div className="bg-slate-900 text-white p-6 text-center">
@@ -1091,7 +1091,7 @@ const [newExp, setNewExp] = useState<{ category: string; amount: string; descrip
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white dark:bg-slate-900 rounded-[2rem] p-8 max-w-md w-full shadow-2xl border border-slate-100 dark:border-slate-800"
+              className="bg-white dark:bg-slate-900 rounded-[2rem] p-8 max-w-md w-full shadow-2xl border border-slate-100 dark:border-slate-800 max-h-[90vh] overflow-y-auto scrollbar-hide"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="w-16 h-16 bg-rose-100 dark:bg-rose-900/30 text-rose-600 rounded-full flex items-center justify-center mb-6 mx-auto">

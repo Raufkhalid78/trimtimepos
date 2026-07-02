@@ -351,7 +351,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, staffList, shopName, onGoToSignU
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              className="bg-[#111827] border border-white/10 p-8 rounded-[2rem] max-w-sm w-full shadow-2xl relative"
+              className="bg-[#111827] border border-white/10 p-8 rounded-[2rem] max-w-sm w-full shadow-2xl relative max-h-[90vh] overflow-y-auto scrollbar-hide"
             >
               <button
                 onClick={() => setShowContactModal(false)}

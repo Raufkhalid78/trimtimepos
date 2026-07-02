@@ -577,7 +577,7 @@ const Inventory: React.FC<InventoryProps> = ({
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="tt-card shadow-xl max-w-md w-full p-6"
+              className="tt-card shadow-xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto scrollbar-hide"
             >
               <div className="flex items-center gap-4 mb-4">
                 <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-red-600 dark:text-red-400">
