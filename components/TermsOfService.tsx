@@ -112,19 +112,23 @@ const TermsOfService: React.FC = () => {
             </section>
 
             <section>
-              <h2 className="text-xl font-bold text-white mb-4">9. Governing Law and Disputes</h2>
+              <h2 className="text-xl font-bold text-white mb-4">9. Business Entity, Governing Law and Disputes</h2>
+              <p className="mb-4">
+                These Terms and Conditions constitute a legally binding agreement between you and <strong>TechyDez</strong> (the parent company operating TrimTime). Our registered business address is Jhelum, Punjab, Pakistan.
+              </p>
               <p>
-                These Terms shall be governed by and construed in accordance with the laws of the jurisdiction where TrimTime's principal operations are located, without regard to conflict of law principles. Any dispute arising under or in connection with these Terms shall be resolved exclusively in the competent courts of that jurisdiction.
+                These terms are governed by the laws of the Islamic Republic of Pakistan and you agree that the courts of Jhelum will have exclusive jurisdiction in any dispute.
               </p>
             </section>
 
             <section>
-              <h2 className="text-xl font-bold text-white mb-4">10. Contact Us</h2>
-              <p>
-                For any inquiries, legal notices, or questions regarding these Terms, please contact us at:
+              <h2 className="text-xl font-bold text-white mb-4">10. Complaint Handling Mechanism & Contact Us</h2>
+              <p className="mb-4">
+                In order to resolve a complaint regarding our services, if you have any problems placing your order, or require support, please contact us immediately:
               </p>
-              <p className="mt-2 font-bold text-white">TrimTime Legal & Compliance</p>
-              <p>Email: <a href="mailto:support@trimtimepos.com" className="text-amber-500 hover:underline">support@trimtimepos.com</a></p>
+              <p><strong>Phone:</strong> <a href="tel:+447517879333" className="text-amber-500 hover:underline">+447517879333</a></p>
+              <p><strong>Email:</strong> <a href="mailto:hello@techydez.com" className="text-amber-500 hover:underline">hello@techydez.com</a></p>
+              <p><strong>Address:</strong> Jhelum, Punjab, Pakistan</p>
             </section>
           </div>
         </motion.div>

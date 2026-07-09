@@ -18,6 +18,7 @@ const ResetPassword = lazy(() => import('@/components/ResetPassword'));
 const StaffLogin = lazy(() => import('@/components/StaffLogin'));
 const PrivacyPolicy = lazy(() => import('@/components/PrivacyPolicy'));
 const TermsOfService = lazy(() => import('@/components/TermsOfService'));
+const ShippingPolicy = lazy(() => import('@/components/ShippingPolicy'));
 const PaymentSuccess = lazy(() => import('@/components/PaymentSuccess'));
 const NotFound = lazy(() => import('@/components/NotFound'));
 
@@ -197,6 +198,10 @@ export const router = createBrowserRouter([
   {
     path: '/terms',
     element: <Suspense fallback={<Loading />}><TermsOfService /></Suspense>
+  },
+  {
+    path: '/shipping',
+    element: <Suspense fallback={<Loading />}><ShippingPolicy /></Suspense>
   },
   {
     path: '/payment-success',
