@@ -2,6 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Service, Product, ShopSettings, Supplier, StockLog } from '../types';
 import { TRANSLATIONS } from '../constants';
+import { useAuth } from '../contexts/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Html5Qrcode as Html5QrcodeType } from 'html5-qrcode';
 import { format, parseISO } from 'date-fns';
@@ -22,6 +23,7 @@ const Inventory: React.FC<InventoryProps> = ({
   services, products, suppliers, stockLogs, settings, 
   onUpdateServices, onUpdateProducts, onUpdateSuppliers, onAddStockLog 
 }) => {
+  const { sessionLanguage } = useAuth();
   const [activeTab, setActiveTab] = useState<'services' | 'products' | 'suppliers' | 'logs' | 'purchase_orders' | 'transfers'>('services');
   const [isEditing, setIsEditing] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -32,7 +34,8 @@ const Inventory: React.FC<InventoryProps> = ({
   const barcodeInputRef = useRef<HTMLInputElement>(null);
   const isScannerActiveRef = useRef(false);
 
-  const t = TRANSLATIONS[settings.language];
+  const activeLanguage = sessionLanguage || settings.language || 'en';
+  const t = TRANSLATIONS[activeLanguage];
 
   useEffect(() => {
     let isMounted = true;
@@ -277,7 +280,7 @@ const Inventory: React.FC<InventoryProps> = ({
   };
 
   const getItemName = (item: any) => {
-      if (settings.language === 'ur' && item.nameUr) return item.nameUr;
+      if ((activeLanguage === 'ur' || activeLanguage === 'ar') && item.nameUr) return item.nameUr;
       return item.name;
   };
 
@@ -288,7 +291,7 @@ const Inventory: React.FC<InventoryProps> = ({
           <h2 className="text-2xl md:text-3xl font-bold text-slate-800 dark:text-white font-brand">{t.shopCatalog}</h2>
           <p className="text-slate-500 dark:text-slate-400 text-sm">{t.updatePrices}</p>
         </div>
-        <button onClick={() => setIsEditing({})} className="bg-slate-950 dark:bg-slate-800 text-white px-6 py-3 rounded-xl font-black flex items-center gap-2 hover:bg-slate-800 transition-all shadow-lg text-sm w-full sm:w-auto justify-center active:scale-95">
+        <button onClick={() => setIsEditing({})} className="bg-slate-950 dark:bg-slate-800 text-white px-6 py-3 rounded-xl font-black flex items-center gap-2 hover:bg-slate-800 transition-all shadow-lg text-sm w-full sm:w-auto justify-center active:scale-95 cursor-pointer">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
           {activeTab === 'services' ? t.newService : 
            activeTab === 'products' ? t.newProduct : 
@@ -302,12 +305,12 @@ const Inventory: React.FC<InventoryProps> = ({
       </div>
       
       <div className="flex bg-[var(--tt-surface)] p-1 rounded-xl shadow-sm border border-[var(--tt-border)] self-start w-full sm:w-auto overflow-x-auto scrollbar-hide">
-        <button onClick={() => setActiveTab('services')} className={`flex-1 sm:px-6 py-2.5 rounded-lg font-bold transition-all text-[10px] md:text-sm whitespace-nowrap ${activeTab === 'services' ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600'}`}>{t.services}</button>
-        <button onClick={() => setActiveTab('products')} className={`flex-1 sm:px-6 py-2.5 rounded-lg font-bold transition-all text-[10px] md:text-sm whitespace-nowrap ${activeTab === 'products' ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600'}`}>{t.inventory}</button>
-        <button onClick={() => setActiveTab('suppliers')} className={`flex-1 sm:px-6 py-2.5 rounded-lg font-bold transition-all text-[10px] md:text-sm whitespace-nowrap ${activeTab === 'suppliers' ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600'}`}>{t.suppliers}</button>
-        <button onClick={() => setActiveTab('purchase_orders')} className={`flex-1 sm:px-6 py-2.5 rounded-lg font-bold transition-all text-[10px] md:text-sm whitespace-nowrap ${activeTab === 'purchase_orders' ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600'}`}>Purchase Orders</button>
-        <button onClick={() => setActiveTab('transfers')} className={`flex-1 sm:px-6 py-2.5 rounded-lg font-bold transition-all text-[10px] md:text-sm whitespace-nowrap ${activeTab === 'transfers' ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600'}`}>Stock Transfers</button>
-        <button onClick={() => setActiveTab('logs')} className={`flex-1 sm:px-6 py-2.5 rounded-lg font-bold transition-all text-[10px] md:text-sm whitespace-nowrap ${activeTab === 'logs' ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600'}`}>{t.stockLogs}</button>
+        <button onClick={() => setActiveTab('services')} className={`flex-1 sm:px-6 py-2.5 rounded-lg font-bold transition-all text-[10px] md:text-sm whitespace-nowrap cursor-pointer ${activeTab === 'services' ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600'}`}>{t.services}</button>
+        <button onClick={() => setActiveTab('products')} className={`flex-1 sm:px-6 py-2.5 rounded-lg font-bold transition-all text-[10px] md:text-sm whitespace-nowrap cursor-pointer ${activeTab === 'products' ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600'}`}>{t.inventory}</button>
+        <button onClick={() => setActiveTab('suppliers')} className={`flex-1 sm:px-6 py-2.5 rounded-lg font-bold transition-all text-[10px] md:text-sm whitespace-nowrap cursor-pointer ${activeTab === 'suppliers' ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600'}`}>{t.suppliers}</button>
+        <button onClick={() => setActiveTab('purchase_orders')} className={`flex-1 sm:px-6 py-2.5 rounded-lg font-bold transition-all text-[10px] md:text-sm whitespace-nowrap cursor-pointer ${activeTab === 'purchase_orders' ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600'}`}>{t.purchaseOrders || 'Purchase Orders'}</button>
+        <button onClick={() => setActiveTab('transfers')} className={`flex-1 sm:px-6 py-2.5 rounded-lg font-bold transition-all text-[10px] md:text-sm whitespace-nowrap cursor-pointer ${activeTab === 'transfers' ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600'}`}>{t.stockTransfers || 'Stock Transfers'}</button>
+        <button onClick={() => setActiveTab('logs')} className={`flex-1 sm:px-6 py-2.5 rounded-lg font-bold transition-all text-[10px] md:text-sm whitespace-nowrap cursor-pointer ${activeTab === 'logs' ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600'}`}>{t.stockLogs}</button>
       </div>
       
       {/* Mobile & Desktop Combined View using flexible cards */}

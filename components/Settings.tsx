@@ -35,7 +35,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
   const [newBranch, setNewBranch] = useState({ name: '', address: '', phone: '', isActive: true });
   const { branches, updateBranches } = useData();
   const { showToast } = useToast();
-  const { authUser } = useAuth();
+  const { authUser, sessionLanguage, setSessionLanguage } = useAuth();
 
   const handleAddBranch = () => {
     if (!newBranch.name.trim()) return;
@@ -86,7 +86,8 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
     'Notification' in window ? Notification.permission : 'denied'
   );
   
-  const t = TRANSLATIONS[settings.language];
+  const activeLanguage = sessionLanguage || settings.language || 'en';
+  const t = TRANSLATIONS[activeLanguage];
 
   useEffect(() => { setPageMeta('Settings', 'Configure your TrimTime shop settings, branding, and preferences.'); }, []);
 
@@ -208,8 +209,8 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
           </div>
           <div>
-            <h3 className="font-bold text-slate-800 dark:text-white">Need a refresher?</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Replay the platform tutorial to see how TrimTime works.</p>
+            <h3 className="font-bold text-slate-800 dark:text-white">{t.needRefresher}</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400">{t.replayTutorial}</p>
           </div>
         </div>
         <button 
@@ -219,9 +220,9 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
             // Actually, let's use a custom event that App.tsx or AuthContext can listen to.
             window.dispatchEvent(new CustomEvent('restart-onboarding'));
           }}
-          className="px-6 py-3 bg-[var(--tt-amber)] text-slate-950 rounded-xl font-black text-sm shadow-lg shadow-[var(--tt-amber-glow)] hover:scale-105 active:scale-95 transition-all"
+          className="px-6 py-3 bg-[var(--tt-amber)] text-slate-950 rounded-xl font-black text-sm shadow-lg shadow-[var(--tt-amber-glow)] hover:scale-105 active:scale-95 transition-all cursor-pointer"
         >
-          Take the Tour
+          {t.takeTheTour}
         </button>
       </motion.div>
 
@@ -256,8 +257,12 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
               <label htmlFor="shop-lang" className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest block mb-2 ml-1">{t.language} / زبان</label>
               <select 
                 id="shop-lang"
-                value={formData.language}
-                onChange={e => setFormData({...formData, language: e.target.value as Language})}
+                value={activeLanguage}
+                onChange={e => {
+                  const newLang = e.target.value as Language;
+                  setFormData({...formData, language: newLang});
+                  setSessionLanguage(newLang);
+                }}
                 className="tt-input"
               >
                 <option value="en">English (US)</option>
@@ -936,28 +941,28 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
             </div>
             <div>
-              <h3 className="text-lg md:text-xl font-bold text-[var(--tt-text-main)]">Deposit & Gateway Configuration</h3>
-              <p className="text-xs text-[var(--tt-text-muted)] mt-1">Configure mandatory booking deposits and automated WhatsApp API options</p>
+              <h3 className="text-lg md:text-xl font-bold text-[var(--tt-text-main)]">{t.bookingSettings}</h3>
+              <p className="text-xs text-[var(--tt-text-muted)] mt-1">{t.bookingSettingsDesc}</p>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="text-xs font-black text-[var(--tt-text-muted)] uppercase tracking-widest block mb-2">Deposit Mode</label>
+              <label className="text-xs font-black text-[var(--tt-text-muted)] uppercase tracking-widest block mb-2">{t.depositRequirement}</label>
               <select
                 value={formData.depositMode || 'none'}
                 onChange={e => setFormData({ ...formData, depositMode: e.target.value as 'none' | 'required' })}
                 className="tt-input"
               >
-                <option value="none">Option 1: Booking Only (No Deposit Required)</option>
-                <option value="required">Option 2: Require Deposit Payment</option>
+                <option value="none">{t.depositNone}</option>
+                <option value="required">{t.depositFixed}</option>
               </select>
             </div>
 
             {formData.depositMode === 'required' && (
               <>
                 <div>
-                  <label className="text-xs font-black text-[var(--tt-text-muted)] uppercase tracking-widest block mb-2">Payment Provider</label>
+                  <label className="text-xs font-black text-[var(--tt-text-muted)] uppercase tracking-widest block mb-2">{t.paymentProvider}</label>
                   <select
                     value={formData.depositPaymentProvider || 'stripe'}
                     onChange={e => setFormData({ ...formData, depositPaymentProvider: e.target.value as 'stripe' | 'creem' | 'custom' })}
@@ -965,11 +970,11 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
                   >
                     <option value="stripe">Stripe</option>
                     <option value="creem">Creem.io</option>
-                    <option value="custom">Custom Link / Local Provider</option>
+                    <option value="custom">Custom Link / Local</option>
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs font-black text-[var(--tt-text-muted)] uppercase tracking-widest block mb-2">Deposit Amount ({formData.currency})</label>
+                  <label className="text-xs font-black text-[var(--tt-text-muted)] uppercase tracking-widest block mb-2">{t.depositAmountLabel} ({formData.currency})</label>
                   <input
                     type="number"
                     step="0.01"
@@ -1077,9 +1082,9 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
               <button 
                   type="button"
                   onClick={() => setShowDeleteConfirm(true)}
-                  className="bg-[var(--tt-rose)] text-white px-6 py-3 rounded-xl font-bold text-sm hover:opacity-90 transition-all shadow-lg shadow-[var(--tt-rose)]/20 active:scale-95"
+                  className="bg-[var(--tt-rose)] text-white px-6 py-3 rounded-xl font-bold text-sm hover:opacity-90 transition-all shadow-lg shadow-[var(--tt-rose)]/20 active:scale-95 cursor-pointer"
               >
-                  Delete Store
+                  {t.deleteStore || 'Delete Store'}
               </button>
             </div>
         </motion.div>
@@ -1215,8 +1220,8 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
             </div>
             <div>
-              <h3 className="text-lg md:text-xl font-bold text-[var(--tt-text-main)]">Subscription & Billing</h3>
-              <p className="text-xs text-[var(--tt-text-muted)] mt-1">Manage your store's active plan</p>
+              <h3 className="text-lg md:text-xl font-bold text-[var(--tt-text-main)]">{t.subscriptionAndBilling}</h3>
+              <p className="text-xs text-[var(--tt-text-muted)] mt-1">{t.subscriptionDesc}</p>
             </div>
           </div>
           
@@ -1228,7 +1233,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
               </p>
             </div>
             <div className="p-4 bg-[var(--tt-surface)] rounded-2xl border border-[var(--tt-border)]">
-              <p className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest mb-1">Status</p>
+              <p className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest mb-1">{t.status}</p>
               <p className={`text-lg font-bold capitalize ${subscription.status === 'active' ? 'text-[var(--tt-emerald)]' : subscription.status === 'cancelled' ? 'text-[var(--tt-rose)]' : 'text-[var(--tt-amber)]'}`}>
                 {subscription.status}
               </p>
@@ -1255,8 +1260,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
                   }}
                   className="px-5 py-3 bg-gradient-to-r from-amber-400 to-amber-600 hover:from-amber-500 hover:to-amber-700 text-slate-950 rounded-xl font-black text-xs uppercase tracking-wider shadow-md shadow-amber-500/20 transition-all flex items-center gap-2 cursor-pointer active:scale-95"
                 >
-                  <span>🚀 Upgrade to Annual ($150/yr)</span>
-                  <span className="bg-slate-950 text-amber-400 px-2 py-0.5 rounded-full text-[9px] font-black tracking-widest uppercase">Save $30</span>
+                  <span>{t.upgradeToAnnual}</span>
                 </button>
               ) : (
                 <button
@@ -1270,7 +1274,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
                   }}
                   className="px-5 py-3 bg-[var(--tt-surface-2)] text-[var(--tt-text-main)] border border-[var(--tt-border)] hover:border-amber-500/50 rounded-xl font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer active:scale-95"
                 >
-                  <span>🔄 Switch to Monthly ($15/mo)</span>
+                  <span>{t.switchToMonthly}</span>
                 </button>
               )}
 
@@ -1279,7 +1283,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
                 onClick={() => setIsPricingOpen(true)}
                 className="px-5 py-3 bg-[var(--tt-surface)] text-[var(--tt-text-main)] border border-[var(--tt-border)] hover:bg-[var(--tt-surface-2)] rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer"
               >
-                View Plans & Add-ons
+                {t.viewPlansAndAddons}
               </button>
             </div>
 
@@ -1289,7 +1293,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
                 onClick={() => setShowCancelSubConfirm(true)}
                 className="px-4 py-2.5 text-[var(--tt-text-muted)] hover:text-[var(--tt-rose)] text-xs font-bold transition-colors cursor-pointer"
               >
-                Cancel Subscription
+                {t.cancelSubscription}
               </button>
             )}
           </div>

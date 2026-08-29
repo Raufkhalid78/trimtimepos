@@ -115,21 +115,99 @@ Please provide in a clean, professional format:
 Keep the total response under 350 words. Use markdown formatting with bold headers.
   `.trim();
 
+  // 1. Try Supabase Edge Function 'gemini-insights' first
   try {
-    const { data, error } = await supabase.functions.invoke('hyper-responder', {
-      body: { prompt }
+    const { data, error } = await supabase.functions.invoke('gemini-insights', {
+      body: { prompt, maxTokens: 600 }
     });
 
-    if (error) {
-      console.error("Supabase Edge Function Error:", error);
-      throw error;
+    if (!error && data?.text) {
+      return data.text;
     }
-
-    return data.text || "No insights could be generated.";
-  } catch (error) {
-    console.error("Gemini Insight Error:", error);
-    return "Unable to generate insights at this time. Please check your network or try again later.";
+  } catch (err) {
+    console.warn("Primary edge function 'gemini-insights' failed, trying fallback...", err);
   }
+
+  // 2. Try fallback Edge Function name 'hyper-responder'
+  try {
+    const { data, error } = await supabase.functions.invoke('hyper-responder', {
+      body: { prompt, maxTokens: 600 }
+    });
+
+    if (!error && data?.text) {
+      return data.text;
+    }
+  } catch (err) {
+    console.warn("Fallback edge function 'hyper-responder' failed...", err);
+  }
+
+  // 3. Client-side fallback if VITE_OPENROUTER_API_KEY or VITE_GEMINI_API_KEY is defined in env
+  const clientOpenRouterKey = (import.meta as any).env?.VITE_OPENROUTER_API_KEY || (import.meta as any).env?.VITE_AI_API_KEY;
+  const clientGeminiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY;
+
+  if (clientOpenRouterKey && clientOpenRouterKey !== 'moved_to_supabase_edge_function') {
+    const modelsToTry = [
+      "google/gemini-2.5-flash",
+      "openai/gpt-4o-mini",
+      "deepseek/deepseek-chat",
+      "meta-llama/llama-3.3-70b-instruct"
+    ];
+
+    for (const model of modelsToTry) {
+      try {
+        const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${clientOpenRouterKey}`,
+            "HTTP-Referer": window.location.origin || "https://trimtimepos.com",
+            "X-Title": "TrimTime POS",
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            model,
+            messages: [
+              { role: "system", content: "You are a professional business consultant for barber shops and beauty salons. Give concise, highly actionable advice." },
+              { role: "user", content: prompt }
+            ],
+            max_tokens: 600,
+            temperature: 0.7
+          })
+        });
+
+        const json = await res.json();
+        if (res.ok && json.choices?.[0]?.message?.content) {
+          return json.choices[0].message.content;
+        }
+      } catch (openRouterErr) {
+        console.warn(`Client OpenRouter ${model} call error:`, openRouterErr);
+      }
+    }
+  }
+
+  if (clientGeminiKey && clientGeminiKey !== 'moved_to_supabase_edge_function') {
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${clientGeminiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { maxOutputTokens: 600, temperature: 0.7 }
+          })
+        }
+      );
+
+      const json = await res.json();
+      if (res.ok && json.candidates?.[0]?.content?.parts?.[0]?.text) {
+        return json.candidates[0].content.parts[0].text;
+      }
+    } catch (geminiErr) {
+      console.warn("Client Gemini call error:", geminiErr);
+    }
+  }
+
+  return "Unable to generate insights at this time. Please ensure your AI API Key (OPENROUTER_API_KEY or GEMINI_API_KEY) is configured in your Supabase Edge Function secrets or environment settings.";
 }
 
 /**

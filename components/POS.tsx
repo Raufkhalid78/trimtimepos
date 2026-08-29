@@ -22,8 +22,10 @@ interface POSProps {
 }
 
 import { useData } from '../contexts/DataContext';
+import { useAuth } from '../contexts/AuthContext';
 
 const POS: React.FC<POSProps> = ({ services, products, staff, customers, sales, settings, currentUser, onCompleteSale, onAddCustomer, dbStatus }) => {
+  const { sessionLanguage } = useAuth();
   // Load active cart from localStorage to persist across navigation
   const [cart, setCart] = useState<SaleItem[]>(() => {
     try {
@@ -96,8 +98,8 @@ const POS: React.FC<POSProps> = ({ services, products, staff, customers, sales, 
   const isScannerActiveRef = useRef(false);
   const processingScanRef = useRef(false);
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth < 1024 : false);
-  
-  const t = TRANSLATIONS[settings.language];
+  const activeLanguage = sessionLanguage || settings.language || 'en';
+  const t = TRANSLATIONS[activeLanguage];
 
   // Track viewport width reactively
   useEffect(() => {

@@ -102,6 +102,316 @@ const EMPLOYEE_STEPS: TourStep[] = [
   }
 ];
 
+const TOUR_TRANSLATIONS: Record<string, {
+  adminSteps: TourStep[];
+  employeeSteps: TourStep[];
+  stepText: string;
+  ofText: string;
+  skip: string;
+  back: string;
+  next: string;
+  finish: string;
+}> = {
+  en: {
+    adminSteps: ADMIN_STEPS,
+    employeeSteps: EMPLOYEE_STEPS,
+    stepText: 'Step',
+    ofText: 'of',
+    skip: 'Skip',
+    back: '← Back',
+    next: 'Next →',
+    finish: '🎉 Finish',
+  },
+  ur: {
+    adminSteps: [
+      {
+        targetId: 'dashboard-root',
+        title: 'ٹرم ٹائم گلوبل میں خوش آمدید 🎉',
+        content: 'یہ آپ کا کمانڈ سینٹر ہے۔ کاروبار چلانے کے لیے آپ کو درکار ہر چیز یہاں موجود ہے۔ آئیے ایک جائزہ لیں۔',
+        position: 'center',
+        requiresRoute: '/dashboard'
+      },
+      {
+        targetId: 'tour-kpi-cards',
+        title: 'براہِ راست میٹرکس',
+        content: 'اپنی آمدنی، اخراجات، تنخواہیں اور انوینٹری کی قیمت ایک نظر میں دیکھیں۔ تمام نمبرز لائیو اپ ڈیٹ ہوتے ہیں۔',
+        position: 'bottom',
+        requiresRoute: '/dashboard'
+      },
+      {
+        targetId: 'tour-revenue-chart',
+        title: 'کارکردگی کی بصیرتیں',
+        content: 'انٹرایکٹو چارٹس کے ذریعے کاروباری ترقی کا تجزیہ کریں۔ آج، ہفتہ، مہینہ، یا کسٹم رینج میں سوئچ کریں۔',
+        position: 'top',
+        requiresRoute: '/dashboard'
+      },
+      {
+        targetId: 'tour-appointments',
+        title: 'لائیو شیڈول',
+        content: 'آج کی تمام تقرریاں یہاں نظر آتی ہیں — دیکھیں اگلا کون آ رہا ہے اور ریئل ٹائم میں اسٹیٹس چیک کریں۔',
+        position: 'left',
+        requiresRoute: '/dashboard'
+      },
+      {
+        targetId: 'nav-pos',
+        title: 'تیز رفتار چیک آؤٹ',
+        content: 'پوائنٹ آف سیل (POS) سے تیزی سے بل بنائیں۔ نقد، کارڈ اور اسپلٹ ادائیگیوں کی سہولت۔',
+        position: 'right'
+      },
+      {
+        targetId: 'nav-appointments',
+        title: 'بکنگ کیلنڈر',
+        content: 'مکمل ٹیم کیلنڈر کے ساتھ کلائنٹ کی تمام تقرریوں کا شیڈول اور انتظام بنائیں۔',
+        position: 'right'
+      },
+      {
+        targetId: 'nav-customers',
+        title: 'صارفین کی ڈائرکٹری',
+        content: 'اپنے کلائنٹس، ان کی وزٹ ہسٹری، وفاداری پوائنٹس اور ترجیحات سب ایک جگہ ٹریک کریں۔',
+        position: 'right'
+      },
+      {
+        targetId: 'nav-inventory',
+        title: 'مصنوعات اور خدمات',
+        content: 'اپنے سروس مینو، ریٹیل آئٹمز، اسٹاک لیول اور سپلائر آرڈرز کا انتظام کریں۔',
+        position: 'right'
+      },
+      {
+        targetId: 'nav-finance',
+        title: 'مالیاتی رپورٹس',
+        content: 'آمدنی، اخراجات اور کمیشن ٹریک کریں، اور اکاؤنٹنگ کے لیے CSV رپورٹس ڈاؤن لوڈ کریں۔',
+        position: 'right'
+      },
+      {
+        targetId: 'nav-settings',
+        title: 'دکان کی ترتیبات',
+        content: 'اپنی کرنسی، ٹیکس، لائلٹی پروگرام اور اسٹاف لاگ ان لنکس کو سیٹنگز سے ایڈجسٹ کریں۔',
+        position: 'right'
+      }
+    ],
+    employeeSteps: [
+      {
+        targetId: 'dashboard-root',
+        title: 'ٹیم میں خوش آمدید! 👋',
+        content: 'آپ کا ذاتی ڈیش بورڈ آپ کی آنے والی تقرریاں اور آج کی کارکردگی دکھاتا ہے۔',
+        position: 'center',
+        requiresRoute: '/dashboard'
+      },
+      {
+        targetId: 'tour-appointments',
+        title: 'آپ کا شیڈول',
+        content: 'دیکھیں کہ آپ کا اگلا کلائنٹ کون ہے۔ ہر کارڈ کلائنٹ، وقت اور اسٹیٹس دکھاتا ہے۔',
+        position: 'top',
+        requiresRoute: '/dashboard'
+      },
+      {
+        targetId: 'nav-pos',
+        title: 'فروخت شروع کریں',
+        content: 'جب کلائنٹ ادائیگی کے لیے تیار ہو، POS ٹرمینل کھول کر چیک آؤٹ کریں۔',
+        position: 'right'
+      }
+    ],
+    stepText: 'مرحلہ',
+    ofText: 'میں سے',
+    skip: 'چھوڑیں',
+    back: '← پیچھے',
+    next: 'اگلا →',
+    finish: '🎉 مکمل',
+  },
+  ar: {
+    adminSteps: [
+      {
+        targetId: 'dashboard-root',
+        title: 'مرحباً بك في TrimTime Global 🎉',
+        content: 'هذا هو مركز التحكم الخاص بك. كل ما تحتاجه لإدارة عملك موجود هنا. لنلقِ نظرة سريعة.',
+        position: 'center',
+        requiresRoute: '/dashboard'
+      },
+      {
+        targetId: 'tour-kpi-cards',
+        title: 'المقاييس الفورية',
+        content: 'تتبع إيراداتك ومصروفاتك ورواتبك وقيمة المخزون بنظرة واحدة. يتم تحديث كافة الأرقام مباشرة.',
+        position: 'bottom',
+        requiresRoute: '/dashboard'
+      },
+      {
+        targetId: 'tour-revenue-chart',
+        title: 'رؤى الأداء',
+        content: 'حلل نمو الأعمال عبر الرسوم البيانية التفاعلية. بدل بين اليوم والأسبوع والشهر.',
+        position: 'top',
+        requiresRoute: '/dashboard'
+      },
+      {
+        targetId: 'tour-appointments',
+        title: 'الجدول المباشر',
+        content: 'مواعيد اليوم مرئية دائماً هنا — اعرف العميل القادم وتتبع الحالات فوراً.',
+        position: 'left',
+        requiresRoute: '/dashboard'
+      },
+      {
+        targetId: 'nav-pos',
+        title: 'نقاط البيع السريعة',
+        content: 'أنجز المبيعات بسرعة عبر محطة نقاط البيع مع دعم الدفع النقدي والبطاقات والدفع المقسم.',
+        position: 'right'
+      },
+      {
+        targetId: 'nav-appointments',
+        title: 'تقويم الحجوزات',
+        content: 'قم بجدولة وإدارة كافة مواعيد العملاء مع تقويم الفريق الكامل.',
+        position: 'right'
+      },
+      {
+        targetId: 'nav-customers',
+        title: 'دليل العملاء',
+        content: 'تتبع العملاء وسجل الزيارات ونقاط الولاء وتفضيلاتهم في مكان واحد.',
+        position: 'right'
+      },
+      {
+        targetId: 'nav-inventory',
+        title: 'المنتجات والخدمات',
+        content: 'أدر قائمة الخدمات ومنتجات التجزئة ومستويات المخزون وطلبات الموردين.',
+        position: 'right'
+      },
+      {
+        targetId: 'nav-finance',
+        title: 'التقارير المالية',
+        content: 'تتبع الإيرادات والمصروفات وعمولات الموظفين ونزّل تقارير CSV للمحاسبة.',
+        position: 'right'
+      },
+      {
+        targetId: 'nav-settings',
+        title: 'إعدادات المتجر',
+        content: 'اضبط عملتك والضرائب وبرنامج الولاء وروابط دخول الموظفين من الإعدادات.',
+        position: 'right'
+      }
+    ],
+    employeeSteps: [
+      {
+        targetId: 'dashboard-root',
+        title: 'مرحباً بك في الفريق! 👋',
+        content: 'تعرض لوحة القيادة الشخصية مواعيدك القادمة وأداءك اليومي بنظرة سريعة.',
+        position: 'center',
+        requiresRoute: '/dashboard'
+      },
+      {
+        targetId: 'tour-appointments',
+        title: 'جدولك الخاص',
+        content: 'اعرف من هو عميلك القادم. تظهر كل بطاقة اسم العميل والوقت والحالة.',
+        position: 'top',
+        requiresRoute: '/dashboard'
+      },
+      {
+        targetId: 'nav-pos',
+        title: 'بدء عملية بيع',
+        content: 'عندما يصبح العميل جاهزاً للدفع، انتقل إلى نقطة البيع POS لإتمام الحساب.',
+        position: 'right'
+      }
+    ],
+    stepText: 'خطوة',
+    ofText: 'من',
+    skip: 'تخطي',
+    back: '← السابق',
+    next: 'التالي →',
+    finish: '🎉 إنهاء',
+  },
+  hi: {
+    adminSteps: [
+      {
+        targetId: 'dashboard-root',
+        title: 'TrimTime Global में आपका स्वागत है 🎉',
+        content: 'यह आपका कमांड सेंटर है। अपने व्यवसाय को चलाने के लिए आवश्यक सभी चीजें यहां हैं। आइए एक त्वरित नज़र डालें।',
+        position: 'center',
+        requiresRoute: '/dashboard'
+      },
+      {
+        targetId: 'tour-kpi-cards',
+        title: 'रीयल-टाइम मेट्रिक्स',
+        content: 'अपने राजस्व, व्यय, पेरोल और इन्वेंट्री मूल्य को एक नज़र में ट्रैक करें। सभी नंबर लाइव अपडेट होते हैं।',
+        position: 'bottom',
+        requiresRoute: '/dashboard'
+      },
+      {
+        targetId: 'tour-revenue-chart',
+        title: 'प्रदर्शन अंतर्दृष्टि',
+        content: 'इंटरैक्टिव चार्ट के साथ व्यवसाय के विकास का विश्लेषण करें। आज, सप्ताह, महीने या कस्टम में स्विच करें।',
+        position: 'top',
+        requiresRoute: '/dashboard'
+      },
+      {
+        targetId: 'tour-appointments',
+        title: 'लाइव शेड्यूल',
+        content: 'आज के अपॉइंटमेंट हमेशा यहां दिखाई देते हैं — देखें कि आगे कौन आ रहा है और स्थिति ट्रैक करें।',
+        position: 'left',
+        requiresRoute: '/dashboard'
+      },
+      {
+        targetId: 'nav-pos',
+        title: 'तेज़ चेकआउट',
+        content: 'पीओएस टर्मिनल के साथ तेजी से बिक्री पूरी करें। नकद, कार्ड और विभाजित भुगतान का समर्थन करता है।',
+        position: 'right'
+      },
+      {
+        targetId: 'nav-appointments',
+        title: 'बुकिंग कैलेंडर',
+        content: 'पूरी टीम कैलेंडर के साथ सभी ग्राहक अपॉइंटमेंट को शेड्यूल और प्रबंधित करें।',
+        position: 'right'
+      },
+      {
+        targetId: 'nav-customers',
+        title: 'ग्राहक निर्देशिका',
+        content: 'अपने ग्राहकों, उनके विज़िट इतिहास, लॉयल्टी पॉइंट और प्राथमिकताओं को एक ही स्थान पर ट्रैक करें।',
+        position: 'right'
+      },
+      {
+        targetId: 'nav-inventory',
+        title: 'उत्पाद और सेवाएं',
+        content: 'अपनी सेवा सूची, खुदरा उत्पाद, स्टॉक स्तर और आपूर्तिकर्ता ऑर्डर प्रबंधित करें।',
+        position: 'right'
+      },
+      {
+        targetId: 'nav-finance',
+        title: 'वित्तीय रिपोर्ट',
+        content: 'राजस्व, व्यय, स्टाफ कमीशन ट्रैक करें और लेखांकन के लिए सीएसवी रिपोर्ट डाउनलोड करें।',
+        position: 'right'
+      },
+      {
+        targetId: 'nav-settings',
+        title: 'दुकान कॉन्फ़िगर करें',
+        content: 'सेटिंग्स से अपनी मुद्रा, कर, लॉयल्टी प्रोग्राम और स्टाफ लॉगिन लिंक सेट करें।',
+        position: 'right'
+      }
+    ],
+    employeeSteps: [
+      {
+        targetId: 'dashboard-root',
+        title: 'टीम में आपका स्वागत है! 👋',
+        content: 'आपका व्यक्तिगत डैशबोर्ड आपके आगामी अपॉइंटमेंट और आज का प्रदर्शन दिखाता है।',
+        position: 'center',
+        requiresRoute: '/dashboard'
+      },
+      {
+        targetId: 'tour-appointments',
+        title: 'आपका शेड्यूल',
+        content: 'देखें कि आपका अगला ग्राहक कौन है। प्रत्येक कार्ड ग्राहक, समय और स्थिति दिखाता है।',
+        position: 'top',
+        requiresRoute: '/dashboard'
+      },
+      {
+        targetId: 'nav-pos',
+        title: 'बिक्री शुरू करें',
+        content: 'जब ग्राहक भुगतान के लिए तैयार हो, तो चेकआउट करने के लिए पीओएस टर्मिनल पर जाएं।',
+        position: 'right'
+      }
+    ],
+    stepText: 'कदम',
+    ofText: 'में से',
+    skip: 'छोड़ें',
+    back: '← पीछे',
+    next: 'आगे →',
+    finish: '🎉 समाप्त',
+  }
+};
+
 /**
  * Attempts to find a DOM element by ID with retry logic.
  * Returns the element's bounding rect or null if not found after retries.
@@ -126,13 +436,15 @@ const findElementWithRetry = (
 };
 
 const OnboardingTour: React.FC = () => {
-  const { currentUser, isTourCompleted, completeTour } = useAuth();
+  const { currentUser, isTourCompleted, completeTour, sessionLanguage } = useAuth();
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
 
-  const steps = currentUser?.role === 'admin' ? ADMIN_STEPS : EMPLOYEE_STEPS;
+  const langKey = sessionLanguage && TOUR_TRANSLATIONS[sessionLanguage] ? sessionLanguage : 'en';
+  const tourT = TOUR_TRANSLATIONS[langKey];
+  const steps = currentUser?.role === 'admin' ? tourT.adminSteps : tourT.employeeSteps;
   const currentStep = steps[currentStepIndex];
 
   // Reset index when tour restarts
@@ -295,7 +607,7 @@ const OnboardingTour: React.FC = () => {
 
           {/* Step counter */}
           <p className="text-[10px] font-bold text-[var(--tt-text-muted)] uppercase tracking-widest mb-3 ml-11">
-            Step {currentStepIndex + 1} of {steps.length}
+            {tourT.stepText} {currentStepIndex + 1} {tourT.ofText} {steps.length}
           </p>
 
           {/* Content */}
@@ -317,25 +629,25 @@ const OnboardingTour: React.FC = () => {
           <div className="flex items-center justify-between">
             <button
               onClick={() => completeTour()}
-              className="text-[10px] font-black text-[var(--tt-text-muted)] hover:text-[var(--tt-rose)] uppercase tracking-widest transition-colors"
+              className="text-[10px] font-black text-[var(--tt-text-muted)] hover:text-[var(--tt-rose)] uppercase tracking-widest transition-colors cursor-pointer"
             >
-              Skip
+              {tourT.skip}
             </button>
 
             <div className="flex items-center gap-2">
               {currentStepIndex > 0 && (
                 <button
                   onClick={handlePrev}
-                  className="px-4 py-2 text-[10px] font-black text-[var(--tt-text-muted)] hover:text-[var(--tt-text-main)] uppercase tracking-widest bg-[var(--tt-surface-2)] rounded-xl transition-colors"
+                  className="px-4 py-2 text-[10px] font-black text-[var(--tt-text-muted)] hover:text-[var(--tt-text-main)] uppercase tracking-widest bg-[var(--tt-surface-2)] rounded-xl transition-colors cursor-pointer"
                 >
-                  ← Back
+                  {tourT.back}
                 </button>
               )}
               <button
                 onClick={handleNext}
-                className="px-5 py-2.5 bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-amber-500/20 active:scale-95 transition-all"
+                className="px-5 py-2.5 bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-amber-500/20 active:scale-95 transition-all cursor-pointer"
               >
-                {currentStepIndex === steps.length - 1 ? '🎉 Finish' : 'Next →'}
+                {currentStepIndex === steps.length - 1 ? tourT.finish : tourT.next}
               </button>
             </div>
           </div>
