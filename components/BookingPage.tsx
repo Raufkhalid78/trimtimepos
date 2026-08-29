@@ -5,6 +5,7 @@ import { useData } from '../contexts/DataContext';
 import { Service, Staff, AppointmentStatus } from '../types';
 import { format, addMinutes, startOfDay, isBefore, isAfter, parse, addDays, isSameDay } from 'date-fns';
 import { setPageMeta } from '../utils/seo';
+import LoadingSpinner from './LoadingSpinner';
 
 const BookingPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -132,7 +133,7 @@ const BookingPage: React.FC = () => {
         notes: `Online booking via ${slug}`
       };
 
-      const success = await publicCreateAppointment(newAppointment, tenant.id);
+      const success = await publicCreateAppointment(newAppointment, (slug || tenant?.slug || tenant?.id || '').trim().toLowerCase());
       
       if (success) {
         setStep(5); // Success step
@@ -149,8 +150,7 @@ const BookingPage: React.FC = () => {
   if (loading && !services.length) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
-        <div className="w-12 h-12 border-4 border-amber-500/30 border-t-amber-500 rounded-full animate-spin"></div>
-        <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Loading shop details...</p>
+        <LoadingSpinner size="lg" color="amber" label="Loading shop details..." />
       </div>
     );
   }
@@ -258,10 +258,11 @@ const BookingPage: React.FC = () => {
                   <div className={`w-14 h-14 rounded-2xl flex items-center justify-center font-black text-xl ${selectedStaff?.id === s.id ? 'bg-slate-950 text-amber-500' : 'bg-amber-500/10 text-amber-500'}`}>
                     {(s.name || 'S').charAt(0)}
                   </div>
-                  <div className="text-left">
+                  <div className="text-left flex-1">
                     <p className="font-bold text-lg">{s.name}</p>
                     <p className={`text-xs uppercase tracking-widest font-black ${selectedStaff?.id === s.id ? 'text-slate-800' : 'text-slate-500'}`}>{s.role}</p>
                   </div>
+                  <span className="text-[10px] uppercase tracking-wider font-bold opacity-60">Station Reserved ✓</span>
                 </button>
               ))}
             </div>
@@ -360,6 +361,18 @@ const BookingPage: React.FC = () => {
                 />
               </div>
 
+              {settings.depositMode === 'required' && (
+                <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-left space-y-2">
+                  <div className="flex justify-between items-center text-xs font-bold text-amber-400">
+                    <span>Mandatory Booking Deposit:</span>
+                    <span>{settings.currency}{settings.depositAmount || 0}</span>
+                  </div>
+                  <p className="text-[10px] text-slate-400">
+                    This deposit will be applied towards your total service cost of {settings.currency}{selectedService?.price}.
+                  </p>
+                </div>
+              )}
+
               <div className="pt-4">
                 <div className="flex justify-between items-center mb-4 px-2">
                   <div className="text-left">
@@ -377,7 +390,7 @@ const BookingPage: React.FC = () => {
                   onClick={handleBooking}
                   className="w-full py-5 bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 rounded-[1.5rem] font-black text-lg shadow-xl shadow-amber-500/10 disabled:opacity-50 transition-all"
                 >
-                  {isSubmitting ? 'Processing...' : 'Request Booking'}
+                  {isSubmitting ? 'Processing...' : (settings.depositMode === 'required' ? `Pay Deposit & Request Booking (${settings.currency}${settings.depositAmount || 0})` : 'Request Booking')}
                 </button>
                 <p className="text-center text-[10px] text-slate-500 mt-4 px-4">By tapping Request Booking, you agree to receive messages from {settings.shopName} regarding your appointment.</p>
               </div>

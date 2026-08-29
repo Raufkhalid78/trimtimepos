@@ -89,6 +89,7 @@ export interface ShopSettings {
   countryCode: string;
   whatsappEnabled: boolean;
   whatsappNumber: string;
+  customWhatsAppApiKey?: string;
   receiptFooter: string;
   taxRate: number;
   taxType: 'included' | 'excluded';
@@ -99,9 +100,13 @@ export interface ShopSettings {
   pointsPerCurrency: number; // e.g. 1 point per $1
   pointRedemptionValue: number; // e.g. 0.01 means 1 point = $0.01
   minPointsToRedeem: number;
-  // Online Booking
+  // Online Booking & Deposit Settings
   bookingEnabled: boolean;
   bookingSlug: string;
+  depositMode: 'none' | 'required';
+  depositPaymentProvider: 'stripe' | 'creem' | 'custom';
+  depositApiKey?: string;
+  depositAmount?: number;
 }
 
 export interface Service {
@@ -144,6 +149,14 @@ export interface StockLog {
   notes?: string;
 }
 
+export interface StaffPermissions {
+  canViewFinance: boolean;
+  canApplyDiscounts: boolean;
+  canExportData: boolean;
+  canEditInventory: boolean;
+  canManageStaff: boolean;
+}
+
 export interface Staff {
   id: string;
   name: string;
@@ -157,6 +170,7 @@ export interface Staff {
   email?: string;
   isFallback?: boolean;
   branchId?: string;
+  permissions?: StaffPermissions;
 }
 
 export interface Customer {
@@ -168,6 +182,7 @@ export interface Customer {
   createdAt: string;
   loyaltyPoints: number;
   preferences?: string;
+  vipTierId?: string;
 }
 
 export type AppointmentStatus = 'unconfirmed' | 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'no_show';
@@ -185,6 +200,11 @@ export interface Appointment {
   customerPhone?: string;
   customerEmail?: string;
   branchId?: string;
+  resourceId?: string;
+  reminderSent24h?: boolean;
+  reminderSent2h?: boolean;
+  depositPaid?: boolean;
+  depositAmount?: number;
 }
 
 export interface StaffAvailability {
@@ -293,3 +313,75 @@ export interface AdvancePayment {
   amount: number;
   description: string;
 }
+
+// ==========================================
+// Roadmap Extended Types
+// ==========================================
+
+export interface PurchaseOrderItem {
+  productId: string;
+  productName: string;
+  quantityOrdered: number;
+  unitCost: number;
+}
+
+export interface PurchaseOrder {
+  id: string;
+  tenantId: string;
+  supplierId: string;
+  supplierName: string;
+  status: 'draft' | 'ordered' | 'received' | 'cancelled';
+  items: PurchaseOrderItem[];
+  totalCost: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface StockTransfer {
+  id: string;
+  tenantId: string;
+  fromBranchId: string;
+  toBranchId: string;
+  productId: string;
+  productName: string;
+  quantity: number;
+  status: 'requested' | 'in_transit' | 'completed' | 'cancelled';
+  createdAt: string;
+  notes?: string;
+}
+
+export interface GiftCard {
+  id: string;
+  tenantId: string;
+  code: string;
+  initialBalance: number;
+  currentBalance: number;
+  isRedeemed: boolean;
+  expiryDate?: string;
+  createdAt: string;
+}
+
+export interface LoyaltyTier {
+  id: string;
+  tenantId: string;
+  name: string; // e.g. 'Bronze', 'Silver', 'Gold VIP'
+  minAnnualSpend: number;
+  multiplier: number; // e.g. 1.5x points
+}
+
+export interface Resource {
+  id: string;
+  tenantId: string;
+  branchId?: string;
+  name: string; // e.g. 'Barber Chair #1', 'Wash Basin #2'
+  type: string;
+  isActive: boolean;
+}
+
+export interface OfflineQueueItem {
+  id: string;
+  type: 'sale' | 'expense' | 'appointment' | 'customer';
+  payload: any;
+  createdAt: string;
+}
+

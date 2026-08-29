@@ -13,6 +13,7 @@ import {
 } from '../types';
 import { DEFAULT_SETTINGS } from '../constants';
 import { ensureHashed } from '../services/passwordService';
+import { offlineSyncService } from '../services/offlineSyncService';
 
 interface DataContextType {
   services: Service[];
@@ -201,49 +202,82 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const fetchPublicTenantBySlug = useCallback(async (slug: string) => {
     setLoading(true);
     try {
-      // 1. Fetch Tenant by Slug
       const cleanSlug = slug.trim().toLowerCase();
-      logger.log('Fetching tenant by slug:', cleanSlug);
+      logger.log('Fetching tenant by slug via secure RPC:', cleanSlug);
 
+      // 1. Fetch sanitized public data via secure PostgreSQL RPC (strips passwords, commissions & internal data)
+      const { data: rpcData, error: rpcError } = await supabase.rpc('get_public_shop_data', { p_slug: cleanSlug });
+
+      if (!rpcError && rpcData?.success) {
+        if (rpcData.services) setServices(rpcData.services);
+        if (rpcData.staff) setStaff(rpcData.staff.map((s: any) => ({
+          ...s,
+          commission: 0,
+          commissionServices: 0,
+          commissionProducts: 0,
+          baseSalary: 0,
+          branchId: s.branchId
+        })));
+        if (rpcData.branches) setBranches(rpcData.branches.map((b: any) => ({ ...b, tenantId: rpcData.tenant?.id, isActive: b.isActive })));
+        if (rpcData.availability) setStaffAvailability(rpcData.availability.map((a: any) => ({
+          id: a.id || `${a.staffId}_${a.dayOfWeek}`,
+          staffId: a.staffId,
+          dayOfWeek: a.dayOfWeek,
+          startTime: a.startTime,
+          endTime: a.endTime
+        })));
+        if (rpcData.settings) {
+          const fetchedSettings = { ...DEFAULT_SETTINGS, ...rpcData.settings };
+          setSettings(fetchedSettings);
+          if (!fetchedSettings.bookingEnabled) {
+            setLoading(false);
+            return null;
+          }
+        }
+        setLoading(false);
+        return rpcData.tenant;
+      }
+
+      // 2. Graceful Fallback if RPC is not yet deployed
       const { data: tenantData, error: tenantError } = await supabase
         .from('tenants')
-        .select('*')
+        .select('id, business_name, business_type, slug, logo_url')
         .eq('slug', cleanSlug)
         .eq('is_active', true)
         .single();
 
       if (tenantError || !tenantData) {
-        logger.error('Tenant fetch error or not found. This is typically caused by Row Level Security (RLS) blocking public access. Details:', tenantError || 'No tenant found with that slug.');
+        logger.error('Tenant fetch error or not found:', tenantError || 'No tenant found with that slug.');
         setLoading(false);
         return false;
       }
 
       const publicTenantId = tenantData.id;
 
-      // 2. Fetch all public data for this tenant
-      const [sv, st, se, avail, br, pi] = await Promise.all([
-        supabase.from('services').select('*').eq('tenant_id', publicTenantId),
-        supabase.from('staff').select('id, name, role, commission, commission_services, commission_products, username, password, email, tenant_id, branch_id').eq('tenant_id', publicTenantId),
-        supabase.from('settings').select('*').eq('tenant_id', publicTenantId).single(),
-        supabase.from('staff_availability').select('*').eq('tenant_id', publicTenantId),
-        supabase.from('branches').select('*').eq('tenant_id', publicTenantId).eq('is_active', true),
-        supabase.from('product_inventory').select('*').eq('tenant_id', publicTenantId)
+      const [sv, st, se, avail, br] = await Promise.all([
+        supabase.from('services').select('id, name, name_ur, price, duration, category').eq('tenant_id', publicTenantId),
+        supabase.from('staff').select('id, name, branch_id').eq('tenant_id', publicTenantId),
+        supabase.from('settings').select('data').eq('tenant_id', publicTenantId).single(),
+        supabase.from('staff_availability').select('staff_id, day_of_week, start_time, end_time').eq('tenant_id', publicTenantId),
+        supabase.from('branches').select('id, name, address, phone, is_active').eq('tenant_id', publicTenantId).eq('is_active', true)
       ]);
 
       if (sv.data) setServices(sv.data.map((s: any) => ({ ...s, nameUr: s.name_ur })));
       if (st.data) setStaff(st.data.map((s: any) => ({
-        ...s,
-        commission: typeof s.commission === 'string' ? parseFloat(s.commission) : (s.commission || 0),
-        commissionServices: typeof s.commission_services === 'string' ? parseFloat(s.commission_services) : (s.commission_services || 0),
-        commissionProducts: typeof s.commission_products === 'string' ? parseFloat(s.commission_products) : (s.commission_products || 0),
+        id: s.id,
+        name: s.name,
+        role: 'employee',
+        commission: 0,
+        commissionServices: 0,
+        commissionProducts: 0,
+        baseSalary: 0,
+        username: '',
         branchId: s.branch_id
       })));
 
       if (se.data?.data) {
         const fetchedSettings = { ...DEFAULT_SETTINGS, ...se.data.data };
         setSettings(fetchedSettings);
-
-        // If booking is disabled for this shop, stop here
         if (!fetchedSettings.bookingEnabled) {
           setLoading(false);
           return null;
@@ -252,7 +286,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (avail.data) {
         setStaffAvailability(avail.data.map((a: any) => ({
-          ...a,
+          id: a.id || `${a.staff_id}_${a.day_of_week}`,
           staffId: a.staff_id,
           dayOfWeek: a.day_of_week,
           startTime: a.start_time,
@@ -260,29 +294,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         })));
       }
 
-      if (br.data) setBranches(br.data.map((b: any) => ({ ...b, tenantId: b.tenant_id, isActive: b.is_active })));
-      if (pi.data) setProductInventory(pi.data.map((p: any) => ({ productId: p.product_id, branchId: p.branch_id, tenantId: p.tenant_id, stock: typeof p.stock === 'string' ? parseFloat(p.stock) : (p.stock || 0) })));
-
-      // We also need to fetch existing appointments to check for conflicts (only future ones)
-      const { data: apptsData } = await supabase
-        .from('appointments')
-        .select('*')
-        .eq('tenant_id', publicTenantId)
-        .gte('start_time', new Date().toISOString());
-
-      if (apptsData) {
-        setAppointments(apptsData.map((a: any) => ({
-          ...a,
-          staffId: a.staff_id,
-          customerId: a.customer_id,
-          serviceIds: (typeof a.service_ids === 'string' ? JSON.parse(a.service_ids) : a.service_ids) || [],
-          startTime: a.start_time,
-          endTime: a.end_time,
-          customerName: a.customer_name,
-          customerPhone: a.customer_phone,
-          branchId: a.branch_id
-        })));
-      }
+      if (br.data) setBranches(br.data.map((b: any) => ({ ...b, tenantId: publicTenantId, isActive: b.is_active })));
 
       setLoading(false);
       return tenantData;
@@ -559,8 +571,38 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (isRefund) setSales(prev => prev.map(s => s.id === sale.id ? sale : s));
     else setSales(prev => [...prev, sale]);
 
+    const salePayload = { id: sale.id, tenant_id: tenantId, timestamp: sale.timestamp, items: sale.items, staff_id: sale.staffId, customer_id: sale.customerId, total: sale.total, subtotal: sale.subtotal, tax: sale.tax, discount: sale.discount, discount_code: sale.discountCode, payment_method: sale.paymentMethod, split_details: sale.splitDetails || null, tax_type: sale.taxType, cost_of_goods: sale.costOfGoods, is_refunded: sale.isRefunded || false, refund_reason: sale.refundReason || null, redeemed_points: sale.redeemedPoints || 0, earned_points: sale.earnedPoints || 0, tip: sale.tip || 0, customer_name: sale.customerName, professional_name: sale.staffName, branch_id: sale.branchId || null };
+
+    if (!navigator.onLine) {
+      await offlineSyncService.enqueueAction('sale', salePayload);
+      showToast('Sale saved offline. Will auto-sync when online!', 'info');
+      return true;
+    }
+
     try {
-      const { error } = await supabase.from('sales').upsert({ id: sale.id, tenant_id: tenantId, timestamp: sale.timestamp, items: sale.items, staff_id: sale.staffId, customer_id: sale.customerId, total: sale.total, subtotal: sale.subtotal, tax: sale.tax, discount: sale.discount, discount_code: sale.discountCode, payment_method: sale.paymentMethod, split_details: sale.splitDetails || null, tax_type: sale.taxType, cost_of_goods: sale.costOfGoods, is_refunded: sale.isRefunded || false, refund_reason: sale.refundReason || null, redeemed_points: sale.redeemedPoints || 0, earned_points: sale.earnedPoints || 0, tip: sale.tip || 0, customer_name: sale.customerName, professional_name: sale.staffName, branch_id: sale.branchId || null });
+      // 1. Attempt Atomic PostgreSQL RPC Transaction
+      const { data: rpcRes, error: rpcErr } = await supabase.rpc('complete_sale_transaction', {
+        p_sale: salePayload,
+        p_items: sale.items,
+        p_customer_id: sale.customerId || null,
+        p_earned_points: isRefund ? 0 : (sale.earnedPoints || 0),
+        p_redeemed_points: isRefund ? 0 : (sale.redeemedPoints || 0)
+      });
+
+      if (!rpcErr && rpcRes?.success) {
+        // Reconcile local state immediately after atomic DB success
+        if (sale.customerId && !isRefund) {
+          const customer = customers.find(c => c.id === sale.customerId);
+          if (customer) {
+            const newPoints = Math.max(0, (customer.loyaltyPoints || 0) - (sale.redeemedPoints || 0) + (sale.earnedPoints || 0));
+            setCustomers(prev => prev.map(c => c.id === sale.customerId ? { ...c, loyaltyPoints: newPoints } : c));
+          }
+        }
+        return true;
+      }
+
+      // 2. Direct Fallback if RPC is unavailable
+      const { error } = await supabase.from('sales').upsert(salePayload);
       if (error) throw error;
 
       if (sale.customerId && !isRefund) {
@@ -641,11 +683,32 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try { await supabase.from('advance_payments').delete().eq('id', id); } catch (e) { showToast("Failed to delete advance", "error"); }
   };
 
-  const publicCreateAppointment = async (appointment: Omit<Appointment, 'id'>, targetTenantId: string) => {
-    logger.log('Attempting public booking for tenant:', targetTenantId);
+  const publicCreateAppointment = async (appointment: Omit<Appointment, 'id'>, targetTenantSlugOrId: string) => {
+    logger.log('Attempting public booking for tenant:', targetTenantSlugOrId);
     try {
-      const { data, error } = await supabase.from('appointments').insert({
-        tenant_id: targetTenantId,
+      // 1. Execute secure server-side booking RPC with validation
+      const { data, error } = await supabase.rpc('create_public_booking', {
+        p_slug: targetTenantSlugOrId,
+        p_staff_id: appointment.staffId || null,
+        p_branch_id: appointment.branchId || null,
+        p_service_ids: appointment.serviceIds,
+        p_start_time: appointment.startTime,
+        p_end_time: appointment.endTime,
+        p_customer_name: appointment.customerName || null,
+        p_customer_phone: appointment.customerPhone || null,
+        p_customer_email: appointment.customerEmail || null,
+        p_notes: appointment.notes || null
+      });
+
+      if (!error && data?.success) {
+        logger.log('Public booking RPC success:', data);
+        return true;
+      }
+
+      // 2. Direct Fallback if RPC is not yet deployed
+      logger.warn('RPC create_public_booking failed, trying fallback insert:', error || data?.error);
+      const { error: directError } = await supabase.from('appointments').insert({
+        tenant_id: targetTenantSlugOrId,
         staff_id: appointment.staffId,
         customer_id: appointment.customerId || null,
         service_ids: JSON.stringify(appointment.serviceIds),
@@ -657,13 +720,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         customer_phone: appointment.customerPhone || null,
         customer_email: appointment.customerEmail || null,
         branch_id: appointment.branchId || null
-      }).select();
+      });
 
-      if (error) {
-        logger.error('Public booking insert error:', error);
-        throw error;
-      }
-      logger.log('Public booking insert success:', data);
+      if (directError) throw directError;
       return true;
     } catch (e) {
       logger.error('Public booking error:', e);
@@ -759,11 +818,22 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     setupRealtime();
 
+    const handleOnline = async () => {
+      const { synced } = await offlineSyncService.syncQueue();
+      if (synced > 0) {
+        showToast(`Synced ${synced} offline transaction(s)!`, 'success');
+        fetchData(true);
+      }
+    };
+
+    window.addEventListener('online', handleOnline);
+
     return () => {
       clearTimeout(retryTimeout);
       if (channel) supabase.removeChannel(channel);
+      window.removeEventListener('online', handleOnline);
     };
-  }, [currentTenant?.id, fetchData]); // Only re-subscribe if tenant ID changes
+  }, [currentTenant?.id, fetchData, showToast]);
 
   return (
     <DataContext.Provider value={{

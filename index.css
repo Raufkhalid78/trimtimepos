@@ -10,26 +10,28 @@
   --tt-bg: #f8fafc;
   --tt-surface: #ffffff;
   --tt-surface-2: #f1f5f9;
-  --tt-border: rgba(0, 0, 0, 0.05);
+  --tt-border: rgba(0, 0, 0, 0.06);
   --tt-text-main: #0f172a;
   --tt-text-muted: #64748b;
   
   --tt-amber: #f59e0b;
-  --tt-amber-glow: rgba(245, 158, 11, 0.1);
+  --tt-amber-glow: rgba(245, 158, 11, 0.12);
   --tt-emerald: #10b981;
   --tt-rose: #f43f5e;
   --tt-violet: #8b5cf6;
   --tt-blue: #3b82f6;
+  --tt-glass-border: rgba(0, 0, 0, 0.08);
 }
 
 html.dark {
-  --tt-bg: #0a0d14;
-  --tt-surface: #111827;
-  --tt-surface-2: #1c2433;
-  --tt-border: rgba(255, 255, 255, 0.07);
+  --tt-bg: #070a11;
+  --tt-surface: rgba(15, 23, 42, 0.8);
+  --tt-surface-2: rgba(30, 41, 59, 0.6);
+  --tt-border: rgba(255, 255, 255, 0.08);
+  --tt-glass-border: rgba(245, 158, 11, 0.15);
   --tt-text-main: #f8fafc;
   --tt-text-muted: #94a3b8;
-  --tt-amber-glow: rgba(245, 158, 11, 0.15);
+  --tt-amber-glow: rgba(245, 158, 11, 0.2);
 }
 
 @layer base {
@@ -64,7 +66,11 @@ html.dark {
 
 @layer components {
   .tt-card {
-    @apply bg-[var(--tt-surface)] border border-[var(--tt-border)] rounded-[1.5rem] shadow-sm transition-all;
+    @apply bg-[var(--tt-surface)] backdrop-blur-xl border border-[var(--tt-border)] rounded-[2rem] shadow-lg transition-all hover:border-amber-500/40 hover:shadow-2xl hover:-translate-y-0.5;
+  }
+
+  .tt-bento-card {
+    @apply bg-slate-900/60 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] p-6 shadow-2xl relative overflow-hidden transition-all hover:border-amber-500/30;
   }
   
   .tt-surface {
@@ -76,15 +82,15 @@ html.dark {
   }
 
   .tt-badge {
-    @apply px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider;
+    @apply px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider shadow-sm;
   }
 
   .tt-input {
-    @apply w-full bg-[var(--tt-surface-2)] border-0 rounded-2xl px-5 py-4 focus:ring-4 focus:ring-[var(--tt-amber-glow)] outline-none text-sm font-bold text-[var(--tt-text-main)] shadow-sm transition-all placeholder:text-[var(--tt-text-muted)];
+    @apply w-full bg-[var(--tt-surface-2)] border border-[var(--tt-border)] rounded-2xl px-5 py-4 focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500/50 outline-none text-sm font-bold text-[var(--tt-text-main)] shadow-inner transition-all placeholder:text-[var(--tt-text-muted)];
   }
 
   .tt-button-primary {
-    @apply bg-[var(--tt-amber)] text-slate-950 px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-wider hover:scale-105 active:scale-95 transition-all shadow-lg shadow-[var(--tt-amber-glow)];
+    @apply bg-gradient-to-tr from-amber-500 to-amber-400 text-slate-950 px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-wider hover:scale-105 active:scale-95 transition-all shadow-xl shadow-amber-500/25;
   }
 
   .tt-button-secondary {

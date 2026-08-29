@@ -4,10 +4,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../contexts/AuthContext';
-import { verifyPassword } from '../services/passwordService';
 import { Staff, Language } from '../types';
 import { TRANSLATIONS } from '../constants';
 import { setPageMeta } from '../utils/seo';
+import LoadingSpinner from './LoadingSpinner';
 
 const StaffLogin: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -21,7 +21,6 @@ const StaffLogin: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [shake, setShake] = useState(false);
   const [tenant, setTenant] = useState<any>(null);
-  const [staffList, setStaffList] = useState<Staff[]>([]);
   const [pageLoading, setPageLoading] = useState(true);
 
   const t = TRANSLATIONS[sessionLanguage] || TRANSLATIONS.en;
@@ -48,92 +47,86 @@ const StaffLogin: React.FC = () => {
   }, [slug]);
 
   useEffect(() => {
-    const loadTenantAndStaff = async () => {
+    const loadTenant = async () => {
       if (!slug) { setPageLoading(false); return; }
 
       const cleanSlug = slug.trim().toLowerCase();
 
-      // 1. Fetch the tenant by slug
-      const { data: tenantData, error: tenantError } = await supabase
-        .from('tenants')
-        .select('*')
-        .eq('slug', cleanSlug)
-        .eq('is_active', true)
-        .single();
+      // Fetch tenant identity using secure public data RPC
+      const { data, error: rpcError } = await supabase.rpc('get_public_shop_data', { p_slug: cleanSlug });
 
-      if (tenantError || !tenantData) {
-        setError(t.shopNotFound);
-        setPageLoading(false);
-        return;
-      }
+      if (rpcError || !data?.success || !data?.tenant) {
+        // Fallback to direct tenant query if RPC is not yet created
+        const { data: tenantData, error: tenantError } = await supabase
+          .from('tenants')
+          .select('id, business_name, business_type, slug, logo_url')
+          .eq('slug', cleanSlug)
+          .eq('is_active', true)
+          .single();
 
-      setTenant(tenantData);
-
-      // 2. Directly fetch staff for this tenant (bypass shared context to avoid race conditions)
-      const { data: staffData, error: staffError } = await supabase
-        .from('staff')
-        .select('id, name, role, commission, username, email, base_salary, tenant_id')
-        .eq('tenant_id', tenantData.id);
-
-      if (!staffError && staffData) {
-        setStaffList(staffData.map((s: any) => ({
-          ...s,
-          commission: typeof s.commission === 'string' ? parseFloat(s.commission) : (s.commission || 0),
-          baseSalary: s.base_salary || 0,
-        })));
+        if (tenantError || !tenantData) {
+          setError(t.shopNotFound);
+          setPageLoading(false);
+          return;
+        }
+        setTenant(tenantData);
+      } else {
+        setTenant(data.tenant);
       }
 
       setPageLoading(false);
     };
 
-    loadTenantAndStaff();
+    loadTenant();
   }, [slug]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!staffList.length) {
-      setError(t.staffRecordsNotFound);
+    if (!username.trim() || !password) {
+      setError(t.invalidLogin);
       return;
     }
 
     setLoading(true);
     setError('');
 
+    const cleanSlug = (slug || '').trim().toLowerCase();
     const cleanUsername = username.toLowerCase().trim();
-    const potentialUsers = staffList.filter(
-      s => s.username?.toLowerCase().trim() === cleanUsername
-    );
-
-    let matchedUser: Staff | null = null;
 
     try {
-      for (const user of potentialUsers) {
-        const { data, error: fetchError } = await supabase
-          .from('staff')
-          .select('password')
-          .eq('id', user.id)
-          .single();
+      // Execute secure server-side bcrypt authentication via PostgreSQL RPC
+      const { data, error: rpcError } = await supabase.rpc('authenticate_staff_secure', {
+        p_slug: cleanSlug,
+        p_username: cleanUsername,
+        p_password: password
+      });
 
-        if (fetchError || !data) {
-          console.error("Could not fetch staff credentials:", fetchError);
-          continue;
-        }
-
-        const storedPass = data.password || '';
-        const ok = await verifyPassword(password, storedPass);
-        if (ok) { matchedUser = user; break; }
-      }
-
-      if (matchedUser) {
-        const expiry = Date.now() + 12 * 60 * 60 * 1000;
-        loginStaff(matchedUser, expiry);
-        navigate('/dashboard');
-      } else {
-        setError(t.invalidLogin);
+      if (rpcError || !data?.success || !data?.staff) {
+        setError(data?.error || t.invalidLogin);
         setShake(true);
         setTimeout(() => setShake(false), 600);
         setLoading(false);
+        return;
       }
+
+      const s = data.staff;
+      const matchedUser: Staff = {
+        id: s.id,
+        name: s.name,
+        role: s.role,
+        commission: typeof s.commission === 'string' ? parseFloat(s.commission) : (s.commission || 0),
+        commissionServices: typeof s.commission_services === 'string' ? parseFloat(s.commission_services) : s.commission_services,
+        commissionProducts: typeof s.commission_products === 'string' ? parseFloat(s.commission_products) : s.commission_products,
+        baseSalary: typeof s.base_salary === 'string' ? parseFloat(s.base_salary) : (s.base_salary || 0),
+        username: s.username,
+        email: s.email,
+        branchId: s.branch_id,
+        permissions: s.permissions
+      };
+
+      const expiry = Date.now() + 12 * 60 * 60 * 1000;
+      loginStaff(matchedUser, expiry);
+      navigate('/dashboard');
     } catch (err: any) {
       console.error("Staff login error:", err);
       setError(t.invalidLogin);
@@ -146,14 +139,7 @@ const StaffLogin: React.FC = () => {
   const shopInitial = (tenant?.business_name || 'T').charAt(0).toUpperCase();
 
   if (pageLoading) {
-    return (
-      <div className="min-h-screen bg-[#080c14] flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="w-16 h-16 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin mx-auto" />
-          <p className="text-slate-500 text-sm font-bold uppercase tracking-widest">{t.loading}</p>
-        </div>
-      </div>
-    );
+    return <LoadingSpinner fullScreen size="lg" color="amber" label={t.loading} />;
   }
 
   if (error && !tenant) {

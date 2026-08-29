@@ -76,7 +76,11 @@ export function getStatusBadgeClasses(subscription: Subscription): string {
  */
 export function isSubscriptionValid(subscription: Subscription | null): boolean {
   if (!subscription) return false;
-  return subscription.status === 'trial' || subscription.status === 'active';
+  if (subscription.status === 'active') return true;
+  if (subscription.status === 'trial') {
+    return getTrialDaysRemaining(subscription) > 0;
+  }
+  return false;
 }
 
 /**

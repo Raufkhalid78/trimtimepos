@@ -79,7 +79,7 @@ const PrivacyPolicy: React.FC = () => {
               <ul className="list-disc pl-6 space-y-2">
                 <li><strong>Supabase Inc.</strong> — Cloud database, authentication, and hosting infrastructure. Data is isolated per tenant.</li>
                 <li><strong>Vercel Inc.</strong> — Frontend hosting and application delivery network.</li>
-                <li><strong>Polar.sh</strong> — Payment processing, checkout infrastructure, and subscription billing. We do not store full credit card details on our servers.</li>
+                <li><strong>Creem.io</strong> — Merchant of record, payment processing, checkout infrastructure, and subscription billing. We do not store full credit card details on our servers.</li>
                 <li><strong>Google LLC</strong> — OAuth login infrastructure and fonts rendering.</li>
               </ul>
               <p className="mt-4">

@@ -48,6 +48,40 @@ export const whatsAppService = {
   },
 
   /**
+   * Sends automated WhatsApp message using central platform gateway or custom tenant API key.
+   */
+  sendMessage: async (
+    phone: string,
+    message: string,
+    settings?: ShopSettings
+  ): Promise<boolean> => {
+    const cleanPhone = phone.replace(/\D/g, '');
+    const apiKey = settings?.customWhatsAppApiKey || import.meta.env.VITE_WHATSAPP_API_KEY;
+
+    if (apiKey) {
+      try {
+        // Example integration with UltraMsg / WhatsApp API gateway
+        const response = await fetch('https://api.ultramsg.com/instance/messages/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            token: apiKey,
+            to: cleanPhone,
+            body: message
+          })
+        });
+        return response.ok;
+      } catch (err) {
+        console.error('WhatsApp API Direct Send Error:', err);
+      }
+    }
+
+    // Fallback: Open wa.me link
+    window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`, '_blank');
+    return true;
+  },
+
+  /**
    * Shares a PDF file via Web Share API if available,
    * otherwise falls back to wa.me text link.
    * Returns true if shared successfully via Web Share API.

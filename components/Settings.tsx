@@ -7,6 +7,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { setPageMeta } from '../utils/seo';
 import { getSubscriptionLimits } from '../services/subscriptionService';
 import { useToast } from '../contexts/ToastContext';
+import { creemService } from '../services/creemService';
+import { useAuth } from '../contexts/AuthContext';
+import PricingPage from './PricingPage';
 
 interface SettingsProps {
   settings: ShopSettings;
@@ -27,10 +30,12 @@ interface SettingsProps {
 const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, currentUser, onPurgeSales, onLogout, dbStatus, dbErrorMessage, onRefreshStatus, onTestNotification, currentTenant, subscription, onCancelSubscription, onDeleteStore }) => {
   const [formData, setFormData] = useState<ShopSettings>(settings);
   const [isCustomCurrency, setIsCustomCurrency] = useState(!CURRENCY_OPTIONS.some(opt => opt.symbol === settings.currency));
+  const [isPricingOpen, setIsPricingOpen] = useState(false);
   const [newPromo, setNewPromo] = useState<DiscountCode>({ code: '', type: 'percentage', value: 0, description: '' });
   const [newBranch, setNewBranch] = useState({ name: '', address: '', phone: '', isActive: true });
   const { branches, updateBranches } = useData();
   const { showToast } = useToast();
+  const { authUser } = useAuth();
 
   const handleAddBranch = () => {
     if (!newBranch.name.trim()) return;
@@ -299,82 +304,80 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
               </AnimatePresence>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6 mt-6">
-              <div>
-                <label htmlFor="shop-country" className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest block mb-2 ml-1">{t.countryCode}</label>
-                <select 
-                  id="shop-country"
-                  value={formData.countryCode}
-                  onChange={e => setFormData({...formData, countryCode: e.target.value})}
-                  className="tt-input"
+            <div>
+              <label htmlFor="shop-country" className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest block mb-2 ml-1">{t.countryCode}</label>
+              <select 
+                id="shop-country"
+                value={formData.countryCode}
+                onChange={e => setFormData({...formData, countryCode: e.target.value})}
+                className="tt-input"
+              >
+                {COUNTRY_CODES.map(code => (
+                  <option key={code.code} value={code.code}>{code.label}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest block mb-2 ml-1">{t.taxCalculation}</label>
+              <div className="flex bg-[var(--tt-surface-2)] p-1 rounded-2xl border border-[var(--tt-border)]">
+                <button 
+                  type="button"
+                  onClick={() => setFormData({...formData, taxType: 'excluded'})}
+                  className={`flex-1 py-2.5 rounded-xl font-bold text-xs transition-all ${formData.taxType === 'excluded' ? 'bg-[var(--tt-surface)] shadow-sm text-[var(--tt-text-main)]' : 'text-[var(--tt-text-muted)] hover:text-[var(--tt-text-main)]'}`}
                 >
-                  {COUNTRY_CODES.map(code => (
-                    <option key={code.code} value={code.code}>{code.label}</option>
-                  ))}
-                </select>
+                  {t.excluded}
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => setFormData({...formData, taxType: 'included'})}
+                  className={`flex-1 py-2.5 rounded-xl font-bold text-xs transition-all ${formData.taxType === 'included' ? 'bg-[var(--tt-surface)] shadow-sm text-[var(--tt-text-main)]' : 'text-[var(--tt-text-muted)] hover:text-[var(--tt-text-main)]'}`}
+                >
+                  {t.included}
+                </button>
               </div>
+            </div>
 
-              <div>
-                <label className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest block mb-2 ml-1">{t.taxCalculation}</label>
-                <div className="flex bg-[var(--tt-surface-2)] p-1 rounded-2xl border border-[var(--tt-border)]">
-                  <button 
-                    type="button"
-                    onClick={() => setFormData({...formData, taxType: 'excluded'})}
-                    className={`flex-1 py-2.5 rounded-xl font-bold text-xs transition-all ${formData.taxType === 'excluded' ? 'bg-[var(--tt-surface)] shadow-sm text-[var(--tt-text-main)]' : 'text-[var(--tt-text-muted)] hover:text-[var(--tt-text-main)]'}`}
-                  >
-                    {t.excluded}
-                  </button>
-                  <button 
-                    type="button"
-                    onClick={() => setFormData({...formData, taxType: 'included'})}
-                    className={`flex-1 py-2.5 rounded-xl font-bold text-xs transition-all ${formData.taxType === 'included' ? 'bg-[var(--tt-surface)] shadow-sm text-[var(--tt-text-main)]' : 'text-[var(--tt-text-muted)] hover:text-[var(--tt-text-main)]'}`}
-                  >
-                    {t.included}
-                  </button>
-                </div>
+            <div>
+              <label htmlFor="shop-taxrate" className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest block mb-2 ml-1">{t.taxRate}</label>
+              <div className="relative">
+                <input 
+                  id="shop-taxrate"
+                  type="number" 
+                  step="0.1"
+                  min="0"
+                  max="100"
+                  value={formData.taxRate}
+                  onChange={e => setFormData({...formData, taxRate: parseFloat(e.target.value) || 0})}
+                  className="tt-input pr-12" 
+                />
+                <span className="absolute right-5 top-1/2 -translate-y-1/2 text-[var(--tt-text-muted)] font-black">%</span>
               </div>
+            </div>
 
-              <div>
-                <label htmlFor="shop-taxrate" className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest block mb-2 ml-1">{t.taxRate}</label>
-                <div className="relative">
-                  <input 
-                    id="shop-taxrate"
-                    type="number" 
-                    step="0.1"
-                    min="0"
-                    max="100"
-                    value={formData.taxRate}
-                    onChange={e => setFormData({...formData, taxRate: parseFloat(e.target.value) || 0})}
-                    className="tt-input pr-12" 
-                  />
-                  <span className="absolute right-5 top-1/2 -translate-y-1/2 text-[var(--tt-text-muted)] font-black">%</span>
-                </div>
+            <div className="md:col-span-2 bg-[var(--tt-surface-2)] p-6 rounded-3xl border border-[var(--tt-border)] flex items-center justify-between">
+              <div className="flex-1 pr-4">
+                <h4 className="text-sm font-bold text-[var(--tt-text-main)] mb-1">{t.deductExpenses}</h4>
+                <p className="text-[10px] text-[var(--tt-text-muted)] leading-relaxed">{t.deductExpensesDesc}</p>
               </div>
-
-              <div className="md:col-span-2 bg-[var(--tt-surface-2)] p-6 rounded-3xl border border-[var(--tt-border)] flex items-center justify-between">
-                <div className="flex-1 pr-4">
-                  <h4 className="text-sm font-bold text-[var(--tt-text-main)] mb-1">{t.deductExpenses}</h4>
-                  <p className="text-[10px] text-[var(--tt-text-muted)] leading-relaxed">{t.deductExpensesDesc}</p>
-                </div>
-                <div className="flex items-center">
-                  <input 
-                    type="checkbox" 
-                    checked={formData.deductExpensesFromCommission}
-                    onChange={e => setFormData({...formData, deductExpensesFromCommission: e.target.checked})}
-                    className="w-6 h-6 rounded-lg text-[var(--tt-amber)] focus:ring-[var(--tt-amber)] border-[var(--tt-border)] bg-transparent"
-                  />
-                </div>
-              </div>
-
-              <div className="md:col-span-2">
-                <label htmlFor="shop-receiptfooter" className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest block mb-2 ml-1">{t.receiptFooter}</label>
-                <textarea 
-                  id="shop-receiptfooter"
-                  value={formData.receiptFooter}
-                  onChange={e => setFormData({...formData, receiptFooter: e.target.value})}
-                  className="tt-input h-[52px] resize-none overflow-hidden" 
+              <div className="flex items-center">
+                <input 
+                  type="checkbox" 
+                  checked={formData.deductExpensesFromCommission}
+                  onChange={e => setFormData({...formData, deductExpensesFromCommission: e.target.checked})}
+                  className="w-6 h-6 rounded-lg text-[var(--tt-amber)] focus:ring-[var(--tt-amber)] border-[var(--tt-border)] bg-transparent"
                 />
               </div>
+            </div>
+
+            <div className="md:col-span-2">
+              <label htmlFor="shop-receiptfooter" className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest block mb-2 ml-1">{t.receiptFooter}</label>
+              <textarea 
+                id="shop-receiptfooter"
+                value={formData.receiptFooter}
+                onChange={e => setFormData({...formData, receiptFooter: e.target.value})}
+                className="tt-input h-[52px] resize-none overflow-hidden" 
+              />
             </div>
           </div>
         </motion.div>
@@ -768,6 +771,28 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
                     <strong>ℹ️ {t.howItWorks || 'How it works'}:</strong> {t.loyaltyExplanation || `Customers earn ${formData.pointsPerCurrency} point(s) per ${formData.currency}1 spent. Once they accumulate ${formData.minPointsToRedeem}+ points, they can redeem them at checkout. Each point provides a ${formData.currency}${formData.pointRedemptionValue} discount.`}
                  </p>
              </div>
+
+              {/* VIP Tiers Config */}
+              <div className="pt-4 border-t border-[var(--tt-border)] space-y-3">
+                <h4 className="text-xs font-black uppercase tracking-widest text-[var(--tt-amber)]">👑 VIP Loyalty Tiers Configuration</h4>
+                <div className="grid grid-cols-3 gap-3 text-center">
+                  <div className="bg-[var(--tt-surface-2)] p-3 rounded-2xl border border-[var(--tt-border)]">
+                    <p className="text-xs font-bold text-amber-500">Bronze VIP</p>
+                    <p className="text-[10px] text-[var(--tt-text-muted)] mt-1">Spend: {formData.currency}0 / yr</p>
+                    <p className="text-[10px] font-black text-emerald-400 mt-1">1.0x Points</p>
+                  </div>
+                  <div className="bg-[var(--tt-surface-2)] p-3 rounded-2xl border border-[var(--tt-border)]">
+                    <p className="text-xs font-bold text-slate-300">Silver VIP</p>
+                    <p className="text-[10px] text-[var(--tt-text-muted)] mt-1">Spend: {formData.currency}250 / yr</p>
+                    <p className="text-[10px] font-black text-emerald-400 mt-1">1.25x Points</p>
+                  </div>
+                  <div className="bg-[var(--tt-surface-2)] p-3 rounded-2xl border border-[var(--tt-border)]">
+                    <p className="text-xs font-bold text-amber-300">Gold VIP</p>
+                    <p className="text-[10px] text-[var(--tt-text-muted)] mt-1">Spend: {formData.currency}500 / yr</p>
+                    <p className="text-[10px] font-black text-emerald-400 mt-1">1.5x Points</p>
+                  </div>
+                </div>
+              </div>
            </div>
         </motion.div>
 
@@ -891,13 +916,93 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
                       className="px-8 py-4 bg-[var(--tt-blue)] text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:opacity-90 transition-all flex items-center justify-center gap-2 shadow-lg shadow-[var(--tt-blue)]/20"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg>
-                      {t.copyBookingLink}
                     </button>
                   </div>
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
+        </motion.div>
+
+        {/* Online Booking & Deposit Settings */}
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.21 }}
+          className="tt-card p-6 md:p-8 space-y-6"
+        >
+          <div className="flex items-center gap-4 mb-2">
+            <div className="w-10 h-10 bg-amber-500/10 rounded-xl flex items-center justify-center text-amber-500">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+            </div>
+            <div>
+              <h3 className="text-lg md:text-xl font-bold text-[var(--tt-text-main)]">Deposit & Gateway Configuration</h3>
+              <p className="text-xs text-[var(--tt-text-muted)] mt-1">Configure mandatory booking deposits and automated WhatsApp API options</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="text-xs font-black text-[var(--tt-text-muted)] uppercase tracking-widest block mb-2">Deposit Mode</label>
+              <select
+                value={formData.depositMode || 'none'}
+                onChange={e => setFormData({ ...formData, depositMode: e.target.value as 'none' | 'required' })}
+                className="tt-input"
+              >
+                <option value="none">Option 1: Booking Only (No Deposit Required)</option>
+                <option value="required">Option 2: Require Deposit Payment</option>
+              </select>
+            </div>
+
+            {formData.depositMode === 'required' && (
+              <>
+                <div>
+                  <label className="text-xs font-black text-[var(--tt-text-muted)] uppercase tracking-widest block mb-2">Payment Provider</label>
+                  <select
+                    value={formData.depositPaymentProvider || 'stripe'}
+                    onChange={e => setFormData({ ...formData, depositPaymentProvider: e.target.value as 'stripe' | 'creem' | 'custom' })}
+                    className="tt-input"
+                  >
+                    <option value="stripe">Stripe</option>
+                    <option value="creem">Creem.io</option>
+                    <option value="custom">Custom Link / Local Provider</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-black text-[var(--tt-text-muted)] uppercase tracking-widest block mb-2">Deposit Amount ({formData.currency})</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={formData.depositAmount || 0}
+                    onChange={e => setFormData({ ...formData, depositAmount: parseFloat(e.target.value) || 0 })}
+                    className="tt-input"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-black text-[var(--tt-text-muted)] uppercase tracking-widest block mb-2">API Key / Checkout URL</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. pk_test_... or https://checkout..."
+                    value={formData.depositApiKey || ''}
+                    onChange={e => setFormData({ ...formData, depositApiKey: e.target.value })}
+                    className="tt-input font-mono text-xs"
+                  />
+                </div>
+              </>
+            )}
+
+            <div className="md:col-span-2 pt-2 border-t border-[var(--tt-border)]">
+              <label className="text-xs font-black text-[var(--tt-text-muted)] uppercase tracking-widest block mb-2">Custom WhatsApp Gateway API Key (Optional)</label>
+              <input
+                type="text"
+                placeholder="Leave blank to use central system WhatsApp gateway"
+                value={formData.customWhatsAppApiKey || ''}
+                onChange={e => setFormData({ ...formData, customWhatsAppApiKey: e.target.value })}
+                className="tt-input font-mono text-xs"
+              />
+              <p className="text-[10px] text-[var(--tt-text-muted)] mt-1">If empty, notifications will be sent automatically using the system central WhatsApp number.</p>
+            </div>
+          </div>
         </motion.div>
 
         {/* Staff Shift Login Settings */}
@@ -1115,10 +1220,12 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
             </div>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
             <div className="p-4 bg-[var(--tt-surface)] rounded-2xl border border-[var(--tt-border)]">
               <p className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest mb-1">Current Plan</p>
-              <p className="text-lg font-bold text-[var(--tt-text-main)] capitalize">{subscription.plan}</p>
+              <p className="text-lg font-bold text-[var(--tt-text-main)] capitalize">
+                {subscription.plan === 'yearly' ? 'Yearly ($150/yr)' : 'Monthly ($15/mo)'}
+              </p>
             </div>
             <div className="p-4 bg-[var(--tt-surface)] rounded-2xl border border-[var(--tt-border)]">
               <p className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest mb-1">Status</p>
@@ -1129,24 +1236,66 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
             <div className="p-4 bg-[var(--tt-surface)] rounded-2xl border border-[var(--tt-border)]">
               <p className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest mb-1">Period Ends</p>
               <p className="text-lg font-bold text-[var(--tt-text-main)]">
-                {new Date(subscription.currentPeriodEnd).toLocaleDateString()}
+                {subscription.currentPeriodEnd ? new Date(subscription.currentPeriodEnd).toLocaleDateString() : 'N/A'}
               </p>
             </div>
           </div>
 
-          {subscription.status !== 'cancelled' && (
-            <div className="flex justify-end pt-4 border-t border-[var(--tt-border)]">
+          <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-[var(--tt-border)]">
+            <div className="flex flex-wrap items-center gap-3">
+              {subscription.plan === 'monthly' ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (currentTenant && authUser) {
+                      creemService.redirectToCheckout('yearly', currentTenant.id, authUser.email || '');
+                    } else {
+                      setIsPricingOpen(true);
+                    }
+                  }}
+                  className="px-5 py-3 bg-gradient-to-r from-amber-400 to-amber-600 hover:from-amber-500 hover:to-amber-700 text-slate-950 rounded-xl font-black text-xs uppercase tracking-wider shadow-md shadow-amber-500/20 transition-all flex items-center gap-2 cursor-pointer active:scale-95"
+                >
+                  <span>🚀 Upgrade to Annual ($150/yr)</span>
+                  <span className="bg-slate-950 text-amber-400 px-2 py-0.5 rounded-full text-[9px] font-black tracking-widest uppercase">Save $30</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (currentTenant && authUser) {
+                      creemService.redirectToCheckout('monthly', currentTenant.id, authUser.email || '');
+                    } else {
+                      setIsPricingOpen(true);
+                    }
+                  }}
+                  className="px-5 py-3 bg-[var(--tt-surface-2)] text-[var(--tt-text-main)] border border-[var(--tt-border)] hover:border-amber-500/50 rounded-xl font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer active:scale-95"
+                >
+                  <span>🔄 Switch to Monthly ($15/mo)</span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => setIsPricingOpen(true)}
+                className="px-5 py-3 bg-[var(--tt-surface)] text-[var(--tt-text-main)] border border-[var(--tt-border)] hover:bg-[var(--tt-surface-2)] rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer"
+              >
+                View Plans & Add-ons
+              </button>
+            </div>
+
+            {subscription.status !== 'cancelled' && (
               <button 
                 type="button"
                 onClick={() => setShowCancelSubConfirm(true)}
-                className="px-6 py-3 bg-[var(--tt-surface)] text-[var(--tt-text-main)] border border-[var(--tt-border)] rounded-xl font-bold text-sm hover:bg-[var(--tt-rose)]/10 hover:text-[var(--tt-rose)] hover:border-[var(--tt-rose)]/30 transition-all"
+                className="px-4 py-2.5 text-[var(--tt-text-muted)] hover:text-[var(--tt-rose)] text-xs font-bold transition-colors cursor-pointer"
               >
                 Cancel Subscription
               </button>
-            </div>
-          )}
+            )}
+          </div>
+
           {subscription.status === 'cancelled' && (
-             <div className="p-4 bg-[var(--tt-rose)]/10 border border-[var(--tt-rose)]/30 rounded-2xl text-center">
+             <div className="p-4 bg-[var(--tt-rose)]/10 border border-[var(--tt-rose)]/30 rounded-2xl text-center mt-4">
                 <p className="text-sm font-bold text-[var(--tt-rose)]">Your subscription is cancelled.</p>
                 <p className="text-xs text-[var(--tt-text-muted)] mt-1">You will lose access to premium features when the current period ends.</p>
              </div>
@@ -1270,6 +1419,15 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, current
               </div>
             </motion.div>
           </div>
+        )}
+
+        {isPricingOpen && (
+          <PricingPage
+            tenantId={currentTenant?.id || ''}
+            userEmail={authUser?.email || currentUser?.email || ''}
+            language={settings.language}
+            onClose={() => setIsPricingOpen(false)}
+          />
         )}
       </AnimatePresence>
     </div>

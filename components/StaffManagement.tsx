@@ -33,7 +33,14 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ staffList, onUpdateSt
     commissionServices: 30,
     commissionProducts: 10,
     baseSalary: 0,
-    branchId: ''
+    branchId: '',
+    permissions: {
+      canViewFinance: true,
+      canApplyDiscounts: true,
+      canExportData: true,
+      canEditInventory: true,
+      canManageStaff: true
+    }
   });
 
   const t = TRANSLATIONS[language];
@@ -81,7 +88,14 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ staffList, onUpdateSt
       commissionServices: 30,
       commissionProducts: 10,
       baseSalary: 0,
-      branchId: branches.length === 1 ? branches[0].id : ''
+      branchId: branches.length === 1 ? branches[0].id : '',
+      permissions: {
+        canViewFinance: true,
+        canApplyDiscounts: true,
+        canExportData: true,
+        canEditInventory: true,
+        canManageStaff: true
+      }
     });
   };
 
@@ -153,17 +167,24 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ staffList, onUpdateSt
                <button 
                  onClick={() => {
                    setEditingStaff(staff);
-                  setFormData({ 
-                    name: staff.name, 
-                    username: staff.username, 
-                    password: staff.password || '', 
-                    role: staff.role, 
-                    commission: staff.commission,
-                    commissionServices: staff.commissionServices ?? staff.commission,
-                    commissionProducts: staff.commissionProducts ?? staff.commission,
-                    baseSalary: staff.baseSalary || 0,
-                    branchId: staff.branchId || ''
-                  });
+                    setFormData({ 
+                      name: staff.name, 
+                      username: staff.username, 
+                      password: staff.password || '', 
+                      role: staff.role, 
+                      commission: staff.commission,
+                      commissionServices: staff.commissionServices ?? staff.commission,
+                      commissionProducts: staff.commissionProducts ?? staff.commission,
+                      baseSalary: staff.baseSalary || 0,
+                      branchId: staff.branchId || '',
+                      permissions: staff.permissions || {
+                        canViewFinance: true,
+                        canApplyDiscounts: true,
+                        canExportData: true,
+                        canEditInventory: true,
+                        canManageStaff: true
+                      }
+                    });
                    setIsAdding(true);
                  }}
                  className="flex-1 py-3 rounded-xl bg-[var(--tt-surface-2)] text-[var(--tt-text-main)] font-bold text-sm hover:bg-[var(--tt-surface)] transition-colors"
@@ -250,7 +271,14 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ staffList, onUpdateSt
                           commissionServices: staff.commissionServices ?? staff.commission,
                           commissionProducts: staff.commissionProducts ?? staff.commission,
                           baseSalary: staff.baseSalary || 0,
-                          branchId: staff.branchId || ''
+                          branchId: staff.branchId || '',
+                          permissions: staff.permissions || {
+                            canViewFinance: true,
+                            canApplyDiscounts: true,
+                            canExportData: true,
+                            canEditInventory: true,
+                            canManageStaff: true
+                          }
                         });
                         setIsAdding(true);
                       }}
@@ -399,6 +427,50 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ staffList, onUpdateSt
                     </div>
                   )}
                 </div>
+
+                {/* Granular Permissions Checkbox Matrix */}
+                <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
+                  <h4 className="text-xs font-black uppercase tracking-widest text-amber-500">Staff Granular Permissions</h4>
+                  <div className="grid grid-cols-2 gap-3 text-xs font-bold text-slate-700 dark:text-slate-300">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.permissions?.canViewFinance ?? true}
+                        onChange={e => setFormData({ ...formData, permissions: { ...formData.permissions, canViewFinance: e.target.checked } })}
+                        className="rounded text-amber-500 focus:ring-0"
+                      />
+                      <span>View Finance & Reports</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.permissions?.canApplyDiscounts ?? true}
+                        onChange={e => setFormData({ ...formData, permissions: { ...formData.permissions, canApplyDiscounts: e.target.checked } })}
+                        className="rounded text-amber-500 focus:ring-0"
+                      />
+                      <span>Apply POS Discounts</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.permissions?.canExportData ?? true}
+                        onChange={e => setFormData({ ...formData, permissions: { ...formData.permissions, canExportData: e.target.checked } })}
+                        className="rounded text-amber-500 focus:ring-0"
+                      />
+                      <span>Export Data / CSVs</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.permissions?.canEditInventory ?? true}
+                        onChange={e => setFormData({ ...formData, permissions: { ...formData.permissions, canEditInventory: e.target.checked } })}
+                        className="rounded text-amber-500 focus:ring-0"
+                      />
+                      <span>Manage Stock & Inventory</span>
+                    </label>
+                  </div>
+                </div>
+
                 <div className="flex gap-4 mt-8">
                   <button type="submit" className="flex-1 px-4 py-4 bg-slate-950 dark:bg-amber-500 text-white dark:text-slate-950 rounded-2xl font-black text-base hover:bg-slate-800 dark:hover:bg-amber-600 transition-all shadow-xl">
                     {editingStaff ? t.updateProfessional : t.saveProfessional}

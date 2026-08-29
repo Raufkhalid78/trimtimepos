@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Language, PLAN_PRICES } from '../types';
 import { TRANSLATIONS } from '../constants';
 import { demoActivateSubscription, addDemoAddOnPack } from '../services/authService';
-import { polarService } from '../services/polarService';
+import { creemService } from '../services/creemService';
 import { useToast } from '../contexts/ToastContext';
 
 interface PricingPageProps {
@@ -23,13 +23,11 @@ const PricingPage: React.FC<PricingPageProps> = ({ tenantId, userEmail, language
     setIsLoading(true);
     setError(null);
     try {
-      if (polarService.isConfigured()) {
-        // ✅ Production path: redirect to Polar.sh hosted checkout
-        polarService.redirectToCheckout(plan, tenantId, userEmail);
-        // Navigation will happen — no need to reset loading state
+      if (creemService.isConfigured()) {
+        // ✅ Creem hosted checkout with dynamic tenant metadata
+        creemService.redirectToCheckout(plan, tenantId, userEmail);
       } else {
         // 🚧 Demo / Dev fallback: activate subscription directly in Supabase
-        // Remove this block once Polar is fully wired up.
         const success = await demoActivateSubscription(tenantId, plan);
         if (success) {
           showToast('Plan activated locally! (Dev Mode)', 'success');
@@ -50,14 +48,19 @@ const PricingPage: React.FC<PricingPageProps> = ({ tenantId, userEmail, language
     setIsLoading(true);
     setError(null);
     try {
-      const success = await addDemoAddOnPack(tenantId);
-      if (success) {
-        showToast('Scale Add-on Pack activated! (+10 Branches, +50 Employees)', 'success');
-        setTimeout(() => {
-          window.location.reload();
-        }, 2000);
+      if (creemService.isConfigured()) {
+        // ✅ Creem hosted checkout for Scale Add-on pack
+        creemService.redirectToCheckout('addon', tenantId, userEmail);
       } else {
-        throw new Error('Add-on activation failed.');
+        const success = await addDemoAddOnPack(tenantId);
+        if (success) {
+          showToast('Scale Add-on Pack activated! (+10 Branches, +50 Employees)', 'success');
+          setTimeout(() => {
+            window.location.reload();
+          }, 2000);
+        } else {
+          throw new Error('Add-on activation failed.');
+        }
       }
     } catch (err: any) {
       setError(err.message || 'Add-on purchase failed');
@@ -90,9 +93,9 @@ const PricingPage: React.FC<PricingPageProps> = ({ tenantId, userEmail, language
           </p>
         </div>
 
-        {!import.meta.env.PROD && !polarService.isConfigured() && (
+        {!import.meta.env.PROD && !creemService.isConfigured() && (
           <div className="mb-6 p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-amber-400 text-center text-sm">
-            ⚠️ <strong>Payment not yet connected.</strong> Add <code>VITE_POLAR_MONTHLY_CHECKOUT_URL</code> and <code>VITE_POLAR_YEARLY_CHECKOUT_URL</code> to your <code>.env.local</code> to enable real Polar.sh payments.
+            ⚠️ <strong>Payment not yet connected.</strong> Add <code>VITE_CREEM_MONTHLY_CHECKOUT_URL</code> and <code>VITE_CREEM_YEARLY_CHECKOUT_URL</code> to your <code>.env.local</code> to enable real Creem payments.
           </div>
         )}
 

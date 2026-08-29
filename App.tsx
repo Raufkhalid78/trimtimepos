@@ -6,6 +6,7 @@ import InstallBanner from '@/components/InstallBanner';
 import IOSInstallGuide from '@/components/IOSInstallGuide';
 import LogoutScreen from '@/components/LogoutScreen';
 import OnboardingTour from '@/components/OnboardingTour';
+import LoadingSpinner from '@/components/LoadingSpinner';
 const LandingPage = lazy(() => import('@/components/LandingPage'));
 const SignUp = lazy(() => import('@/components/SignUp'));
 import SubscriptionBanner, { SubscriptionExpiredScreen } from '@/components/SubscriptionBanner';
@@ -19,6 +20,7 @@ import { supabase } from './supabaseClient';
 import { useAuth } from './contexts/AuthContext';
 import { useData } from './contexts/DataContext';
 import { isSubscriptionValid } from './services/subscriptionService';
+import { creemService } from './services/creemService';
 import { useToast } from './contexts/ToastContext';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { loginWithEmail, loginWithGoogle } from './services/authService';
@@ -68,12 +70,38 @@ const App: React.FC = () => {
   const t = TRANSLATIONS[sessionLanguage];
 
   const handleFullSignOut = async () => {
-    setLogoutUserName(currentUser?.name || '');
+    setLogoutUserName(currentUser?.name || authUser?.email || settings?.shopName || 'User');
     setShowLogoutConfirm(false);
     localStorage.removeItem('trimtime_session');
     await signOut();
+    setSaasView('landing');
     setShowLogoutScreen(true);
   };
+
+  const LogoutConfirmModal = () => (
+    <AnimatePresence>
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-md z-[1000] flex items-center justify-center p-6">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="bg-[#111827] border border-white/10 p-8 rounded-[2rem] max-w-sm w-full shadow-2xl text-center"
+          >
+            <div className="w-14 h-14 bg-rose-500/10 border border-rose-500/20 rounded-2xl flex items-center justify-center mx-auto mb-5">
+              <svg className="w-7 h-7 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+            </div>
+            <h3 className="text-xl font-black text-white mb-2">End Your Session?</h3>
+            <p className="text-slate-400 text-sm mb-8">You'll be signed out securely. Any unsaved changes may be lost.</p>
+            <div className="flex gap-3">
+              <button type="button" onClick={() => setShowLogoutConfirm(false)} className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-slate-300 font-bold rounded-xl text-sm transition-colors cursor-pointer">Cancel</button>
+              <button type="button" onClick={handleFullSignOut} className="flex-1 py-3 bg-rose-500 hover:bg-rose-600 text-white font-black rounded-xl text-sm transition-colors shadow-lg shadow-rose-500/20 cursor-pointer">Sign Out</button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
+  );
 
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   useEffect(() => {
@@ -126,7 +154,7 @@ const App: React.FC = () => {
     }
   }, [saasView, authLoading, navigate, setSaasView]);
 
-  const PageLoader = () => <div className="h-screen w-full flex items-center justify-center bg-[#080c14]"><div className="w-12 h-12 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" /></div>;
+  const PageLoader = () => <LoadingSpinner fullScreen size="lg" color="amber" label="Loading TrimTime..." />;
 
   if (showLogoutScreen) return <LogoutScreen userName={logoutUserName} shopName={settings?.shopName || 'TrimTime'} onDone={() => {
     setShowLogoutScreen(false);
@@ -149,15 +177,45 @@ const App: React.FC = () => {
   if (subscription && !isSubscriptionValid(subscription)) {
     return (
       <Suspense fallback={<PageLoader />}>
-        <SubscriptionExpiredScreen onManageSubscription={() => setIsPricingOpen(true)} onLogout={() => setShowLogoutConfirm(true)} />
-        {isPricingOpen && authUser && currentTenant && <PricingPage tenantId={currentTenant.id} userEmail={authUser.email || ''} language={sessionLanguage} onClose={() => setIsPricingOpen(false)} />}
+        <SubscriptionExpiredScreen 
+          onManageSubscription={() => setIsPricingOpen(true)} 
+          onSelectPlan={(plan) => {
+            if (currentTenant && authUser) {
+              creemService.redirectToCheckout(plan, currentTenant.id, authUser.email || '');
+            } else {
+              setIsPricingOpen(true);
+            }
+          }}
+          onLogout={() => setShowLogoutConfirm(true)} 
+        />
+        {isPricingOpen && authUser && currentTenant && (
+          <PricingPage 
+            tenantId={currentTenant.id} 
+            userEmail={authUser.email || ''} 
+            language={sessionLanguage} 
+            onClose={() => setIsPricingOpen(false)} 
+          />
+        )}
+        <LogoutConfirmModal />
       </Suspense>
     );
   }
 
   if (dataLoading) return <PageLoader />;
 
-  if (!currentUser) return <Login onLogin={loginStaff} staffList={staff} shopName={settings.shopName} onGoToLanding={() => setShowLogoutConfirm(true)} />;
+  if (!currentUser) {
+    return (
+      <>
+        <Login 
+          onLogin={loginStaff} 
+          staffList={staff} 
+          shopName={settings.shopName} 
+          onGoToLanding={() => setShowLogoutConfirm(true)} 
+        />
+        <LogoutConfirmModal />
+      </>
+    );
+  }
 
   const currentPath = location.pathname.split('/').pop() || 'dashboard';
 
@@ -197,7 +255,7 @@ const App: React.FC = () => {
 
         <main className="flex-1 overflow-y-auto p-4 md:p-8 relative scrollbar-hide min-h-0">
           <ErrorBoundary key={location.pathname}>
-            <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-10 w-10 border-t-2 border-amber-500"></div></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-64"><LoadingSpinner size="md" color="amber" /></div>}>
               <AnimatePresence mode='wait'>
                 <motion.div key={location.pathname} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} className="h-full">
                   <Outlet />
@@ -216,29 +274,8 @@ const App: React.FC = () => {
 
       {isPricingOpen && authUser && currentTenant && <PricingPage tenantId={currentTenant.id} userEmail={authUser.email || ''} language={sessionLanguage} onClose={() => setIsPricingOpen(false)} />}
 
-      {/* Logout Confirmation Modal */}
-      <AnimatePresence>
-        {showLogoutConfirm && (
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-[500] flex items-center justify-center p-6">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              className="bg-[#111827] border border-white/10 p-8 rounded-[2rem] max-w-sm w-full shadow-2xl text-center"
-            >
-              <div className="w-14 h-14 bg-rose-500/10 border border-rose-500/20 rounded-2xl flex items-center justify-center mx-auto mb-5">
-                <svg className="w-7 h-7 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
-              </div>
-              <h3 className="text-xl font-black text-white mb-2">End Your Session?</h3>
-              <p className="text-slate-400 text-sm mb-8">You'll be signed out securely. Any unsaved changes may be lost.</p>
-              <div className="flex gap-3">
-                <button onClick={() => setShowLogoutConfirm(false)} className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-slate-300 font-bold rounded-xl text-sm transition-colors">Cancel</button>
-                <button onClick={handleFullSignOut} className="flex-1 py-3 bg-rose-500 hover:bg-rose-600 text-white font-black rounded-xl text-sm transition-colors shadow-lg shadow-rose-500/20">Sign Out</button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      {/* Universal Logout Confirmation Modal */}
+      <LogoutConfirmModal />
     </div>
   );
 };

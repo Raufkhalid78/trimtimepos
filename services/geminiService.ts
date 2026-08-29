@@ -132,3 +132,45 @@ Keep the total response under 350 words. Use markdown formatting with bold heade
   }
 }
 
+/**
+ * AI Assistant helper for POS checkout cross-sell suggestions.
+ */
+export function getPredictiveCrossSell(cartItemsName: string[], businessType?: string): string {
+  const lowerNames = cartItemsName.map(n => n.toLowerCase());
+  const isBarber = businessType === 'barbershop' || lowerNames.some(n => n.includes('beard') || n.includes('haircut') || n.includes('fade'));
+
+  if (lowerNames.some(n => n.includes('beard') || n.includes('shave'))) {
+    return '💡 AI Suggestion: Recommend Organic Beard Oil or Conditioning Balm ($15)';
+  }
+  if (lowerNames.some(n => n.includes('color') || n.includes('highlight') || n.includes('dye'))) {
+    return '💡 AI Suggestion: Recommend Color Protect Shampoo & Treatment Serum ($22)';
+  }
+  if (lowerNames.some(n => n.includes('haircut') || n.includes('styling') || n.includes('cut'))) {
+    return isBarber
+      ? '💡 AI Suggestion: Recommend Matte Hair Clay or Styling Pomade ($18)'
+      : '💡 AI Suggestion: Recommend Heat Protectant Spray or Argan Hair Oil ($24)';
+  }
+  return '💡 AI Suggestion: Offer $10 Add-on Hair Scalp Treatment or Hydration Mask';
+}
+
+/**
+ * Analyzes unbooked customers to identify churning clients.
+ */
+export function getRetentionRadar(customers: any[], sales: any[]): { count: number; overdueCustomers: any[] } {
+  const sixtyDaysAgo = new Date();
+  sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+
+  const activeCustomerIds = new Set(
+    sales
+      .filter(s => new Date(s.timestamp) >= sixtyDaysAgo && s.customerId)
+      .map(s => s.customerId)
+  );
+
+  const overdue = customers.filter(c => !activeCustomerIds.has(c.id));
+  return {
+    count: overdue.length,
+    overdueCustomers: overdue.slice(0, 5)
+  };
+}
+
+

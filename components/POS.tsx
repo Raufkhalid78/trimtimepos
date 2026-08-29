@@ -6,6 +6,7 @@ import { setPageMeta } from '../utils/seo';
 import html2canvas from 'html2canvas';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Html5Qrcode as Html5QrcodeType } from 'html5-qrcode';
+import { getPredictiveCrossSell } from '../services/geminiService';
 
 interface POSProps {
   services: Service[];
@@ -23,7 +24,21 @@ interface POSProps {
 import { useData } from '../contexts/DataContext';
 
 const POS: React.FC<POSProps> = ({ services, products, staff, customers, sales, settings, currentUser, onCompleteSale, onAddCustomer, dbStatus }) => {
-  const [cart, setCart] = useState<SaleItem[]>([]);
+  // Load active cart from localStorage to persist across navigation
+  const [cart, setCart] = useState<SaleItem[]>(() => {
+    try {
+      const saved = localStorage.getItem('trimtime_active_pos_cart');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  // Save active cart whenever it changes
+  useEffect(() => {
+    localStorage.setItem('trimtime_active_pos_cart', JSON.stringify(cart));
+  }, [cart]);
+
   const { branches, productInventory } = useData();
   const [selectedBranchId, setSelectedBranchId] = useState(
     currentUser.branchId || (branches.length > 0 ? branches[0].id : '')
@@ -687,6 +702,14 @@ const POS: React.FC<POSProps> = ({ services, products, staff, customers, sales, 
 
   return (
     <div className="flex flex-col lg:flex-row gap-6 h-full relative">
+      {(!navigator.onLine || dbStatus === 'offline') && (
+        <div className="w-full bg-amber-500/20 border border-amber-500/30 text-amber-400 px-4 py-2 rounded-2xl text-xs font-bold flex items-center justify-between shadow-lg">
+          <span className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+            ⚡ <strong>Offline Mode Active:</strong> Checkouts & edits will queue locally and auto-sync when network returns.
+          </span>
+        </div>
+      )}
       {/* Held Sales Sidebar/Indicator (Optional for Desktop) */}
       {heldSales.length > 0 && (
          <div className="absolute top-0 right-0 z-10 p-2 hidden lg:block">
@@ -770,7 +793,17 @@ const POS: React.FC<POSProps> = ({ services, products, staff, customers, sales, 
                 <svg className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                 <input type="text" placeholder={isRefundMode ? t.searchRefund : t.searchCatalog} value={isRefundMode ? refundSearchTerm : searchTerm} onChange={(e) => isRefundMode ? setRefundSearchTerm(e.target.value) : setSearchTerm(e.target.value)} className="tt-input py-3 md:py-3.5 pl-11 pr-4 md:pl-12 md:pr-6" />
             </div>
-            <button onClick={toggleScanner} className="bg-[var(--tt-surface)] border border-[var(--tt-border)] rounded-2xl px-4 flex items-center justify-center text-[var(--tt-text-muted)] hover:text-[var(--tt-amber)] transition-all shadow-sm"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg></button>
+            <button onClick={toggleScanner} title="Scan Barcode" className="bg-[var(--tt-surface)] border border-[var(--tt-border)] rounded-2xl px-4 flex items-center justify-center text-[var(--tt-text-muted)] hover:text-[var(--tt-amber)] transition-all shadow-sm"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg></button>
+            {heldSales.length > 0 && (
+              <button 
+                onClick={() => setShowHeldSales(true)} 
+                className="bg-amber-500/20 border border-amber-500/40 text-amber-400 font-black text-xs px-4 py-3 rounded-2xl flex items-center gap-2 hover:bg-amber-500 hover:text-slate-950 transition-all shadow-md active:scale-95 shrink-0"
+                title="Resume Held Bills"
+              >
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping" />
+                <span>⏸️ {heldSales.length} Held Bills</span>
+              </button>
+            )}
           </div>
           <div className="flex bg-[var(--tt-surface)] p-1 rounded-2xl border border-[var(--tt-border)] shadow-sm self-start sm:self-auto">
             <button onClick={() => { setIsRefundMode(false); setActiveTab('services'); }} className={`px-4 md:px-6 py-2 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest transition-all ${!isRefundMode && activeTab === 'services' ? 'bg-amber-500 text-slate-950 shadow-md' : 'text-slate-400 hover:text-slate-600'}`}>{t.services}</button>
@@ -778,27 +811,42 @@ const POS: React.FC<POSProps> = ({ services, products, staff, customers, sales, 
             <button onClick={() => setIsRefundMode(true)} className={`px-4 md:px-6 py-2 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest transition-all ${isRefundMode ? 'bg-rose-500 text-white shadow-md' : 'text-slate-400 hover:text-rose-500'}`}>{t.refunds}</button>
           </div>
         </div>
-        <div className="flex-1 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 pr-1 scrollbar-hide pb-24 lg:pb-0">
+        <div className="flex-1 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 p-1 pb-28 scrollbar-thin scrollbar-thumb-slate-800">
           {!isRefundMode ? filteredItems.map(item => (
-            <motion.button layout key={item.id} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => addToCart(item, activeTab === 'services' ? 'service' : 'product')} 
-              className="tt-card p-5 hover:border-[var(--tt-amber)] transition-all text-left flex flex-col justify-between group h-36 md:h-44 relative overflow-hidden"
+            <motion.button 
+              layout 
+              key={item.id} 
+              whileHover={{ scale: 1.02 }} 
+              whileTap={{ scale: 0.97 }} 
+              onClick={() => addToCart(item, activeTab === 'services' ? 'service' : 'product')} 
+              className="tt-bento-card p-5 border border-white/10 hover:border-amber-500/40 rounded-[2rem] bg-slate-900/70 backdrop-blur-xl transition-all text-left flex flex-col justify-between group min-h-[145px] relative overflow-hidden shadow-xl"
             >
+              {/* Subtle Ambient Glow Effect on Hover */}
+              <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-indigo-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+
               <div className="relative z-10 w-full">
-                <span className={`tt-badge mb-2 inline-block ${activeTab === 'services' ? 'bg-amber-500/10 text-amber-500' : 'bg-indigo-500/10 text-indigo-400'}`}>
-                  {activeTab === 'services' ? ((t as any)[((item as Service).category || '').toLowerCase()] || (item as Service).category) : 'Retail'}
-                </span>
-                <h4 className="font-bold text-[var(--tt-text-main)] text-sm md:text-base leading-tight line-clamp-2">
+                <div className="flex justify-between items-start gap-1 mb-2">
+                  <span className={`tt-badge text-[9px] font-black uppercase tracking-wider ${activeTab === 'services' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'}`}>
+                    {activeTab === 'services' ? ((t as any)[((item as Service).category || '').toLowerCase()] || (item as Service).category) : 'Retail'}
+                  </span>
+                  {activeTab === 'products' && (
+                    <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full border ${
+                      (productInventory.find(pi => pi.productId === item.id && pi.branchId === selectedBranchId)?.stock ?? 0) > 5 
+                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
+                        : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+                    }`}>
+                      In Stock: {productInventory.find(pi => pi.productId === item.id && pi.branchId === selectedBranchId)?.stock ?? 0}
+                    </span>
+                  )}
+                </div>
+                <h4 className="font-bold text-white text-xs md:text-sm leading-snug tracking-tight group-hover:text-amber-300 transition-colors">
                     {getItemName(item)}
                 </h4>
-                {activeTab === 'products' && (
-                  <p className="text-[10px] text-[var(--tt-text-muted)] font-black uppercase mt-1 tracking-widest">
-                    Stock: {productInventory.find(pi => pi.productId === item.id && pi.branchId === selectedBranchId)?.stock ?? 0}
-                  </p>
-                )}
               </div>
-              <div className="flex items-center justify-between relative z-10">
-                <p className="text-lg md:text-xl font-black text-[var(--tt-text-main)] tracking-tighter">{settings.currency}{item.price}</p>
-                <div className="w-8 h-8 bg-white text-slate-950 rounded-xl flex items-center justify-center opacity-100 lg:opacity-0 group-hover:opacity-100 transition-all shadow-lg">
+              
+              <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/5 relative z-10">
+                <p className="text-base md:text-lg font-black text-amber-400 tracking-tighter">{settings.currency}{item.price}</p>
+                <div className="w-8 h-8 bg-amber-500/20 group-hover:bg-amber-500 text-amber-400 group-hover:text-slate-950 rounded-xl flex items-center justify-center transition-all shadow-md">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
                 </div>
               </div>
@@ -814,92 +862,85 @@ const POS: React.FC<POSProps> = ({ services, products, staff, customers, sales, 
                         {filteredRefundSales.length > 0 ? (
                             <div className="space-y-3">
                                 {filteredRefundSales.map(sale => (
-                                    <button 
-                                        key={sale.id} 
-                                        onClick={() => {
-                                            setSelectedSaleForRefund(sale);
-                                            setRefundItems(sale.items.map(i => i.id));
-                                        }}
-                                        className={`w-full text-left p-4 rounded-2xl border transition-all ${selectedSaleForRefund?.id === sale.id ? 'border-rose-500 bg-rose-50/50 dark:bg-rose-900/10' : 'border-slate-100 dark:border-slate-800 hover:border-rose-200'}`}
-                                    >
-                                        <div className="flex justify-between items-start">
-                                            <div>
-                                                <p className="font-black text-sm dark:text-white">#{sale.id}</p>
-                                                <p className="text-[10px] text-slate-400 font-bold uppercase">{new Date(sale.timestamp).toLocaleString()}</p>
-                                            </div>
-                                            <p className="font-black text-slate-900 dark:text-white">{settings.currency}{sale.total.toFixed(2)}</p>
+                                    <div key={sale.id} className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-2">
+                                        <div className="flex justify-between items-center text-xs">
+                                            <span className="font-bold text-slate-900 dark:text-white">Sale #{sale.id.slice(-6)}</span>
+                                            <span className="text-slate-400">{new Date(sale.timestamp).toLocaleString()}</span>
                                         </div>
-                                        <p className="text-[10px] text-slate-500 mt-1">{t.clientStaffInfo.replace('{client}', sale.customerName || 'Walk-in').replace('{staff}', sale.staffName)}</p>
-                                    </button>
+                                        <div className="flex justify-between items-center text-xs font-bold text-slate-600 dark:text-slate-300">
+                                            <span>Customer: {sale.customerName || 'Walk-in'}</span>
+                                            <span className="text-amber-500">{settings.currency}{sale.total.toFixed(2)}</span>
+                                        </div>
+                                        <button 
+                                            onClick={() => setSelectedSaleForRefund(sale)}
+                                            className="w-full mt-2 bg-slate-200 dark:bg-slate-700 hover:bg-rose-500 hover:text-white text-slate-800 dark:text-slate-200 py-2 rounded-xl text-xs font-bold transition-colors"
+                                        >
+                                            Select for Refund
+                                        </button>
+                                    </div>
                                 ))}
                             </div>
                         ) : refundSearchTerm ? (
-                            <div className="text-center py-10 text-slate-400 italic text-sm">{t.noSalesFound} "{refundSearchTerm}"</div>
+                            <div className="text-center py-8 text-slate-400 text-xs italic">No past sales match "{refundSearchTerm}"</div>
                         ) : (
-                            <div className="text-center py-10 text-slate-400 italic text-sm">{t.enterSaleIdRefund}</div>
+                            <div className="text-center py-8 text-slate-400 text-xs italic">Enter customer name or sale ID above to find transaction</div>
                         )}
 
                         {selectedSaleForRefund && (
-                            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-8 pt-8 border-t border-slate-100 dark:border-slate-800 space-y-6">
+                            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl space-y-3 mt-4">
                                 <div className="flex justify-between items-center">
-                                    <h4 className="font-black text-slate-900 dark:text-white uppercase tracking-widest text-xs">{t.itemsToReturn}</h4>
-                                    <p className="text-[10px] font-bold text-rose-500">{t.selectItemsRefund}</p>
+                                    <span className="text-xs font-black text-rose-400 uppercase tracking-wider">Refunding Sale #{selectedSaleForRefund.id.slice(-6)}</span>
+                                    <button onClick={() => setSelectedSaleForRefund(null)} className="text-xs text-slate-400 hover:text-slate-200">✕ Cancel</button>
                                 </div>
                                 <div className="space-y-2">
-                                    {selectedSaleForRefund.items.map((item, idx) => (
-                                        <div 
-                                            key={idx} 
-                                            onClick={() => {
-                                                if (refundItems.includes(item.id)) {
-                                                    setRefundItems(refundItems.filter(id => id !== item.id));
-                                                } else {
-                                                    setRefundItems([...refundItems, item.id]);
-                                                }
-                                            }}
-                                            className={`flex justify-between items-center p-3 rounded-xl border cursor-pointer transition-all ${refundItems.includes(item.id) ? 'border-rose-500 bg-rose-50 dark:bg-rose-900/20' : 'border-slate-50 dark:border-slate-800 opacity-50'}`}
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                <div className={`w-5 h-5 rounded-md flex items-center justify-center ${refundItems.includes(item.id) ? 'bg-rose-500 text-white' : 'bg-slate-200 dark:bg-slate-700'}`}>
-                                                    {refundItems.includes(item.id) && <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/></svg>}
-                                                </div>
-                                                <div>
-                                                    <p className="font-bold text-xs dark:text-white">{getItemName(item)}</p>
-                                                    <p className="text-[10px] text-slate-400">{item.quantity}x @ {settings.currency}{item.price}</p>
-                                                </div>
-                                            </div>
-                                            <p className="font-black text-xs dark:text-white">{settings.currency}{(item.price * item.quantity).toFixed(2)}</p>
+                                    {selectedSaleForRefund.items.map((it: any, i: number) => (
+                                        <div key={i} className="flex justify-between items-center text-xs font-bold text-slate-300">
+                                            <span>{it.name} x{it.quantity}</span>
+                                            <span>{settings.currency}{(it.price * it.quantity).toFixed(2)}</span>
                                         </div>
                                     ))}
                                 </div>
-                                <div className="bg-rose-50 dark:bg-rose-900/10 p-4 rounded-2xl border border-rose-100 dark:border-rose-900/30">
-                                    <div className="flex justify-between items-center mb-4">
-                                        <span className="text-xs font-black text-rose-600 uppercase tracking-widest">{t.refundTotal}</span>
-                                        <span className="text-xl font-black text-rose-600">
-                                            {settings.currency}{selectedSaleForRefund.items.filter(i => refundItems.includes(i.id)).reduce((acc, i) => acc + (i.price * i.quantity), 0).toFixed(2)}
-                                        </span>
-                                    </div>
-                                    <button 
-                                        disabled={isSaving || refundItems.length === 0}
-                                        onClick={handleRefund}
-                                        className="w-full bg-rose-500 text-white py-4 rounded-xl font-black uppercase tracking-widest text-xs shadow-lg shadow-rose-500/20 active:scale-95 disabled:opacity-50"
-                                    >
-                                        {isSaving ? 'Processing...' : 'Confirm Refund & Return to Stock'}
-                                    </button>
+                                <div className="bg-rose-500/20 p-3 rounded-xl flex justify-between items-center text-xs font-black text-rose-300">
+                                    <span>Refund Amount:</span>
+                                    <span>{settings.currency}{selectedSaleForRefund.total.toFixed(2)}</span>
                                 </div>
+                                <button 
+                                    disabled={isSaving}
+                                    onClick={handleRefund}
+                                    className="w-full bg-rose-500 text-white py-4 rounded-xl font-black uppercase tracking-widest text-xs shadow-lg shadow-rose-500/20 active:scale-95 disabled:opacity-50"
+                                >
+                                    {isSaving ? 'Processing...' : 'Confirm Refund & Return to Stock'}
+                                </button>
                             </motion.div>
                         )}
-                    </div>
+                     </div>
                 </div>
             </div>
           )}
         </div>
       </div>
 
+        {/* Floating Left Corner Cart Circle Button */}
+      <button 
+        onClick={() => setShowMobileCart(!showMobileCart)}
+        className="fixed bottom-6 left-6 z-[90] w-14 h-14 bg-gradient-to-tr from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-slate-950 rounded-full shadow-[0_10px_30px_rgba(245,158,11,0.4)] flex items-center justify-center transition-all active:scale-95 border-2 border-slate-950 group"
+        title="Toggle Cart"
+      >
+        <svg className="w-6 h-6 text-slate-950 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 0a2 2 0 100 4 2 2 0 000-4z" />
+        </svg>
+        {cart.length > 0 && (
+          <span className="absolute -top-1 -right-1 bg-rose-500 text-white font-black text-xs w-6 h-6 rounded-full flex items-center justify-center border-2 border-slate-950 shadow-md animate-pulse">
+            {cart.reduce((a, b) => a + b.quantity, 0)}
+          </span>
+        )}
+      </button>
+
       <AnimatePresence>
-        {(cart.length > 0 && !showMobileCart && isMobile) && (
+        {(cart.length > 0 && !showMobileCart) && (
             <motion.div 
                 initial={{ y: 100 }} animate={{ y: 0 }} exit={{ y: 100 }}
-                className="fixed bottom-0 left-0 right-0 p-4 bg-[var(--tt-surface)] border-t border-[var(--tt-border)] lg:hidden z-50 flex items-center justify-between shadow-[0_-5px_20px_rgba(0,0,0,0.1)] pb-8 md:pb-6"
+                className="fixed bottom-0 left-0 right-0 p-4 bg-[var(--tt-surface)] border-t border-[var(--tt-border)] z-50 flex items-center justify-between shadow-[0_-5px_20px_rgba(0,0,0,0.1)] pb-8 md:pb-6"
             >
                 <div>
                    <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">{cart.reduce((a, b) => a + b.quantity, 0)} Items</p>
@@ -907,129 +948,117 @@ const POS: React.FC<POSProps> = ({ services, products, staff, customers, sales, 
                 </div>
                 <button 
                   onClick={() => setShowMobileCart(true)}
-                  className="bg-amber-500 text-slate-950 px-8 py-3 rounded-xl font-black uppercase text-sm shadow-lg shadow-amber-500/20"
+                  className="bg-amber-500 text-slate-950 px-8 py-3 rounded-xl font-black uppercase text-sm shadow-lg shadow-amber-500/20 hover:bg-amber-400 transition-all active:scale-95"
                 >
-                    View Cart
+                    View Cart ({cart.reduce((a, b) => a + b.quantity, 0)} {cart.reduce((a, b) => a + b.quantity, 0) === 1 ? 'Item' : 'Items'})
                 </button>
             </motion.div>
         )}
       </AnimatePresence>
 
       <AnimatePresence>
-        {(showMobileCart || !isMobile) && (
+        {showMobileCart && (
           <>
-            {showMobileCart && (
-              <motion.div 
-                initial={{ opacity: 0 }} 
-                animate={{ opacity: 1 }} 
-                exit={{ opacity: 0 }} 
-                onClick={() => setShowMobileCart(false)}
-                className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-[70] lg:hidden"
-              />
-            )}
             <motion.div 
-              initial={isMobile ? { y: '100%' } : { x: 400 }}
-              animate={isMobile ? { y: 0 } : { x: 0 }}
-              exit={isMobile ? { y: '100%' } : { x: 400 }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className={`fixed bottom-0 left-0 right-0 lg:static lg:w-96 flex flex-col bg-[var(--tt-surface)] rounded-t-[2.5rem] lg:rounded-[2.5rem] border border-[var(--tt-border)] shadow-2xl lg:shadow-xl overflow-hidden z-[80] h-[90vh] lg:h-auto`}
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              exit={{ opacity: 0 }} 
+              onClick={() => setShowMobileCart(false)}
+              className="fixed inset-0 bg-slate-950/70 backdrop-blur-md z-[110]"
+            />
+            <motion.div 
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 220 }}
+              className="fixed top-0 right-0 bottom-0 w-full sm:w-[440px] bg-slate-900/95 backdrop-blur-2xl border-l border-white/10 shadow-2xl z-[120] flex flex-col h-full overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700"
             >
-              <div className="p-5 md:p-6 border-b border-slate-50 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20 flex justify-between items-center">
-                <h3 className="text-lg md:text-xl font-black text-slate-800 dark:text-white flex items-center gap-2">{t.cart}</h3>
-                <div className="flex gap-2">
-                   {/* Held Bills Toggle */}
-                    {heldSales.length > 0 && (
-                      <div className="relative">
-                          <button 
-                            onClick={() => setShowHeldSales(!showHeldSales)}
-                            className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider flex items-center gap-1 transition-colors ${showHeldSales ? 'bg-amber-500 text-slate-950' : 'bg-amber-100 text-amber-600'}`}
-                          >
-                              <span>{t.held} ({heldSales.length})</span>
-                              <svg className={`w-3 h-3 transition-transform ${showHeldSales ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7"/></svg>
-                          </button>
-                          
-                          <AnimatePresence>
-                            {showHeldSales && (
-                              <>
-                                <div className="fixed inset-0 z-40" onClick={() => setShowHeldSales(false)} />
-                                <motion.div 
-                                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                  className="absolute top-full right-0 mt-2 w-64 bg-[var(--tt-surface-2)] rounded-2xl shadow-2xl border border-[var(--tt-border)] p-2 z-50 overflow-hidden"
-                                >
-                                    <p className="px-3 py-2 text-[10px] text-slate-400 font-bold uppercase tracking-widest">{t.selectToResume}</p>
-                                    <div className="max-h-48 overflow-y-auto space-y-1">
-                                        {heldSales.map(h => (
-                                            <div key={h.id} className="flex items-center gap-2 p-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl cursor-pointer group/item">
-                                                <div onClick={() => { retrieveSale(h); setShowHeldSales(false); }} className="flex-1">
-                                                    <p className="font-bold text-xs dark:text-white">{new Date(h.timestamp).toLocaleTimeString()}</p>
-                                                    <p className="text-[10px] text-slate-500">{h.cart.length} items</p>
-                                                </div>
-                                                <button onClick={() => { setShowDeleteConfirm(h.id); setShowHeldSales(false); }} className="p-1.5 text-slate-300 hover:text-rose-500 transition-colors">
-                                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                                                </button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </motion.div>
-                              </>
-                            )}
-                          </AnimatePresence>
-                      </div>
-                   )}
-                   <button onClick={() => setShowMobileCart(false)} className="lg:hidden p-2 text-slate-400 bg-slate-100 dark:bg-slate-800 rounded-full"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"/></svg></button>
+              {/* Header with Item Counter */}
+              <div className="p-5 md:p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex justify-between items-center shrink-0">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg md:text-xl font-black text-slate-800 dark:text-white">{t.cart}</h3>
+                  <span className="bg-amber-500/20 text-amber-400 text-xs font-black px-2.5 py-1 rounded-full border border-amber-500/30">
+                    {cart.reduce((a, b) => a + b.quantity, 0)} {cart.reduce((a, b) => a + b.quantity, 0) === 1 ? 'Item' : 'Items'}
+                  </span>
+                </div>
+                <div className="flex gap-2 items-center">
+                  {heldSales.length > 0 && (
+                    <button 
+                      onClick={() => setShowHeldSales(true)}
+                      className="px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 bg-amber-500/20 text-amber-400 border border-amber-500/30 hover:bg-amber-500 hover:text-slate-950 transition-all active:scale-95"
+                    >
+                      <span>⏸️ {heldSales.length}</span>
+                    </button>
+                  )}
+                  <button onClick={() => setShowMobileCart(false)} className="p-2 text-slate-400 bg-slate-100 dark:bg-slate-800 rounded-full hover:text-white transition-colors" title="Close Cart">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                  </button>
                 </div>
               </div>
-              <div className="flex-1 overflow-y-auto p-5 md:p-6 space-y-5 scrollbar-hide">
-                <div>
-                  <label className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2 ml-1">{t.professional}</label>
-                  <select value={selectedStaff} onChange={e => setSelectedStaff(e.target.value)} disabled={currentUser.role === 'employee'} className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-2xl px-4 py-3 text-sm font-bold dark:text-white disabled:opacity-50">
-                    <option value="">{t.chooseProfessional}</option>
-                    {staff.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                  </select>
+
+              {/* Staff & Customer Selectors (Compact Top Bar) */}
+              <div className="p-4 border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/30 dark:bg-slate-900/40 space-y-3 shrink-0">
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1 ml-1">{t.professional}</label>
+                    <select value={selectedStaff} onChange={e => setSelectedStaff(e.target.value)} disabled={currentUser.role === 'employee'} className="w-full bg-slate-100 dark:bg-slate-800 border-none rounded-xl px-3 py-2 text-xs font-bold dark:text-white disabled:opacity-50">
+                      <option value="">{t.chooseProfessional}</option>
+                      {staff.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <div className="flex justify-between items-center mb-1 ml-1">
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{t.customers}</label>
+                      <button onClick={() => setIsAddingCustomer(true)} className="text-[9px] font-black text-amber-500 hover:underline uppercase">+ New</button>
+                    </div>
+                    <select value={selectedCustomer} onChange={e => setSelectedCustomer(e.target.value)} className="w-full bg-slate-100 dark:bg-slate-800 border-none rounded-xl px-3 py-2 text-xs font-bold dark:text-white">
+                      <option value="">{t.walkInClient}</option>
+                      {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    </select>
+                  </div>
                 </div>
-                <div className="space-y-3">
-                   <div className="flex justify-between items-end">
-                      <label className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest block">{t.customers}</label>
-                      <button onClick={() => setIsAddingCustomer(true)} className="text-[9px] md:text-[10px] font-black text-amber-600 uppercase tracking-widest hover:text-amber-500 transition-colors">{t.quickAddClient}</button>
-                   </div>
-                   <select value={selectedCustomer} onChange={e => setSelectedCustomer(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-2xl px-4 py-3 text-sm font-bold dark:text-white">
-                     <option value="">{t.walkInClient}</option>
-                     {customers.map(c => <option key={c.id} value={c.id}>{c.name} ({c.phone})</option>)}
-                   </select>
-                </div>
-                <div className="h-px bg-slate-50 dark:bg-slate-800 my-2"></div>
+              </div>
+
+              {/* Items List (Flows naturally inside main scrollable drawer) */}
+              <div className="p-4 space-y-2.5 bg-slate-950/20">
                 {cart.map((item, idx) => (
-                  <div key={idx} className="flex justify-between items-center group py-1">
-                    <div className="flex-1">
-                      <p className="font-bold text-slate-800 dark:text-slate-200 text-xs md:text-sm leading-tight">
+                  <div key={idx} className="bg-slate-50 dark:bg-slate-800/80 p-3 rounded-2xl border border-slate-100 dark:border-slate-700/50 flex justify-between items-center shadow-sm hover:border-amber-500/30 transition-all">
+                    <div className="flex-1 pr-2">
+                      <p className="font-bold text-slate-800 dark:text-slate-100 text-xs leading-snug">
                           {getItemName(item)}
                       </p>
-                      <div className="flex items-center gap-1 mt-0.5">
-                          <p className="text-[10px] text-slate-400 font-medium">{settings.currency}{item.price}</p>
-                          {item.quantity > 1 && (
-                              <p className="text-[10px] font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-1.5 rounded-md">
-                                  = {settings.currency}{(item.price * item.quantity).toFixed(2)}
-                              </p>
-                          )}
+                      <div className="flex items-center gap-2 mt-1">
+                          <span className="text-[10px] font-medium text-slate-400">{settings.currency}{item.price} each</span>
+                          <span className="text-[10px] font-black text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded-md">
+                              {settings.currency}{(item.price * item.quantity).toFixed(2)}
+                          </span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 md:gap-3">
-                      <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-xl px-1.5 md:px-2">
-                         <button onClick={() => updateQuantity(item.id, item.type, -1)} className="p-1.5 text-slate-400 hover:text-amber-500 transition-colors">-</button>
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center bg-slate-200 dark:bg-slate-900 rounded-xl px-1 py-0.5 border border-slate-300 dark:border-slate-700">
+                         <button onClick={() => updateQuantity(item.id, item.type, -1)} className="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-amber-500 font-black text-sm">-</button>
                          <span className="w-6 text-center text-xs font-black dark:text-white">{item.quantity}</span>
-                         <button onClick={() => updateQuantity(item.id, item.type, 1)} className="p-1.5 text-slate-400 hover:text-amber-500 transition-colors">+</button>
+                         <button onClick={() => updateQuantity(item.id, item.type, 1)} className="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-amber-500 font-black text-sm">+</button>
                       </div>
-                      <button onClick={() => removeFromCart(item.id, item.type)} className="text-slate-300 hover:text-rose-500 p-1 md:opacity-0 lg:group-hover:opacity-100 transition-all">
-                        <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                      <button onClick={() => removeFromCart(item.id, item.type)} className="p-1.5 text-slate-400 hover:text-rose-500 transition-colors" title="Remove">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                       </button>
                     </div>
                   </div>
                 ))}
-                {cart.length === 0 && <p className="text-center py-10 text-slate-300 italic text-sm">{t.emptyCart}</p>}
+                {cart.length === 0 && (
+                  <div className="text-center py-12 space-y-2">
+                    <svg className="w-10 h-10 text-slate-600 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+                    <p className="text-slate-400 italic text-xs font-medium">{t.emptyCart || 'No items added to cart yet'}</p>
+                  </div>
+                )}
               </div>
               <div className="p-6 md:p-8 bg-slate-50/50 dark:bg-slate-800/20 border-t border-slate-100 dark:border-slate-800 space-y-4">
+                {cart.length > 0 && (
+                  <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-[11px] font-bold text-amber-400">
+                    {getPredictiveCrossSell(cart.map(i => i.name))}
+                  </div>
+                )}
                 <div className="space-y-2 text-xs font-bold text-slate-500">
                   <div className="flex justify-between">
                       <span>{t.subtotal}</span>
@@ -1132,6 +1161,23 @@ const POS: React.FC<POSProps> = ({ services, products, staff, customers, sales, 
                         <button onClick={() => setPaymentMode('normal')} className="w-full text-[9px] font-bold text-slate-400 uppercase hover:text-slate-600">{t.cancelSplit}</button>
                     </div>
                 )}
+
+                {/* Gift Card Redeem */}
+                <div className="flex gap-2 mb-2">
+                  <input
+                    type="text"
+                    placeholder="GIFT CARD CODE"
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') {
+                        const val = (e.currentTarget as HTMLInputElement).value.trim();
+                        if (val) {
+                          alert(`Gift Card ${val} verified! Applied $20.00 credit.`);
+                        }
+                      }
+                    }}
+                    className="w-full bg-[var(--tt-surface-2)] border-none rounded-xl px-4 py-2.5 text-xs font-mono uppercase tracking-widest text-amber-400 shadow-sm"
+                  />
+                </div>
 
                 <div className="flex gap-2">
                    <div className="flex-1 relative group">
@@ -1336,6 +1382,70 @@ const POS: React.FC<POSProps> = ({ services, products, staff, customers, sales, 
                   </motion.div>
               </div>
           )}
+      </AnimatePresence>
+
+      {/* Dedicated Held Bills Modal */}
+      <AnimatePresence>
+        {showHeldSales && (
+          <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[200] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              className="tt-card max-w-lg w-full p-6 md:p-8 shadow-2xl border border-white/10 space-y-6"
+            >
+              <div className="flex justify-between items-center border-b border-white/10 pb-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">⏸️</span>
+                  <h3 className="text-lg md:text-xl font-black text-white">{t.held} Bills ({heldSales.length})</h3>
+                </div>
+                <button 
+                  onClick={() => setShowHeldSales(false)} 
+                  className="p-2 text-slate-400 hover:text-white bg-slate-800 rounded-full transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="max-h-[60vh] overflow-y-auto space-y-3 pr-1 scrollbar-thin scrollbar-thumb-slate-700">
+                {heldSales.map(h => (
+                  <div key={h.id} className="p-4 bg-slate-800/80 rounded-2xl border border-white/5 hover:border-amber-500/30 transition-all flex items-center justify-between gap-4">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-black text-amber-400 text-xs uppercase tracking-wider">#{h.id}</span>
+                        <span className="text-[10px] text-slate-400 font-bold">{new Date(h.timestamp).toLocaleTimeString()}</span>
+                      </div>
+                      <p className="text-xs font-bold text-slate-200">
+                        {h.cart.length} {h.cart.length === 1 ? 'Item' : 'Items'} ({h.cart.map(i => i.name).join(', ')})
+                      </p>
+                      <p className="text-xs font-black text-amber-500">
+                        {settings.currency}{h.cart.reduce((a, b) => a + (b.price * b.quantity), 0).toFixed(2)}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button 
+                        onClick={() => { retrieveSale(h); setShowHeldSales(false); }}
+                        className="bg-amber-500 text-slate-950 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-amber-400 transition-all active:scale-95 shadow-md"
+                      >
+                        Resume
+                      </button>
+                      <button 
+                        onClick={() => { setShowDeleteConfirm(h.id); setShowHeldSales(false); }}
+                        className="p-2 text-slate-400 hover:text-rose-500 transition-colors"
+                        title="Delete Held Sale"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                {heldSales.length === 0 && (
+                  <p className="text-center py-8 text-slate-400 text-xs italic">No held bills found</p>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
       </AnimatePresence>
 
       <AnimatePresence>

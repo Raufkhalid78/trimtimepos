@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { format, subDays, addDays, isWithinInterval, startOfDay, endOfDay, startOfMonth, endOfMonth, parseISO, getDaysInMonth, isValid, isSameDay } from 'date-fns';
 import { setPageMeta } from '../utils/seo';
 import { useData } from '../contexts/DataContext';
+import { getRetentionRadar } from '../services/geminiService';
 
 const RevenueChart = lazy(() => import('./Charts').then(m => ({ default: m.RevenueChart })));
 const ExpensePieChart = lazy(() => import('./Charts').then(m => ({ default: m.ExpensePieChart })));
@@ -265,34 +266,64 @@ const Dashboard: React.FC<DashboardProps> = ({ sales, expenses, products, staff,
           </AnimatePresence>
         </div>
       </div>
-
-      {/* Main Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-5" id="tour-kpi-cards">
+      {/* Main Metrics Bento Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-5" id="tour-kpi-cards">
         {[
-          { label: t.revenue, value: stats.revenue, color: 'var(--tt-amber)', icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
-          { label: t.refunds || 'Refunds', value: stats.totalRefunds, color: 'var(--tt-rose)', isNegative: true, icon: 'M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6' },
-          { label: t.expenses, value: stats.expenses, color: '#f97316', icon: 'M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z' },
-          { label: t.payroll, value: stats.payroll, color: 'var(--tt-violet)', icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z' },
-          { label: t.remainingBalance, value: stats.remainingBalance, color: 'var(--tt-emerald)', icon: 'M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3' },
-          { label: t.inventoryValue, value: stats.inventoryValue, color: 'var(--tt-blue)', icon: 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4' },
-          { label: t.avgTicket, value: stats.avgTicket, color: 'var(--tt-amber)', icon: 'M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z' },
+          { label: t.revenue, value: stats.revenue, color: 'from-amber-500 to-amber-600', glow: 'rgba(245, 158, 11, 0.2)', icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
+          { label: t.refunds || 'Refunds', value: stats.totalRefunds, color: 'from-rose-500 to-rose-600', glow: 'rgba(244, 63, 94, 0.2)', isNegative: true, icon: 'M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6' },
+          { label: t.expenses, value: stats.expenses, color: 'from-orange-500 to-orange-600', glow: 'rgba(249, 115, 22, 0.2)', icon: 'M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z' },
+          { label: t.payroll, value: stats.payroll, color: 'from-violet-500 to-violet-600', glow: 'rgba(139, 92, 246, 0.2)', icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z' },
+          { label: t.remainingBalance, value: stats.remainingBalance, color: 'from-emerald-500 to-emerald-600', glow: 'rgba(16, 185, 129, 0.2)', icon: 'M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3' },
+          { label: t.inventoryValue, value: stats.inventoryValue, color: 'from-blue-500 to-blue-600', glow: 'rgba(59, 130, 246, 0.2)', icon: 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4' },
+          { label: t.avgTicket, value: stats.avgTicket, color: 'from-amber-500 to-amber-600', glow: 'rgba(245, 158, 11, 0.2)', icon: 'M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z' },
         ].map((stat: any, i) => (
-          <motion.div key={i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
-            className="tt-card p-5 group hover:scale-[1.02] active:scale-95 cursor-default relative overflow-hidden"
+          <motion.div key={i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}
+            className="tt-bento-card p-5 group hover:border-amber-500/40 hover:scale-[1.03] active:scale-95 cursor-default relative overflow-hidden shadow-2xl"
           >
-            <div className="absolute top-0 right-0 w-24 h-24 bg-[var(--tt-amber-glow)] rounded-full -mr-12 -mt-12 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity" />
-            <div className={`w-11 h-11 rounded-2xl flex items-center justify-center text-white shadow-lg mb-4`} style={{ backgroundColor: stat.color }}>
+            <div className="absolute top-0 right-0 w-28 h-28 rounded-full -mr-12 -mt-12 blur-3xl opacity-20 group-hover:opacity-100 transition-opacity" style={{ background: stat.glow }} />
+            <div className={`w-11 h-11 rounded-2xl flex items-center justify-center text-white shadow-xl mb-4 bg-gradient-to-tr ${stat.color}`}>
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d={stat.icon} /></svg>
             </div>
             <div>
-              <p className="text-[10px] font-black text-[var(--tt-text-muted)] uppercase tracking-widest">{stat.label}</p>
-              <p className={`text-2xl font-black mt-1 tracking-tighter ${stat.isNegative && stat.value > 0 ? 'text-[var(--tt-rose)]' : 'text-[var(--tt-text-main)]'}`}>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{stat.label}</p>
+              <p className={`text-2xl font-black mt-1 tracking-tighter ${stat.isNegative && stat.value > 0 ? 'text-rose-400' : 'text-white'}`}>
                 {stat.isNegative && stat.value > 0 ? '-' : ''}<CountUp value={stat.value} prefix={currency} />
               </p>
             </div>
           </motion.div>
         ))}
       </div>
+
+      {/* AI Smart Stylist Assistant Widget */}
+      {(() => {
+        const { customers } = useData();
+        const retention = getRetentionRadar(customers || [], sales || []);
+        return (
+          <div className="bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/10 border border-amber-500/20 p-6 rounded-[2rem] shadow-lg flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-amber-500/20 rounded-2xl flex items-center justify-center text-2xl text-amber-400 shrink-0">
+                🤖
+              </div>
+              <div>
+                <h4 className="text-sm font-black uppercase tracking-wider text-amber-400">AI Retention Radar Assistant</h4>
+                <p className="text-xs text-[var(--tt-text-muted)] mt-1">
+                  {retention.count > 0 
+                    ? `⚠️ ${retention.count} valued customers haven't booked in over 60 days. Send automated re-engagement offers to boost retention!`
+                    : `🎉 All clients are actively engaged! Your customer retention rate is performing optimally.`}
+                </p>
+              </div>
+            </div>
+            {retention.count > 0 && (
+              <button
+                onClick={() => onViewChange(View.CUSTOMERS)}
+                className="px-5 py-2.5 bg-amber-500 text-slate-950 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-amber-400 transition-all shadow-md shrink-0"
+              >
+                View Retention List ({retention.count})
+              </button>
+            )}
+          </div>
+        );
+      })()}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Revenue Trends Chart */}

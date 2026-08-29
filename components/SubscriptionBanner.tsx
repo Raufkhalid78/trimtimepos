@@ -102,51 +102,67 @@ export const SubscriptionBadge: React.FC<{ subscription: Subscription | null }> 
 /**
  * Full-screen expired overlay
  */
-export const SubscriptionExpiredScreen: React.FC<{ onManageSubscription: () => void; onLogout: () => void }> = ({ onManageSubscription, onLogout }) => {
+export const SubscriptionExpiredScreen: React.FC<{ 
+  onManageSubscription: () => void; 
+  onSelectPlan?: (plan: 'monthly' | 'yearly') => void;
+  onLogout: () => void;
+}> = ({ onManageSubscription, onSelectPlan, onLogout }) => {
+  const handlePlanClick = (plan: 'monthly' | 'yearly') => {
+    if (onSelectPlan) {
+      onSelectPlan(plan);
+    } else {
+      onManageSubscription();
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6">
+    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6 relative">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="max-w-md w-full text-center"
+        className="max-w-md w-full text-center z-10"
       >
-        <div className="w-24 h-24 bg-rose-500/10 rounded-full flex items-center justify-center text-5xl mx-auto mb-8">
+        <div className="w-24 h-24 bg-rose-500/10 rounded-full flex items-center justify-center text-5xl mx-auto mb-8 border border-rose-500/20 shadow-inner">
           🔒
         </div>
         <h1 className="text-3xl font-black text-white mb-3">Trial Expired</h1>
-        <p className="text-slate-400 mb-8 leading-relaxed">
+        <p className="text-slate-400 mb-8 leading-relaxed text-sm">
           Your 30-day free trial has ended. Subscribe to a plan to continue managing your business with TrimTime.
         </p>
 
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <button
-              onClick={onManageSubscription}
-              className="p-4 bg-slate-800/50 border border-slate-700/50 rounded-2xl hover:border-amber-500/30 transition-all"
+              type="button"
+              onClick={() => handlePlanClick('monthly')}
+              className="p-4 bg-slate-800/50 border border-slate-700/50 rounded-2xl hover:border-amber-500/50 hover:bg-slate-800/80 transition-all cursor-pointer text-center group"
             >
-              <p className="text-2xl font-black text-white">$15</p>
-              <p className="text-slate-500 text-xs">/month</p>
+              <p className="text-2xl font-black text-white group-hover:text-amber-400 transition-colors">$15</p>
+              <p className="text-slate-400 text-xs mt-1">/month</p>
             </button>
             <button
-              onClick={onManageSubscription}
-              className="p-4 bg-amber-500/5 border-2 border-amber-500/30 rounded-2xl relative"
+              type="button"
+              onClick={() => handlePlanClick('yearly')}
+              className="p-4 bg-amber-500/5 border-2 border-amber-500/30 rounded-2xl hover:border-amber-500 hover:bg-amber-500/10 transition-all relative cursor-pointer text-center group"
             >
-              <div className="absolute -top-2 right-2 bg-amber-500 text-slate-950 px-2 py-0.5 rounded-full text-[8px] font-black">SAVE $30</div>
-              <p className="text-2xl font-black text-white">$150</p>
-              <p className="text-slate-500 text-xs">/year</p>
+              <div className="absolute -top-2.5 right-2 bg-amber-500 text-slate-950 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider shadow-sm">SAVE $30</div>
+              <p className="text-2xl font-black text-white group-hover:text-amber-400 transition-colors">$150</p>
+              <p className="text-slate-400 text-xs mt-1">/year</p>
             </button>
           </div>
 
           <button
-            onClick={onManageSubscription}
-            className="w-full py-4 bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 rounded-2xl font-black text-lg shadow-lg shadow-amber-500/20"
+            type="button"
+            onClick={() => handlePlanClick('monthly')}
+            className="w-full py-4 bg-gradient-to-r from-amber-400 to-amber-600 hover:from-amber-500 hover:to-amber-700 text-slate-950 rounded-2xl font-black text-base shadow-lg shadow-amber-500/20 transition-all cursor-pointer"
           >
             Subscribe Now
           </button>
 
           <button
+            type="button"
             onClick={onLogout}
-            className="w-full py-3 text-slate-500 hover:text-slate-300 font-bold text-sm transition-colors"
+            className="w-full py-3 text-slate-400 hover:text-white font-bold text-sm transition-colors cursor-pointer"
           >
             Log Out
           </button>

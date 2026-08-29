@@ -83,9 +83,20 @@ export async function setupBusinessProfile(data: SetupBusinessData): Promise<{ s
       .select()
       .single();
 
-    if (tenantError) throw new Error(`Tenant creation failed: ${tenantError.message}`);
-
     const tenantId = tenant.id;
+
+    // 2b. Create Primary Branch
+    const { data: branchData, error: branchError } = await supabase
+      .from('branches')
+      .insert({
+        tenant_id: tenantId,
+        name: 'Main Location',
+        is_active: true,
+      })
+      .select()
+      .single();
+
+    if (branchError) logger.error('Branch seed error:', branchError);
 
     // 3. Create Subscription (starts with 30-day free trial)
     const trialEnd = new Date();
@@ -123,6 +134,7 @@ export async function setupBusinessProfile(data: SetupBusinessData): Promise<{ s
         username: (user.email ? user.email.split('@')[0] : 'admin') + '_' + Math.random().toString(36).substring(2, 6),
         password: ownerPassword,
         email: user.email || '',
+        branch_id: branchData?.id || null,
       });
 
     if (staffError) logger.error('Staff seed error:', staffError);
@@ -139,6 +151,7 @@ export async function setupBusinessProfile(data: SetupBusinessData): Promise<{ s
           username: s.username,
           password: await hashPassword(s.password),
           email: null,
+          branch_id: branchData?.id || null,
         }))
       );
 

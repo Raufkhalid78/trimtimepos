@@ -57,7 +57,16 @@ const Sidebar: React.FC<SidebarProps> = ({
     ), roles: ['admin', 'employee'] },
   ];
 
-  const visibleItems = navItems.filter(item => item.roles.includes(userRole));
+  const { currentUser } = useAuth();
+  const perms = currentUser?.permissions;
+
+  const visibleItems = navItems.filter(item => {
+    if (userRole === 'admin') return true;
+    if (item.id === 'finance' && perms && !perms.canViewFinance) return false;
+    if (item.id === 'inventory' && perms && !perms.canEditInventory) return false;
+    if (item.id === 'staff' && perms && !perms.canManageStaff) return false;
+    return item.roles.includes(userRole);
+  });
 
   return (
     <>

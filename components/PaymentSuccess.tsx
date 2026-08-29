@@ -3,12 +3,12 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
 /**
- * PaymentSuccess — Polar.sh redirects here after a successful checkout.
+ * PaymentSuccess — Creem.io redirects here after a successful checkout.
  *
  * URL will look like:
- *   /payment-success?checkout_id=polar_ch_xxxxx&plan=monthly
+ *   /payment-success?checkout_id=ch_xxxxx&plan=monthly
  *
- * The subscription is activated by the Polar webhook (async), so we poll
+ * The subscription is activated by the Creem webhook (async), so we poll
  * for a few seconds then send the user to their dashboard.
  */
 const PaymentSuccess: React.FC = () => {

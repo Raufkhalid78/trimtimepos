@@ -22,9 +22,11 @@ const ShippingPolicy = lazy(() => import('@/components/ShippingPolicy'));
 const PaymentSuccess = lazy(() => import('@/components/PaymentSuccess'));
 const NotFound = lazy(() => import('@/components/NotFound'));
 
+import LoadingSpinner from '@/components/LoadingSpinner';
+
 const Loading = () => (
-  <div className="h-full w-full flex items-center justify-center bg-slate-50 dark:bg-slate-950">
-    <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-amber-500"></div>
+  <div className="h-full w-full flex items-center justify-center bg-slate-50 dark:bg-slate-950 min-h-[300px]">
+    <LoadingSpinner size="lg" color="amber" />
   </div>
 );
 

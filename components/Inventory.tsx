@@ -22,7 +22,7 @@ const Inventory: React.FC<InventoryProps> = ({
   services, products, suppliers, stockLogs, settings, 
   onUpdateServices, onUpdateProducts, onUpdateSuppliers, onAddStockLog 
 }) => {
-  const [activeTab, setActiveTab] = useState<'services' | 'products' | 'suppliers' | 'logs'>('services');
+  const [activeTab, setActiveTab] = useState<'services' | 'products' | 'suppliers' | 'logs' | 'purchase_orders' | 'transfers'>('services');
   const [isEditing, setIsEditing] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [isScanning, setIsScanning] = useState(false);
@@ -302,10 +302,12 @@ const Inventory: React.FC<InventoryProps> = ({
       </div>
       
       <div className="flex bg-[var(--tt-surface)] p-1 rounded-xl shadow-sm border border-[var(--tt-border)] self-start w-full sm:w-auto overflow-x-auto scrollbar-hide">
-        <button onClick={() => setActiveTab('services')} className={`flex-1 sm:px-8 py-2.5 rounded-lg font-bold transition-all text-[10px] md:text-sm whitespace-nowrap ${activeTab === 'services' ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600'}`}>{t.services}</button>
-        <button onClick={() => setActiveTab('products')} className={`flex-1 sm:px-8 py-2.5 rounded-lg font-bold transition-all text-[10px] md:text-sm whitespace-nowrap ${activeTab === 'products' ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600'}`}>{t.inventory}</button>
-        <button onClick={() => setActiveTab('suppliers')} className={`flex-1 sm:px-8 py-2.5 rounded-lg font-bold transition-all text-[10px] md:text-sm whitespace-nowrap ${activeTab === 'suppliers' ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600'}`}>{t.suppliers}</button>
-        <button onClick={() => setActiveTab('logs')} className={`flex-1 sm:px-8 py-2.5 rounded-lg font-bold transition-all text-[10px] md:text-sm whitespace-nowrap ${activeTab === 'logs' ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600'}`}>{t.stockLogs}</button>
+        <button onClick={() => setActiveTab('services')} className={`flex-1 sm:px-6 py-2.5 rounded-lg font-bold transition-all text-[10px] md:text-sm whitespace-nowrap ${activeTab === 'services' ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600'}`}>{t.services}</button>
+        <button onClick={() => setActiveTab('products')} className={`flex-1 sm:px-6 py-2.5 rounded-lg font-bold transition-all text-[10px] md:text-sm whitespace-nowrap ${activeTab === 'products' ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600'}`}>{t.inventory}</button>
+        <button onClick={() => setActiveTab('suppliers')} className={`flex-1 sm:px-6 py-2.5 rounded-lg font-bold transition-all text-[10px] md:text-sm whitespace-nowrap ${activeTab === 'suppliers' ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600'}`}>{t.suppliers}</button>
+        <button onClick={() => setActiveTab('purchase_orders')} className={`flex-1 sm:px-6 py-2.5 rounded-lg font-bold transition-all text-[10px] md:text-sm whitespace-nowrap ${activeTab === 'purchase_orders' ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600'}`}>Purchase Orders</button>
+        <button onClick={() => setActiveTab('transfers')} className={`flex-1 sm:px-6 py-2.5 rounded-lg font-bold transition-all text-[10px] md:text-sm whitespace-nowrap ${activeTab === 'transfers' ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600'}`}>Stock Transfers</button>
+        <button onClick={() => setActiveTab('logs')} className={`flex-1 sm:px-6 py-2.5 rounded-lg font-bold transition-all text-[10px] md:text-sm whitespace-nowrap ${activeTab === 'logs' ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600'}`}>{t.stockLogs}</button>
       </div>
       
       {/* Mobile & Desktop Combined View using flexible cards */}

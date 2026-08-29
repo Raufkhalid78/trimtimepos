@@ -64,7 +64,7 @@ const TermsOfService: React.FC = () => {
                 </div>
                 <div>
                   <strong className="text-white block mb-1">B. Subscription Plans and Pricing</strong>
-                  <p>Subscriptions are billed monthly ($15/month) or annually ($150/year). All fees are processed securely via Polar.sh and are billed in advance. We reserve the right to adjust subscription rates upon 30 days' notice.</p>
+                  <p>Subscriptions are billed monthly ($15/month) or annually ($150/year). All fees are processed securely via Creem.io and are billed in advance. We reserve the right to adjust subscription rates upon 30 days' notice.</p>
                 </div>
                 <div>
                   <strong className="text-white block mb-1">C. Cancellation and Refunds</strong>

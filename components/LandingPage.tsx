@@ -4,7 +4,7 @@ import HeroSection from './landing/HeroSection';
 import StatsBar from './landing/StatsBar';
 import FeaturesSection from './landing/FeaturesSection';
 import HowItWorksSection from './landing/HowItWorksSection';
-import TestimonialsSection from './landing/TestimonialsSection';
+import IndustrySolutionsSection from './landing/IndustrySolutionsSection';
 import PricingSection from './landing/PricingSection';
 import FaqSection from './landing/FaqSection';
 import CtaSection from './landing/CtaSection';
@@ -35,7 +35,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGoToSignUp, onGoToLogin }) 
         <StatsBar />
         <FeaturesSection />
         <HowItWorksSection />
-        <TestimonialsSection />
+        <IndustrySolutionsSection />
         <PricingSection onGoToSignUp={onGoToSignUp} />
         <FaqSection />
         <CtaSection onGoToSignUp={onGoToSignUp} />

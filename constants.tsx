@@ -40,6 +40,7 @@ export const DEFAULT_SETTINGS: ShopSettings = {
   countryCode: '+1',
   whatsappEnabled: true,
   whatsappNumber: '',
+  customWhatsAppApiKey: '',
   receiptFooter: 'Thank you for choosing us!',
   taxRate: 8,
   taxType: 'excluded',
@@ -51,7 +52,10 @@ export const DEFAULT_SETTINGS: ShopSettings = {
   pointRedemptionValue: 0.01,
   minPointsToRedeem: 100,
   bookingEnabled: false,
-  bookingSlug: ''
+  bookingSlug: '',
+  depositMode: 'none',
+  depositPaymentProvider: 'stripe',
+  depositAmount: 0
 };
 
 const RAW_TRANSLATIONS: Record<Language, any> = {
