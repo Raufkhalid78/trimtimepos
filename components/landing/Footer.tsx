@@ -85,20 +85,20 @@ const Footer: React.FC<FooterProps> = ({ onGoToLogin, onGoToSignUp }) => {
             <h3 className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500 mb-5">Account</h3>
             <ul className="space-y-3">
               <li>
-                <button
-                  onClick={onGoToSignUp}
-                  className="text-sm text-slate-500 hover:text-amber-400 transition-colors font-medium text-left"
+                <Link
+                  to="/signup"
+                  className="text-sm text-slate-500 hover:text-amber-400 transition-colors font-medium text-left inline-block"
                 >
                   Start Free Trial
-                </button>
+                </Link>
               </li>
               <li>
-                <button
-                  onClick={onGoToLogin}
-                  className="text-sm text-slate-500 hover:text-amber-400 transition-colors font-medium text-left"
+                <Link
+                  to="/login"
+                  className="text-sm text-slate-500 hover:text-amber-400 transition-colors font-medium text-left inline-block"
                 >
                   Business Login
-                </button>
+                </Link>
               </li>
             </ul>
           </div>
@@ -122,12 +122,12 @@ const Footer: React.FC<FooterProps> = ({ onGoToLogin, onGoToSignUp }) => {
             <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-5">
               <p className="text-xs font-black text-amber-400 uppercase tracking-widest mb-2">Free Trial</p>
               <p className="text-sm text-slate-300 mb-4 leading-snug">Start today — no card required.</p>
-              <button
-                onClick={onGoToSignUp}
-                className="w-full py-2.5 bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 rounded-xl text-xs font-black shadow-lg shadow-amber-500/20"
+              <Link
+                to="/signup"
+                className="w-full py-2.5 bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 rounded-xl text-xs font-black shadow-lg shadow-amber-500/20 inline-block text-center"
               >
                 Get Started →
-              </button>
+              </Link>
             </div>
           </div>
         </div>

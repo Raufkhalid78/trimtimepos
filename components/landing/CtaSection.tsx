@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 
 interface CtaSectionProps {
   onGoToSignUp: () => void;
@@ -32,18 +33,18 @@ const CtaSection: React.FC<CtaSectionProps> = ({ onGoToSignUp }) => {
               Set up in minutes. Cancel any time. No card required to start.
             </p>
 
-            <motion.button
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.97 }}
-              onClick={onGoToSignUp}
-              className="inline-flex items-center gap-2 px-12 py-5 bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 rounded-2xl text-lg font-black shadow-2xl shadow-amber-500/30 hover:shadow-amber-500/50 transition-all"
-              aria-label="Start your free month — no credit card required"
-            >
-              Start Your Free Month
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-              </svg>
-            </motion.button>
+            <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }} className="inline-block">
+              <Link
+                to="/signup"
+                className="inline-flex items-center gap-2 px-12 py-5 bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 rounded-2xl text-lg font-black shadow-2xl shadow-amber-500/30 hover:shadow-amber-500/50 transition-all"
+                aria-label="Start your free month — no credit card required"
+              >
+                Start Your Free Month
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+              </Link>
+            </motion.div>
 
             {/* Trust chips */}
             <div className="flex flex-wrap justify-center items-center gap-x-6 gap-y-3 mt-8">

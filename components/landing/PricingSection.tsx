@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Link } from 'react-router-dom';
 
 interface PricingSectionProps {
   onGoToSignUp: () => void;
@@ -122,13 +123,13 @@ const PricingSection: React.FC<PricingSectionProps> = ({ onGoToSignUp }) => {
               ))}
             </ul>
 
-            <button
-              onClick={onGoToSignUp}
-              className="w-full py-4 bg-slate-700 hover:bg-slate-600 text-white rounded-2xl font-black transition-colors"
+            <Link
+              to="/signup"
+              className="w-full py-4 bg-slate-700 hover:bg-slate-600 text-white rounded-2xl font-black transition-colors inline-block text-center"
               aria-label="Start monthly free trial"
             >
               Start Free Trial
-            </button>
+            </Link>
           </motion.div>
 
           {/* Yearly card */}
@@ -166,13 +167,13 @@ const PricingSection: React.FC<PricingSectionProps> = ({ onGoToSignUp }) => {
               ))}
             </ul>
 
-            <button
-              onClick={onGoToSignUp}
-              className="w-full py-4 bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 rounded-2xl font-black shadow-lg shadow-amber-500/20 hover:shadow-amber-500/40 transition-all"
+            <Link
+              to="/signup"
+              className="w-full py-4 bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 rounded-2xl font-black shadow-lg shadow-amber-500/20 hover:shadow-amber-500/40 transition-all inline-block text-center"
               aria-label="Start yearly free trial — best value"
             >
               Start Free Trial →
-            </button>
+            </Link>
           </motion.div>
         </div>
 

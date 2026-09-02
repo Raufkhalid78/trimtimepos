@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Link } from 'react-router-dom';
 
 interface NavbarProps {
   onGoToSignUp: () => void;
@@ -57,22 +58,22 @@ const Navbar: React.FC<NavbarProps> = ({ onGoToSignUp, onGoToLogin }) => {
 
         {/* Desktop CTAs */}
         <div className="hidden md:flex items-center gap-3">
-          <button
-            onClick={onGoToLogin}
-            className="px-5 py-2.5 text-sm font-bold text-slate-400 hover:text-white transition-colors"
+          <Link
+            to="/login"
+            className="px-5 py-2.5 text-sm font-bold text-slate-400 hover:text-white transition-colors inline-block"
             aria-label="Log in to your TrimTime account"
           >
             Log In
-          </button>
-          <motion.button
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
-            onClick={onGoToSignUp}
-            className="px-6 py-2.5 bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 rounded-xl text-sm font-black shadow-lg shadow-amber-500/20 hover:shadow-amber-500/40 transition-shadow"
-            aria-label="Start your free trial"
-          >
-            Start Free Trial
-          </motion.button>
+          </Link>
+          <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+            <Link
+              to="/signup"
+              className="px-6 py-2.5 bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 rounded-xl text-sm font-black shadow-lg shadow-amber-500/20 hover:shadow-amber-500/40 transition-shadow inline-block"
+              aria-label="Start your free trial"
+            >
+              Start Free Trial
+            </Link>
+          </motion.div>
         </div>
 
         {/* Mobile hamburger */}
@@ -113,20 +114,22 @@ const Navbar: React.FC<NavbarProps> = ({ onGoToSignUp, onGoToLogin }) => {
                   {link.label}
                 </a>
               ))}
-              <div className="pt-4 flex flex-col gap-3">
-                <button
-                  onClick={() => { onGoToLogin(); setMenuOpen(false); }}
-                  className="w-full py-3 text-sm font-bold text-slate-300 border border-slate-700 rounded-xl hover:border-slate-500 transition-colors"
-                >
-                  Log In
-                </button>
-                <button
-                  onClick={() => { onGoToSignUp(); setMenuOpen(false); }}
-                  className="w-full py-3 bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 rounded-xl text-sm font-black"
-                >
-                  Start Free Trial
-                </button>
-              </div>
+                <div className="pt-4 flex flex-col gap-3">
+                  <Link
+                    to="/login"
+                    onClick={() => setMenuOpen(false)}
+                    className="w-full py-3 text-sm font-bold text-slate-300 border border-slate-700 rounded-xl hover:border-slate-500 transition-colors inline-block text-center"
+                  >
+                    Log In
+                  </Link>
+                  <Link
+                    to="/signup"
+                    onClick={() => setMenuOpen(false)}
+                    className="w-full py-3 bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 rounded-xl text-sm font-black inline-block text-center"
+                  >
+                    Start Free Trial
+                  </Link>
+                </div>
             </div>
           </motion.div>
         )}

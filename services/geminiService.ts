@@ -141,48 +141,8 @@ Keep the total response under 350 words. Use markdown formatting with bold heade
     console.warn("Fallback edge function 'hyper-responder' failed...", err);
   }
 
-  // 3. Client-side fallback if VITE_OPENROUTER_API_KEY or VITE_GEMINI_API_KEY is defined in env
-  const clientOpenRouterKey = (import.meta as any).env?.VITE_OPENROUTER_API_KEY || (import.meta as any).env?.VITE_AI_API_KEY;
+  // 3. Client-side fallback if VITE_GEMINI_API_KEY is defined in env (only for testing)
   const clientGeminiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY;
-
-  if (clientOpenRouterKey && clientOpenRouterKey !== 'moved_to_supabase_edge_function') {
-    const modelsToTry = [
-      "google/gemini-2.5-flash",
-      "openai/gpt-4o-mini",
-      "deepseek/deepseek-chat",
-      "meta-llama/llama-3.3-70b-instruct"
-    ];
-
-    for (const model of modelsToTry) {
-      try {
-        const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${clientOpenRouterKey}`,
-            "HTTP-Referer": window.location.origin || "https://trimtimepos.com",
-            "X-Title": "TrimTime POS",
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            model,
-            messages: [
-              { role: "system", content: "You are a professional business consultant for barber shops and beauty salons. Give concise, highly actionable advice." },
-              { role: "user", content: prompt }
-            ],
-            max_tokens: 600,
-            temperature: 0.7
-          })
-        });
-
-        const json = await res.json();
-        if (res.ok && json.choices?.[0]?.message?.content) {
-          return json.choices[0].message.content;
-        }
-      } catch (openRouterErr) {
-        console.warn(`Client OpenRouter ${model} call error:`, openRouterErr);
-      }
-    }
-  }
 
   if (clientGeminiKey && clientGeminiKey !== 'moved_to_supabase_edge_function') {
     try {

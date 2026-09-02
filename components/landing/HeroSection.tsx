@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 
 interface HeroSectionProps {
   onGoToSignUp: () => void;
@@ -171,22 +172,22 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onGoToSignUp, onGoToLogin }) 
 
             {/* CTAs */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 mb-7">
-              <motion.button
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-                onClick={onGoToSignUp}
-                className="px-8 py-4 bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 rounded-2xl text-base font-black shadow-2xl shadow-amber-500/25 hover:shadow-amber-500/45 transition-all text-center"
-                aria-label="Start your free trial — no credit card required"
-              >
-                Start Free — No Card Needed →
-              </motion.button>
-              <button
-                onClick={onGoToLogin}
-                className="px-8 py-4 bg-slate-800/60 border border-slate-700/50 text-slate-300 rounded-2xl text-base font-bold hover:bg-slate-800 hover:text-white hover:border-slate-600 transition-all text-center"
+              <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+                <Link
+                  to="/signup"
+                  className="px-8 py-4 bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 rounded-2xl text-base font-black shadow-2xl shadow-amber-500/25 hover:shadow-amber-500/45 transition-all text-center inline-block w-full sm:w-auto"
+                  aria-label="Start your free trial — no credit card required"
+                >
+                  Start Free — No Card Needed →
+                </Link>
+              </motion.div>
+              <Link
+                to="/login"
+                className="px-8 py-4 bg-slate-800/60 border border-slate-700/50 text-slate-300 rounded-2xl text-base font-bold hover:bg-slate-800 hover:text-white hover:border-slate-600 transition-all text-center inline-block"
                 aria-label="Sign in to your existing TrimTime account"
               >
                 Sign In to Dashboard
-              </button>
+              </Link>
             </div>
 
             {/* Trust micro-copy */}

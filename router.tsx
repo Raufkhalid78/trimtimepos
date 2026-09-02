@@ -157,6 +157,16 @@ function LoginRedirect() {
   return <Navigate to="/" replace />;
 }
 
+function SignupRedirect() {
+  const { setSaasView, currentUser } = useAuth();
+  React.useEffect(() => {
+    if (!currentUser) {
+      setSaasView('signup');
+    }
+  }, [setSaasView, currentUser]);
+  return <Navigate to="/" replace />;
+}
+
 export const router = createBrowserRouter([
   {
     path: '/',
@@ -192,6 +202,10 @@ export const router = createBrowserRouter([
   {
     path: '/login',
     element: <LoginRedirect />
+  },
+  {
+    path: '/signup',
+    element: <SignupRedirect />
   },
   {
     path: '/privacy',

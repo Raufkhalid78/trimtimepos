@@ -22,7 +22,7 @@ import { useData } from './contexts/DataContext';
 import { isSubscriptionValid } from './services/subscriptionService';
 import { creemService } from './services/creemService';
 import { useToast } from './contexts/ToastContext';
-import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate, Link } from 'react-router-dom';
 import { loginWithEmail, loginWithGoogle } from './services/authService';
 import { notificationService } from './services/notificationService';
 
@@ -461,12 +461,12 @@ const OwnerLogin: React.FC<{ onBack: () => void; onSuccess: () => void | Promise
           </motion.div>
           <div className="flex flex-col items-center gap-3 mt-6">
             <p className="text-slate-500 text-sm">Don't have an account?{' '}
-              <button type="button" onClick={() => setSaasView('signup')} className="text-amber-400 font-bold hover:text-amber-300 bg-transparent border-none p-0 cursor-pointer transition-colors">Sign Up Free</button>
+              <Link to="/signup" className="text-amber-400 font-bold hover:text-amber-300 bg-transparent border-none p-0 cursor-pointer transition-colors inline-block">Sign Up Free</Link>
             </p>
-            <button type="button" onClick={onBack} className="text-slate-600 text-sm font-bold hover:text-slate-400 transition-colors flex items-center gap-1">
+            <Link to="/" className="text-slate-600 text-sm font-bold hover:text-slate-400 transition-colors flex items-center gap-1 inline-flex">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 17l-5-5m0 0l5-5m-5 5h12" /></svg>
-              Back to Home
-            </button>
+              Back to website
+            </Link>
           </div>
         </div>
       </motion.div>
